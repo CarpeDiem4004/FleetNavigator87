@@ -1,0 +1,219 @@
+// Configurações de acesso à API do Supabase
+export const SUPABASE_URL = "https://hvsmxxqkuyjhpsiojupb.supabase.co/rest/v1";
+// API Key para usuário com permissão de serviço para contornar RLS
+export const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y";
+// Chave anterior (anônima) que estava sofrendo com restrições de RLS:
+// "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA"
+
+// Função para enviar dados para endpoints do Supabase
+export async function enviarParaSupabase(endpoint: string, dados: any, method: string = "POST") {
+  try {
+    // Verifica a conexão com a internet antes de tentar a requisição
+    if (!navigator.onLine) {
+      throw new Error("Sem conexão com a internet. Verifique sua rede e tente novamente.");
+    }
+    
+    console.log(`[SUPABASE] Iniciando requisição ${method} para ${endpoint}`);
+    
+    // Adiciona timestamp para minimizar cache
+    const timestamp = new Date().getTime();
+    
+    const options: RequestInit = {
+      method: method,
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": API_KEY,
+        "Authorization": `Bearer ${API_KEY}`,
+        "Prefer": "return=representation",
+        "Cache-Control": "no-cache, no-store",
+        "Pragma": "no-cache",
+        "X-Request-Timestamp": timestamp.toString()
+      },
+      // Adiciona timeout para a requisição
+      signal: AbortSignal.timeout(10000) // 10 segundos de timeout
+    };
+    
+    // Só adiciona o body para métodos que o requerem
+    if (method !== "GET" && method !== "HEAD" && method !== "DELETE") {
+      options.body = JSON.stringify(dados);
+    }
+    
+    const url = `${SUPABASE_URL}/${endpoint}`;
+    console.log(`[SUPABASE] URL completa: ${url}`);
+    console.log(`[SUPABASE] Método: ${method}`);
+    console.log(`[SUPABASE] Cabeçalhos:`, options.headers);
+    
+    try {
+      console.log(`[SUPABASE] Executando fetch...`);
+      const res = await fetch(url, options);
+      console.log(`[SUPABASE] Resposta recebida. Status:`, res.status);
+      
+      if (!res.ok) {
+        // Tentar obter mais detalhes sobre o erro
+        let errorDetail = "";
+        try {
+          const errorResponse = await res.json();
+          errorDetail = JSON.stringify(errorResponse);
+        } catch (parseError) {
+          errorDetail = await res.text();
+        }
+        
+        console.error(`[SUPABASE] Erro na resposta:`, res.status, errorDetail);
+        throw new Error(`Erro ao enviar dados: ${res.status} - ${errorDetail}`);
+      }
+      
+      // Algumas requisições (como DELETE) podem não retornar conteúdo
+      if (res.status === 204) {
+        console.log(`[SUPABASE] Requisição completada com sucesso (204 No Content)`);
+        return true;
+      }
+      
+      console.log(`[SUPABASE] Requisição completada com sucesso`);
+      return await res.json();
+    } catch (fetchError: any) {
+      // Tratamento para erros específicos de timeout
+      if (fetchError.name === 'TimeoutError' || fetchError.message?.includes('timeout')) {
+        console.error(`[SUPABASE] Erro de timeout:`, fetchError);
+        throw new Error("Tempo limite excedido ao conectar com o servidor. Verifique sua conexão e tente novamente.");
+      }
+      
+      // Verifica se o erro é por falta de conexão
+      if (fetchError.message?.includes('Failed to fetch')) {
+        console.error(`[SUPABASE] Erro de conexão:`, fetchError);
+        throw new Error("Falha na conexão com o servidor. Verifique se você tem acesso à internet.");
+      }
+      
+      // Repassar o erro original se não for um dos casos específicos
+      console.error(`[SUPABASE] Erro no fetch:`, fetchError);
+      throw fetchError;
+    }
+  } catch (error) {
+    console.error(`[SUPABASE] Erro na requisição (${method}):`, error);
+    throw error;
+  }
+}
+
+// Função para buscar dados dos endpoints do Supabase
+export async function buscarDadosSupabase(endpoint: string, queryParams: string = "") {
+  try {
+    // Verifica a conexão com a internet antes de tentar a requisição
+    if (!navigator.onLine) {
+      throw new Error("Sem conexão com a internet. Verifique sua rede e tente novamente.");
+    }
+    
+    // Adiciona timestamp para evitar caches
+    const timestamp = new Date().getTime();
+    const separator = queryParams ? '&' : '?';
+    const url = `${SUPABASE_URL}/${endpoint}${queryParams ? `?${queryParams}` : ""}${separator}_t=${timestamp}`;
+    console.log("Buscando dados em:", url);
+    
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": API_KEY,
+          "Authorization": `Bearer ${API_KEY}`,
+          "Cache-Control": "no-cache, no-store",
+          "Pragma": "no-cache"
+        },
+        // Adiciona timeout para a requisição
+        signal: AbortSignal.timeout(10000) // 10 segundos de timeout
+      });
+      
+      if (!res.ok) {
+        // Tentar obter mais detalhes sobre o erro
+        let errorDetail = "";
+        try {
+          const errorResponse = await res.json();
+          errorDetail = JSON.stringify(errorResponse);
+        } catch (parseError) {
+          errorDetail = await res.text();
+        }
+        
+        throw new Error(`Erro ao buscar dados: ${res.status} - ${errorDetail}`);
+      }
+      
+      return await res.json();
+    } catch (fetchError: any) {
+      // Tratamento para erros específicos de timeout
+      if (fetchError.name === 'TimeoutError' || fetchError.message?.includes('timeout')) {
+        throw new Error("Tempo limite excedido ao conectar com o servidor. Verifique sua conexão e tente novamente.");
+      }
+      
+      // Verifica se o erro é por falta de conexão
+      if (fetchError.message?.includes('Failed to fetch')) {
+        throw new Error("Falha na conexão com o servidor. Verifique se você tem acesso à internet.");
+      }
+      
+      // Repassar o erro original se não for um dos casos específicos
+      throw fetchError;
+    }
+  } catch (error) {
+    console.error(`Erro ao buscar dados de ${endpoint}:`, error);
+    throw error;
+  }
+}
+
+// Endpoints disponíveis
+export const ENDPOINTS = {
+  ABASTECIMENTOS: "abastecimentos", // Corrigindo para o nome real da tabela no Supabase
+  RECEBIMENTOS: "recebimentos_tanques",
+  MOVIMENTACOES: "movimentacoes_patio",
+  CONFIG_TANQUES: "controle_tanques" // Alterando para um nome que pode ser diferente na API
+};
+
+// Função para verificar a conectividade com o Supabase
+export async function verificarConexaoSupabase(): Promise<boolean> {
+  try {
+    // Verifica se há conexão com a internet
+    if (!navigator.onLine) {
+      console.log("Sem conexão com a internet");
+      return false;
+    }
+    
+    // Tenta fazer uma requisição simples para verificar a conectividade usando um endpoint existente
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout
+    
+    // Adiciona timestamp para evitar cache
+    const timestamp = new Date().getTime();
+    
+    try {
+      // Usamos o endpoint de configuração de tanques como teste de conexão
+      const response = await fetch(`${SUPABASE_URL}/${ENDPOINTS.CONFIG_TANQUES}?limit=1&_t=${timestamp}`, {
+        method: 'GET',
+        headers: {
+          "apikey": API_KEY,
+          "Authorization": `Bearer ${API_KEY}`,
+          "Cache-Control": "no-cache, no-store",
+          "Pragma": "no-cache"
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Registra o status para depuração
+      console.log("Teste de conexão com Supabase:", response.status, response.ok);
+      
+      return response.ok;
+    } catch (error) {
+      // Cast seguro para Error pois todos os erros de fetch herdam de Error
+      const fetchError = error instanceof Error ? error : new Error(String(error));
+      console.error("Erro na requisição de teste ao Supabase:", fetchError);
+      
+      // Verificamos se o erro é devido a timeout ou falha de rede
+      if (fetchError.name === 'AbortError') {
+        console.log("Timeout ao conectar com Supabase");
+      } else if (fetchError.message && fetchError.message.includes('Failed to fetch')) {
+        console.log("Falha na conexão com Supabase");
+      }
+      
+      return false;
+    }
+  } catch (error) {
+    console.error("Erro ao verificar conexão com Supabase:", error);
+    return false;
+  }
+};

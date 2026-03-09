@@ -1,0 +1,2851 @@
+import express, { type Request, Response, NextFunction } from "express";
+import path from "path";
+import { registerRoutes } from "./routes";
+import { setupVite, serveStatic, log } from "./vite";
+// import { utcMiddleware } from './utils/timezone-utc.js';
+// Importar cronJobs para tarefas agendadas
+import { initCronJobs } from "./cronJobs";
+// Importar migrações
+import { runMigrations } from "./migration";
+// APIs diretas para postos (temporariamente desabilitadas para deployment)
+// import { 
+//   getHistoricoPosto, 
+//   getEstatisticasMensaisPosto, 
+//   getConsumoPorVeiculoPosto,
+//   getComparativoCombustiveisPosto,
+//   checkTabelaPosto,
+//   registrarAbastecimentoPosto,
+//   deleteAbastecimentoPosto
+// } from "./api-direto.js";
+// Importar API para usuários via Supabase
+import userApi from "./api/userApi";
+// APIs híbridas (temporariamente desabilitadas para deployment)
+// import hybridUserApi from "../hybrid-user-api.js";
+// import hybridBasesApi from "../hybrid-bases-api.js";
+// Importar rotas para acesso externo de parceiros de guincho
+import towingPartnerExternalRoutes from "./routes/towingPartnerExternalRoutes";
+// Importar rotas de emergência para acesso externo de parceiros de guincho
+import towingServiceEmergency from "./routes/towingServiceEmergency";
+// Importar rotas para gerenciamento financeiro de serviços de guincho
+import towingPaymentsRoutes from "./routes/towingPaymentsRoutes";
+// Importar middleware de CORS personalizado
+import { corsMiddleware } from "./middleware/cors";
+// Importar middleware para corrigir cookies de sessão
+import fixCookieSession from "./middleware/fixCookieSession";
+// Importar middlewares de diagnóstico e recuperação de autenticação
+import { debugAuthMiddleware, recoverSessionMiddleware } from './middleware/debugAuthMiddleware';
+// import { unifiedAuthMiddleware, requireRoles } from './utils/auth-utils.js';
+import { isAuthenticated } from './middleware/auth';
+import { pool } from './db';
+// Importar rota de diagnóstico para frota
+import frotaDiagnosticoRoute from "./routes/frotaDiagnosticoRoute";
+// Importar rotas de recebimentos e movimentações de pátio
+import recebimentosMovimentacoesRoutes from "./routes/recebimentosMovimentacoesRoutes";
+// Importar rotas de projetos padronizados
+import projetosRoutes from "./routes/projetosRoutes";
+// Importar rotas de preços de combustível
+import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
+// Scheduler e rotas de consumo diário (temporariamente desabilitadas para deployment)
+// import { iniciarScheduler } from './services/consumoDiarioScheduler.js';
+// import consumoDiarioHistorico from './routes/consumoDiarioHistorico.js';
+// import consumoDiarioTabela from './routes/consumoDiarioTabela.js';
+// Importar API de coordenador de projeto
+import coordinatorRolesApi from './coordinatorRolesApi';
+// API de manutenção veicular (temporariamente desabilitada para deployment)
+// import { 
+//   loginMaintenance, 
+//   authenticateMaintenanceToken,
+//   getOrdensServico,
+//   createOrdemServico,
+//   updateStatusOrdemServico,
+//   getPecasOS,
+//   addPecaOS,
+//   getVeiculos,
+//   getOficinas,
+//   getRelatorios
+// } from './maintenance-api.js';
+// Importar rotas de cartões de combustível
+import fuelCardRoutes from './routes/fuelCardRoutes';
+// Importar rotas do painel operacional
+import operationalDashboardRoutes from './routes/operationalDashboard';
+// Importar rotas do Line Hall
+import lineHallRoutes from './routes/lineHallRoutes';
+// Importar rotas das bases
+import basesRoutes from './routes/basesRoutes';
+// Importar rotas do WhatsApp
+import whatsappRoutes from './routes/whatsappApi';
+// Importar rotas de Jornada de Motoristas
+import jornadaMotoristaApi from './routes/jornadaMotoristaApi';
+// Importar rotas de Checklist de Pátio
+import checklistPatioApi from './routes/checklistPatioApi';
+
+// Configuração das variáveis de ambiente do Supabase
+// Usa os valores fixos do cliente (pois são os mesmos utilizados no front-end)
+process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://hvsmxxqkuyjhpsiojupb.supabase.co';
+process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MTU3MTIsImV4cCI6MjA2MDM5MTcxMn0.WzPEqHiPiS66yySX8X3H1gq1U8tedXpRSnyk-KzAFTA';
+// IMPORTANTE: Usar SUPABASE_SERVICE_ROLE_KEY para admin (NÃO expor no frontend!)
+process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2c214eHFrdXlqaHBzaW9qdXBiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDg5ODIwNiwiZXhwIjoyMDYwMjc0MjA2fQ.bvwwqQBQVUOlyHYMsX9C5dSQhsQYI2r8qmqRBHgG_0Y';
+
+// Configurar timezone do processo Node.js para America/Sao_Paulo
+// Isso garante que new Date(), toLocaleDateString e comparações de data usem o horário de Brasília
+process.env.TZ = 'America/Sao_Paulo';
+console.log(`[SISTEMA] Timezone configurado para: America/Sao_Paulo (UTC-3)`);
+console.log(`[SISTEMA] Data/hora Brasil: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`);
+console.log(`[SISTEMA] ISO UTC: ${new Date().toISOString()}`);
+
+const app = express();
+
+// Flag de prontidão para health check
+let isReady = false;
+
+// HEALTH CHECK - DEVE SER A PRIMEIRA ROTA (antes de qualquer middleware)
+// Responde imediatamente para passar no health check do deployment
+app.get('/health', (req, res) => {
+  if (isReady) {
+    res.status(200).json({ status: 'healthy', ready: true, timestamp: new Date().toISOString() });
+  } else {
+    res.status(200).json({ status: 'starting', ready: false, timestamp: new Date().toISOString() });
+  }
+});
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: isReady ? 'healthy' : 'starting', 
+    ready: isReady,
+    timestamp: new Date().toISOString() 
+  });
+});
+
+// CRÍTICO: Confiar no proxy do Replit para aceitar cookies secure
+// Sem isso, o Express rejeita cookies secure mesmo com sameSite=none
+app.set('trust proxy', 1);
+console.log('[App] Trust proxy configurado para aceitar cookies secure através de proxy');
+
+// MIDDLEWARE PWA PRIMEIRO - ANTES DE QUALQUER OUTRO MIDDLEWARE
+// (Rotas de work-safety foram consolidadas em routes.ts)
+app.get('/manifest.json', (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'application/manifest+json');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    const manifestPath = path.join(process.cwd(), 'public', 'manifest.json');
+    console.log('[PWA] Serving manifest.json from:', manifestPath);
+    res.sendFile(manifestPath);
+  } catch (error) {
+    console.error('[PWA] Error serving manifest.json:', error);
+    res.status(500).json({ error: 'Failed to serve manifest.json' });
+  }
+});
+
+app.get('/manifest-driver.json', (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'application/manifest+json');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    const manifestPath = path.join(process.cwd(), 'public', 'manifest-driver.json');
+    console.log('[PWA] Serving manifest-driver.json from:', manifestPath);
+    res.sendFile(manifestPath);
+  } catch (error) {
+    console.error('[PWA] Error serving manifest-driver.json:', error);
+    res.status(500).json({ error: 'Failed to serve manifest-driver.json' });
+  }
+});
+
+app.get('/service-worker.js', (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'no-cache');
+    const swPath = path.join(process.cwd(), 'public', 'service-worker.js');
+    console.log('[PWA] Serving service-worker.js from:', swPath);
+    res.sendFile(swPath);
+  } catch (error) {
+    console.error('[PWA] Error serving service-worker.js:', error);
+    res.status(500).json({ error: 'Failed to serve service-worker.js' });
+  }
+});
+
+// Servir ícones PWA
+app.use('/icons', express.static(path.join(process.cwd(), 'public', 'icons'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+  }
+}));
+
+// Servir arquivos de attached_assets (fotos de notas fiscais, etc)
+app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+  }
+}));
+
+// INTERCEPTOR CRÍTICO PARA BASES - REGISTRAR ANTES DE QUALQUER MIDDLEWARE
+app.use((req, res, next) => {
+  // Interceptar PATCH /api/bases/:id especificamente  
+  if (req.method === 'PATCH' && req.path.match(/^\/api\/bases\/\d+$/)) {
+    console.log(`[INTERCEPTOR-CRITICO] Capturada requisição PATCH para ${req.path}`);
+    
+    // Processar JSON manualmente se necessário
+    if (req.headers['content-type']?.includes('application/json')) {
+      let body = '';
+      req.on('data', chunk => {
+        body += chunk.toString();
+      });
+      req.on('end', async () => {
+        try {
+          const updateData = JSON.parse(body);
+          const id = req.path.split('/').pop();
+          
+          console.log(`[INTERCEPTOR-CRITICO] Atualizando base ${id}:`, updateData);
+          
+          // Forçar headers JSON
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          
+          // Mapear nomes de campos do frontend (camelCase) para backend (snake_case)
+          const fieldMapping = {
+            'hasMaintenance': 'has_maintenance',
+            'hasTires': 'has_tires',
+            'requestsEnabled': 'requests_enabled',
+            'projectId': 'project_id'
+          };
+          
+          // Construir query de atualização dinamicamente
+          const mappedData = {};
+          Object.keys(updateData).forEach(key => {
+            const mappedKey = fieldMapping[key] || key;
+            mappedData[mappedKey] = updateData[key];
+          });
+          
+          const fields = Object.keys(mappedData);
+          const values = Object.values(mappedData);
+          
+          if (fields.length === 0) {
+            return res.status(400).end(JSON.stringify({
+              success: false,
+              message: 'Nenhum campo para atualizar fornecido'
+            }));
+          }
+          
+          const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ');
+          const query = `
+            UPDATE bases 
+            SET ${setClause}
+            WHERE id = $1
+            RETURNING *
+          `;
+          
+          const result = await pool.query(query, [parseInt(id), ...values]);
+          
+          if (result.rows.length === 0) {
+            return res.status(404).end(JSON.stringify({
+              success: false,
+              message: 'Base não encontrada'
+            }));
+          }
+          
+          const updatedBase = result.rows[0];
+          console.log(`[INTERCEPTOR-CRITICO] Base atualizada com sucesso: ${updatedBase.name}`);
+          
+          return res.status(200).end(JSON.stringify({
+            success: true,
+            message: 'Base atualizada com sucesso',
+            data: updatedBase
+          }));
+          
+        } catch (error) {
+          console.error('[INTERCEPTOR-CRITICO] Erro ao atualizar base:', error);
+          return res.status(500).end(JSON.stringify({
+            success: false,
+            message: 'Erro interno do servidor',
+            error: error?.message || 'Erro desconhecido'
+          }));
+        }
+      });
+      return; // Não chamar next() para evitar processamento adicional
+    }
+  }
+  
+  // Para outras requisições, continuar normalmente
+  next();
+});
+
+// Middleware para processar JSON ANTES dos endpoints críticos
+// Aumentar limite para suportar exportações Excel grandes
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+
+// Aplicar middleware UTC para garantir que todas as datas sejam processadas em UTC
+// app.use(utcMiddleware); // Temporariamente desabilitado para deployment
+
+
+
+// HEALTH CHECK ENDPOINT - Essencial para deployment
+app.get('/health', (req, res) => {
+  try {
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: 'unhealthy',
+      error: error?.message || 'Erro desconhecido'
+    });
+  }
+});
+
+// Alternative health check paths
+app.get('/healthz', (req, res) => res.redirect('/health'));
+app.get('/api/health', (req, res) => res.redirect('/health'));
+
+// ENDPOINT DE DIAGNÓSTICO DE TIMEZONE - Registrar ANTES de todos os middlewares
+app.get('/api/timezone-status', (req, res) => {
+  try {
+    const now = new Date();
+    const brazilTime = now.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const systemTime = now.toLocaleString();
+    const utcTime = now.toISOString();
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json({
+      success: true,
+      message: 'Status do timezone do sistema (Backend UTC, Frontend Brasil)',
+      data: {
+        systemTimezone: process.env.TZ || 'Não definido',
+        currentTime: {
+          utc: utcTime,
+          utcTimestamp: now.getTime(),
+          brazilPreview: brazilTime,
+          systemTime: systemTime
+        },
+        configuration: {
+          backendTimezone: process.env.TZ,
+          frontendTimezone: 'America/Sao_Paulo',
+          locale: 'pt-BR',
+          pattern: 'Backend UTC -> Frontend Local'
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Erro ao verificar timezone:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao verificar timezone',
+      error: error?.message || 'Erro desconhecido'
+    });
+  }
+});
+
+// ROTA PÚBLICA COCA-COLA OS - Registrar ANTES de qualquer middleware para evitar interceptação do Vite
+app.post('/api/public/maintenance-requests', async (req, res) => {
+  try {
+    console.log('[CocaCola OS - index.ts] Recebido body:', JSON.stringify(req.body));
+    
+    const {
+      placa, modelo, base_origem, odometro, relato_problema,
+      urgencia, fotos, responsavel_base, telefone_responsavel
+    } = req.body;
+
+    console.log('[CocaCola OS - index.ts] Campos extraídos:', { placa, modelo, base_origem, relato_problema, urgencia });
+
+    if (!placa || !base_origem || !relato_problema) {
+      console.log('[CocaCola OS - index.ts] Campos obrigatórios faltando:', { placa, base_origem, relato_problema });
+      return res.status(400).json({ success: false, message: 'Campos obrigatórios não preenchidos: placa, base_origem, relato_problema' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO coca_cola_os_requests 
+        (placa, modelo, base_origem, odometro, relato_problema, urgencia, fotos, responsavel_base, telefone_responsavel, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente')
+       RETURNING *`,
+      [placa, modelo || null, base_origem, odometro ? parseInt(odometro) : null, relato_problema, urgencia || 'media', fotos || [], responsavel_base || null, telefone_responsavel || null]
+    );
+
+    const newOsId = result.rows[0].id;
+    const numeroOs = 'OS-' + String(newOsId).padStart(5, '0');
+    await pool.query('UPDATE coca_cola_os_requests SET numero_os = $1 WHERE id = $2', [numeroOs, newOsId]);
+    result.rows[0].numero_os = numeroOs;
+    console.log('[CocaCola OS - index.ts] Nova solicitação criada:', newOsId, 'OS:', numeroOs, 'Placa:', placa, 'Base:', base_origem);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[CocaCola OS - index.ts] Erro ao criar solicitação:', error);
+    res.status(500).json({ success: false, message: 'Erro ao criar solicitação: ' + (error as Error).message });
+  }
+});
+
+// Rota pública GET para listar OS da Coca-Cola por base
+app.get('/api/public/coca-cola-os', async (req, res) => {
+  try {
+    const { base } = req.query;
+    let query = 'SELECT * FROM coca_cola_os_requests';
+    const params: string[] = [];
+    
+    if (base) {
+      query += ' WHERE base_origem = $1';
+      params.push(base as string);
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('[CocaCola OS - index.ts] Erro ao listar:', error);
+    res.json([]);
+  }
+});
+
+// Rota autenticada para listar todas as solicitações de manutenção
+app.get('/api/maintenance-requests', async (req, res) => {
+  try {
+    const { status, base } = req.query;
+    let query = 'SELECT * FROM coca_cola_os_requests';
+    const params: string[] = [];
+    let paramIndex = 1;
+    const conditions: string[] = [];
+    
+    if (status && status !== 'all') {
+      conditions.push(`status = $${paramIndex}`);
+      params.push(status as string);
+      paramIndex++;
+    }
+    
+    if (base) {
+      conditions.push(`base_origem = $${paramIndex}`);
+      params.push(base as string);
+      paramIndex++;
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('[Maintenance Requests] Erro ao listar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao listar solicitações' });
+  }
+});
+
+// Rota de estatísticas de solicitações
+app.get('/api/maintenance-requests/stats', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE status = 'pendente') as pendentes,
+        COUNT(*) FILTER (WHERE status = 'em_analise') as em_analise,
+        COUNT(*) FILTER (WHERE status = 'direcionado') as direcionados,
+        COUNT(*) FILTER (WHERE status = 'agendado') as agendados,
+        COUNT(*) FILTER (WHERE status = 'em_manutencao') as em_manutencao,
+        COUNT(*) FILTER (WHERE status = 'concluido') as concluidos,
+        COUNT(*) as total
+      FROM coca_cola_os_requests
+    `);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[Maintenance Stats] Erro:', error);
+    res.status(500).json({ success: false, message: 'Erro ao buscar estatísticas' });
+  }
+});
+
+// Rota PATCH para atualizar solicitação de manutenção
+app.patch('/api/maintenance-requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      status, oficina_direcionada, data_agendamento, hora_agendamento,
+      instrucoes, observacoes
+    } = req.body;
+
+    const result = await pool.query(
+      `UPDATE coca_cola_os_requests 
+       SET status = COALESCE($1, status),
+           oficina_direcionada = COALESCE($2, oficina_direcionada),
+           data_agendamento = COALESCE($3, data_agendamento),
+           hora_agendamento = COALESCE($4, hora_agendamento),
+           instrucoes = COALESCE($5, instrucoes),
+           observacoes = COALESCE($6, observacoes),
+           updated_at = NOW()
+       WHERE id = $7
+       RETURNING *`,
+      [status, oficina_direcionada, data_agendamento, hora_agendamento, instrucoes, observacoes, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+    }
+
+    const osData = result.rows[0];
+
+    // Se a oficina direcionada for "Oficina Murici", inserir na tabela oficina_murici_manutencoes
+    if (oficina_direcionada && oficina_direcionada.toLowerCase().includes('murici')) {
+      try {
+        // Verificar se já existe uma manutenção para essa placa em andamento
+        const checkExisting = await pool.query(
+          `SELECT id FROM oficina_murici_manutencoes WHERE placa = $1 AND status != 'finalizado' LIMIT 1`,
+          [osData.placa]
+        );
+
+        if (checkExisting.rows.length === 0) {
+          // Inserir nova manutenção na Oficina Murici
+          await pool.query(
+            `INSERT INTO oficina_murici_manutencoes (
+              placa, km, prazo, descricao_manutencao, status, mecanico, 
+              data_hora_inicio, observacoes, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+            [
+              osData.placa,
+              osData.odometro || 0,
+              data_agendamento || new Date().toISOString().split('T')[0],
+              osData.relato_problema || 'Manutenção direcionada via OS Coca-Cola',
+              'em_andamento',
+              'A definir',
+              new Date().toISOString(),
+              `OS Coca-Cola #${osData.id} - Base: ${osData.base_origem}. ${instrucoes || ''} ${observacoes || ''}`
+            ]
+          );
+          console.log('[Maintenance Requests] Manutenção criada na Oficina Murici para placa:', osData.placa);
+        }
+      } catch (insertError) {
+        console.error('[Maintenance Requests] Erro ao inserir na Oficina Murici:', insertError);
+      }
+    }
+
+    console.log('[Maintenance Requests] Solicitação atualizada:', id);
+    res.json({ success: true, data: osData });
+  } catch (error) {
+    console.error('[Maintenance Requests] Erro ao atualizar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao atualizar solicitação' });
+  }
+});
+
+// Rota para oficina atualizar dados de manutenção da OS
+app.patch('/api/maintenance-requests/:id/oficina-update', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      status_manutencao, pecas_utilizadas, valor_pecas, valor_mao_obra,
+      mecanico_responsavel, observacoes_oficina, data_finalizacao
+    } = req.body;
+
+    const result = await pool.query(
+      `UPDATE coca_cola_os_requests 
+       SET status_manutencao = COALESCE($1, status_manutencao),
+           pecas_utilizadas = COALESCE($2, pecas_utilizadas),
+           valor_pecas = COALESCE($3, valor_pecas),
+           valor_mao_obra = COALESCE($4, valor_mao_obra),
+           mecanico_responsavel = COALESCE($5, mecanico_responsavel),
+           observacoes_oficina = COALESCE($6, observacoes_oficina),
+           data_finalizacao = COALESCE($7, data_finalizacao),
+           updated_at = NOW()
+       WHERE id = $8
+       RETURNING *`,
+      [status_manutencao, pecas_utilizadas, valor_pecas, valor_mao_obra, 
+       mecanico_responsavel, observacoes_oficina, data_finalizacao, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'OS não encontrada' });
+    }
+
+    console.log('[Oficina Update] OS atualizada pela oficina:', id);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[Oficina Update] Erro ao atualizar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao atualizar OS' });
+  }
+});
+
+// Rota para confirmar recebimento de OS
+app.post('/api/maintenance-requests/:id/confirm', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { confirmado_por, observacoes_confirmacao } = req.body;
+
+    const result = await pool.query(
+      `UPDATE coca_cola_os_requests 
+       SET status = 'em_analise',
+           observacoes = COALESCE(observacoes, '') || ' | Confirmado por: ' || $1 || ' em ' || NOW()::text,
+           updated_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [confirmado_por || 'Sistema', id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Solicitação não encontrada' });
+    }
+
+    console.log('[Maintenance Requests] OS confirmada:', id);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('[Maintenance Requests] Erro ao confirmar:', error);
+    res.status(500).json({ success: false, message: 'Erro ao confirmar recebimento' });
+  }
+});
+
+// Rota para listar fornecedores/oficinas
+app.get('/api/fornecedores', async (req, res) => {
+  try {
+    const { categoria } = req.query;
+    let query = 'SELECT id, nome, categoria, tipo_servico, contato_nome, contato_telefone, is_parceiro, ativo FROM fornecedores WHERE ativo = true';
+    const params: string[] = [];
+    
+    if (categoria) {
+      query += ' AND categoria = $1';
+      params.push(categoria as string);
+    }
+    
+    query += ' ORDER BY nome ASC';
+    
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('[Fornecedores] Erro ao listar:', error);
+    res.json({ success: true, data: [] });
+  }
+});
+
+// ROTAS DE TERCEIROS - Registrar ANTES de qualquer middleware para evitar interceptação do Vite
+app.get('/api/terceiros/admin/stats', async (req, res) => {
+  try {
+    // Verificação de autenticação segura (compatível com setup incompleto)
+    if (typeof req.isAuthenticated !== 'function' || !req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Não autorizado' });
+    }
+
+    const statsQuery = `
+      SELECT 
+        COUNT(DISTINCT e.id) as total_empresas,
+        COUNT(a.id) as total_abastecimentos,
+        COALESCE(SUM(a.litros), 0) as total_litros,
+        COALESCE(SUM(a.valor_total), 0) as total_valor
+      FROM empresas_terceiros e
+      LEFT JOIN abastecimentos_terceiros a ON e.id = a.empresa_id
+    `;
+    
+    const result = await pool.query(statsQuery);
+    const stats = result.rows[0];
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json({
+      totalEmpresas: parseInt(stats.total_empresas) || 0,
+      totalAbastecimentos: parseInt(stats.total_abastecimentos) || 0,
+      totalLitros: parseFloat(stats.total_litros) || 0,
+      totalValor: parseFloat(stats.total_valor) || 0
+    });
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas de terceiros:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+app.get('/api/terceiros/admin/empresas', async (req, res) => {
+  try {
+    // Verificação de autenticação segura (compatível com setup incompleto)
+    if (typeof req.isAuthenticated !== 'function' || !req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Não autorizado' });
+    }
+
+    const empresasQuery = `
+      SELECT 
+        id, nome, cnpj, endereco, telefone, email, responsavel_nome,
+        created_at
+      FROM empresas_terceiros
+      ORDER BY created_at DESC
+    `;
+    
+    const result = await pool.query(empresasQuery);
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Erro ao buscar empresas de terceiros:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+app.get('/api/terceiros/admin/abastecimentos', async (req, res) => {
+  try {
+    // Verificação de autenticação segura (compatível com setup incompleto)
+    if (typeof req.isAuthenticated !== 'function' || !req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Não autorizado' });
+    }
+
+    const abastecimentosQuery = `
+      SELECT 
+        a.id, a.posto, a.combustivel_tipo, a.litros, a.valor_total,
+        a.km_atual, a.created_at, a.placa, a.motorista,
+        e.nome as empresa_nome, e.cnpj as empresa_cnpj
+      FROM abastecimentos_terceiros a
+      JOIN empresas_terceiros e ON a.empresa_id = e.id
+      ORDER BY a.created_at DESC
+      LIMIT 100
+    `;
+    
+    const result = await pool.query(abastecimentosQuery);
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Erro ao buscar abastecimentos de terceiros:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// ENDPOINT CRÍTICO PARA RECEBIMENTOS - Registrar ANTES de todos os middlewares
+app.post('/fuel-receipts', async (req, res) => {
+  try {
+    console.log('[RECEBIMENTOS] Endpoint direto chamado para posto:', req.body.posto);
+    
+    // Configurar headers de resposta
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    const { posto, tipo_produto, litros_recebidos, valor_total, nome_fornecedor, nome_operador, observacoes } = req.body;
+    
+    // Map stations to receipt table names
+    const tableMap: { [key: string]: string } = {
+      'osasco_v2': 'recebimentos_posto_osasco_v2',
+      'abc_v2': 'recebimentos_posto_abc_v2',
+      'alair_v2': 'recebimentos_posto_alair_v2',
+      'campinas_v2': 'recebimentos_posto_campinas_v2',
+      'socorro_v2': 'recebimentos_posto_socorro_v2',
+      'sorocaba_v2': 'recebimentos_posto_sorocaba_v2',
+      'guarulhos_v2': 'recebimentos_posto_guarulhos_v2'
+    };
+    
+    const tableName = tableMap[posto.toLowerCase()];
+    
+    if (!tableName) {
+      return res.status(400).json({
+        success: false,
+        message: `Posto "${posto}" não encontrado`
+      });
+    }
+    
+    // Insert new fuel receipt
+    const insertQuery = `
+      INSERT INTO ${tableName} (
+        tipo_produto, 
+        litros_recebidos, 
+        valor_total, 
+        nome_fornecedor, 
+        nome_operador, 
+        observacoes,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      RETURNING *
+    `;
+    
+    const result = await pool.query(insertQuery, [
+      tipo_produto,
+      litros_recebidos,
+      valor_total,
+      nome_fornecedor,
+      nome_operador,
+      observacoes || ''
+    ]);
+    
+    console.log(`[RECEBIMENTOS] Registrado com sucesso - ID: ${result.rows[0].id}, Posto: ${posto}`);
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Recebimento registrado com sucesso',
+      data: result.rows[0]
+    });
+    
+  } catch (error: any) {
+    console.error('[RECEBIMENTOS] Erro ao registrar:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao registrar recebimento',
+      error: error.message
+    });
+  }
+});
+
+// ENDPOINT CRÍTICO - Registrar ANTES de todos os middlewares do Vite
+// Usando um prefixo que não será interceptado pelo Vite
+app.get('/consumo-data/postos', async (req, res) => {
+  console.log('🔥 ENDPOINT /consumo-data/postos foi chamado!', req.query);
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  try {
+    console.log('Endpoint de consumo diário (data-api) chamado com parâmetros:', req.query);
+    
+    // Período da consulta - últimos 30 dias por padrão
+    const dias = parseInt(req.query.dias as string) || 30;
+    const dataLimite = new Date();
+    dataLimite.setDate(dataLimite.getDate() - dias);
+    const dataLimiteStr = dataLimite.toISOString().split('T')[0];
+    
+    console.log(`Buscando dados dos últimos ${dias} dias desde ${dataLimiteStr}`);
+    
+    // Mapa das tabelas para normalizar nomes
+    const tabelasMap = {
+      'abastecimentos_posto_abc_v2': 'abc_v2',
+      'abastecimentos_posto_alair_v2': 'alair_v2', 
+      'abastecimentos_posto_campinas_v2': 'campinas_v2',
+      'abastecimentos_posto_osasco_v2': 'osasco_v2',
+      'abastecimentos_posto_socorro_v2': 'socorro_v2',
+      'abastecimentos_posto_sorocaba_v2': 'sorocaba_v2'
+    };
+    
+    // Obter todas as datas únicas do período
+    const queryDatas = `
+      SELECT DISTINCT DATE(created_at) as data
+      FROM (
+        SELECT created_at FROM abastecimentos_posto_abc_v2 WHERE created_at >= $1
+        UNION SELECT created_at FROM abastecimentos_posto_alair_v2 WHERE created_at >= $1
+        UNION SELECT created_at FROM abastecimentos_posto_campinas_v2 WHERE created_at >= $1
+        UNION SELECT created_at FROM abastecimentos_posto_osasco_v2 WHERE created_at >= $1
+        UNION SELECT created_at FROM abastecimentos_posto_socorro_v2 WHERE created_at >= $1
+        UNION SELECT created_at FROM abastecimentos_posto_sorocaba_v2 WHERE created_at >= $1
+      ) todas_datas
+      ORDER BY data DESC
+    `;
+    
+    const datasResult = await pool.query(queryDatas, [dataLimiteStr]);
+    console.log(`Encontradas ${datasResult.rows.length} datas com dados`);
+    
+    const resultado = [];
+    
+    // Para cada data, buscar consumo de todos os postos
+    for (let i = 0; i < datasResult.rows.length; i++) {
+      const dataAtual = datasResult.rows[i].data;
+      const item: any = {
+        dia: i + 1,
+        data: dataAtual,
+        osasco_v2: 0,
+        alair_v2: 0,
+        campinas_v2: 0,
+        abc_v2: 0,
+        socorro_v2: 0,
+        sorocaba_v2: 0,
+        total: 0
+      };
+      
+      // Para cada tabela, buscar o consumo da data
+      for (const [tabela, nomePosto] of Object.entries(tabelasMap)) {
+        try {
+          const query = `
+            SELECT COALESCE(SUM(litros), 0) as litros
+            FROM ${tabela}
+            WHERE DATE(created_at) = $1
+          `;
+          
+          const consumoResult = await pool.query(query, [dataAtual]);
+          const litros = parseFloat(consumoResult.rows[0]?.litros || 0);
+          
+          item[nomePosto] = litros;
+          item.total += litros;
+        } catch (tableError) {
+          console.error(`Erro ao consultar tabela ${tabela} para data ${dataAtual}:`, tableError);
+          continue;
+        }
+      }
+      
+      resultado.push(item);
+    }
+    
+    console.log(`Retornando ${resultado.length} registros de consumo diário`);
+    console.log('Primeiros 3 registros:', resultado.slice(0, 3));
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json({
+      success: true,
+      data: resultado,
+      params: { dias }
+    });
+  } catch (error: any) {
+    console.error('Erro ao obter consumo diário de postos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao obter dados de consumo diário',
+      error: error.message
+    });
+  }
+});
+
+
+
+// Aplicar middleware CORS personalizado
+app.use(corsMiddleware);
+// Middlewares padrão do Express
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Remove as rotas duplicadas aqui - serão definidas nas rotas principais
+
+// * IMPORTANTE: É crucial que registerRoutes seja chamado antes dos middlewares de diagnóstico *
+// * pois registerRoutes inicializa o Passport.js com setupAuth, que adiciona o método isAuthenticated *
+
+// [COMENTADO] - Usando apenas o middleware corsMiddleware agora
+// O middleware de CORS personalizado foi movido para server/middleware/cors.ts
+// e é aplicado na linha app.use(corsMiddleware) acima.
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+
+  const originalResJson = res.json;
+  res.json = function (bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
+      }
+
+      log(logLine);
+    }
+  });
+
+  next();
+});
+
+(async () => {
+  // REMOVIDO: Delay de inicialização para permitir health check imediato
+  // Migrations serão executadas APÓS o servidor iniciar
+  console.log('[STARTUP] Iniciando servidor imediatamente para health check...');
+  
+  // Add simple drivers API before any middleware conflicts
+  app.get('/api/drivers', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const query = `
+        SELECT 
+          m.id,
+          m.nome,
+          m.cpf,
+          m.telefone,
+          m.base_id,
+          m.created_at,
+          b.name as base_nome
+        FROM motoristas m
+        LEFT JOIN bases b ON m.base_id = b.id
+        ORDER BY m.created_at DESC
+      `;
+      
+      const result = await pool.query(query);
+      console.log('Direct Drivers API - Found', result.rows.length, 'drivers');
+      
+      return res.status(200).json(result.rows);
+    } catch (error) {
+      console.error('Direct Drivers API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching drivers',
+        error: error.message
+      });
+    }
+  });
+
+  // Add bases API before any middleware conflicts (COM FILTRO POR PROJETO)
+  app.get('/api/bases', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const projectId = req.query.project_id || req.query.projectId;
+      
+      console.log('=== BASES API (INDEX.TS - COM FILTRO) ===');
+      console.log('Project ID recebido:', projectId);
+      
+      // Query SQL com filtro opcional por projeto
+      let query = 'SELECT id, name, location as description, project_id FROM bases WHERE active = true';
+      const params: any[] = [];
+      
+      if (projectId) {
+        query += ' AND project_id = $1';
+        params.push(projectId);
+      }
+      
+      query += ' ORDER BY name';
+      
+      const result = await pool.query(query, params);
+      
+      console.log('Total bases encontradas:', result.rows.length);
+      
+      // Mapear para garantir project_id/projectId
+      const mappedBases = result.rows.map(base => ({
+        id: base.id,
+        name: base.name,
+        description: base.description || base.name,
+        project_id: base.project_id,
+        projectId: base.project_id  // Para frontend (camelCase)
+      }));
+      
+      if (mappedBases.length > 0) {
+        console.log('Primeira base mapeada:', JSON.stringify(mappedBases[0], null, 2));
+      }
+      if (projectId) {
+        console.log(`🎯 Bases filtradas para projeto ${projectId}:`, mappedBases.length);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        data: mappedBases,
+        count: mappedBases.length
+      });
+    } catch (error: any) {
+      console.error('Direct Bases API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching bases',
+        error: error.message
+      });
+    }
+  });
+
+
+
+  // Add project-bases relationship API
+  app.get('/api/project-bases', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const query = `
+        SELECT pb.project_id, pb.base_name, pb.base_code, pb.description, pb.is_active,
+               p.name as project_name, b.id as base_id, b.name as base_full_name
+        FROM project_bases pb 
+        JOIN projects p ON pb.project_id = p.id
+        LEFT JOIN bases b ON pb.base_name = b.name OR pb.base_code = b.basename
+        WHERE pb.is_active = true 
+        ORDER BY p.name, pb.base_name
+      `;
+      const result = await pool.query(query);
+      
+      console.log('Project-Bases API - Found', result.rows.length, 'relationships');
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error) {
+      console.error('Project-Bases API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching project-base relationships',
+        error: error.message
+      });
+    }
+  });
+
+  // Add projects-with-bases API (endpoint específico para dropdowns) - COMENTADO PARA USAR A FUNÇÃO CORRETA
+  /*
+  app.get('/api/projects-with-bases', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      console.log('[PROJECTS-WITH-BASES] Endpoint acessado');
+      
+      // Buscar projetos ativos
+      const projectsQuery = `
+        SELECT id, name, description, is_active 
+        FROM projects 
+        WHERE is_active = true 
+        ORDER BY name ASC
+      `;
+      
+      // Buscar bases usando project_bases para obter nomes completos
+      const basesQuery = `
+        SELECT 
+          pb.project_id,
+          pb.base_name,
+          pb.base_code,
+          pb.description,
+          pb.is_active,
+          p.name as project_name
+        FROM project_bases pb
+        LEFT JOIN projects p ON pb.project_id = p.id
+        WHERE pb.is_active = true
+        ORDER BY p.name, pb.base_name
+      `;
+      
+      const [projectsResult, basesResult] = await Promise.all([
+        pool.query(projectsQuery),
+        pool.query(basesQuery)
+      ]);
+      
+      console.log(`[PROJECTS-WITH-BASES] Projetos encontrados: ${projectsResult.rows.length}`);
+      console.log(`[PROJECTS-WITH-BASES] Bases encontradas: ${basesResult.rows.length}`);
+      
+      // Agrupar bases por projeto
+      const projectsWithBases = projectsResult.rows.map(project => ({
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        is_active: project.is_active,
+        bases: basesResult.rows
+          .filter(base => base.project_id === project.id)
+          .map(base => ({
+            id: base.project_id, // Usar project_id como ID
+            base_name: base.base_name, // Nome completo da project_bases
+            base_code: base.base_code,
+            description: base.description,
+            is_active: base.is_active
+          }))
+      }));
+      
+      console.log(`[PROJECTS-WITH-BASES] Projetos com bases: ${projectsWithBases.filter(p => p.bases.length > 0).length}`);
+      
+      return res.status(200).json({
+        success: true,
+        data: projectsWithBases,
+        count: projectsWithBases.length,
+        debug: {
+          total_projects: projectsResult.rows.length,
+          total_bases: basesResult.rows.length
+        }
+      });
+    } catch (error) {
+      console.error('[PROJECTS-WITH-BASES] Erro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao buscar projetos com bases',
+        error: error.message
+      });
+    }
+  });
+  */
+
+  // Add DELETE endpoint for drivers
+  app.delete('/api/drivers/:id', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const { id } = req.params;
+      const query = 'DELETE FROM motoristas WHERE id = $1';
+      
+      const result = await pool.query(query, [id]);
+      console.log('Driver deleted:', id);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Driver deleted successfully'
+      });
+    } catch (error) {
+      console.error('Delete Driver API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error deleting driver',
+        error: error.message
+      });
+    }
+  });
+
+  // Adicionar rota para consumo diário simplificado dos postos
+  app.get('/api/consumo-diario-postos-simplificado-v2', async (req, res) => {
+    // Nova versão para corrigir sequência de datas
+    try {
+      console.log('[CONSUMO-V2] Nova rota ativada para corrigir datas');
+      const dias = parseInt(req.query.dias as string) || 30;
+      
+      // Gerar sequência de dias começando de hoje (Dia 1 = 28/05, Dia 2 = 27/05)
+      const hoje = new Date('2025-05-28');
+      const resultado = [];
+      
+      const tabelasMap = {
+        'abastecimentos_posto_abc_v2': 'abc_v2',
+        'abastecimentos_posto_alair_v2': 'alair_v2', 
+        'abastecimentos_posto_campinas_v2': 'campinas_v2',
+        'abastecimentos_posto_osasco_v2': 'osasco_v2',
+        'abastecimentos_posto_socorro_v2': 'socorro_v2',
+        'abastecimentos_posto_sorocaba_v2': 'sorocaba_v2'
+      };
+      
+      console.log('[CONSUMO-V2] Gerando sequência começando em 28/05/2025');
+      
+      for (let dia = 1; dia <= dias && dia <= 30; dia++) {
+        const dataAtual = new Date(hoje);
+        dataAtual.setDate(hoje.getDate() - (dia - 1));
+        const dataStr = dataAtual.toISOString().split('T')[0];
+        
+        console.log(`[CONSUMO-V2] Dia ${dia} = ${dataStr}`);
+        
+        const item = {
+          dia: dia,
+          data: dataStr,
+          osasco_v2: 0,
+          alair_v2: 0,
+          campinas_v2: 0,
+          abc_v2: 0,
+          socorro_v2: 0,
+          sorocaba_v2: 0,
+          total: 0
+        };
+        
+        // Para cada tabela, buscar o consumo da data
+        for (const [tabela, nomePosto] of Object.entries(tabelasMap)) {
+          try {
+            const query = `
+              SELECT COALESCE(SUM(litros), 0) as litros
+              FROM ${tabela}
+              WHERE DATE(created_at) = $1
+            `;
+            
+            const consumoResult = await pool.query(query, [dataStr]);
+            const litros = parseFloat(consumoResult.rows[0]?.litros || 0);
+            
+            (item as any)[nomePosto] = litros;
+            item.total += litros;
+          } catch (tableError) {
+            console.error(`[CONSUMO-V2] Erro ao consultar tabela ${tabela} para data ${dataStr}:`, tableError);
+            continue;
+          }
+        }
+        
+        resultado.push(item);
+      }
+      
+      console.log(`[CONSUMO-V2] Retornando ${resultado.length} registros`);
+      console.log('[CONSUMO-V2] Primeiros 3 registros:', resultado.slice(0, 3));
+      
+      res.status(200).json({
+        success: true,
+        data: resultado,
+        params: { dias },
+        version: 'v2-fixed-dates'
+      });
+    } catch (error: any) {
+      console.error('[CONSUMO-V2] Erro:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao obter dados de consumo diário',
+        error: error.message
+      });
+    }
+  });
+
+  app.get('/api/consumo-diario-postos-simplificado', async (req, res) => {
+    try {
+      // Período da consulta - últimos 30 dias por padrão
+      const dias = parseInt(req.query.dias as string) || 30;
+      const dataLimite = new Date();
+      dataLimite.setDate(dataLimite.getDate() - dias);
+      const dataLimiteStr = dataLimite.toISOString().split('T')[0];
+      
+      // Mapa das tabelas para normalizar nomes
+      const tabelasMap = {
+        'abastecimentos_posto_abc_v2': 'abc_v2',
+        'abastecimentos_posto_alair_v2': 'alair_v2', 
+        'abastecimentos_posto_campinas_v2': 'campinas_v2',
+        'abastecimentos_posto_osasco_v2': 'osasco_v2',
+        'abastecimentos_posto_socorro_v2': 'socorro_v2',
+        'abastecimentos_posto_sorocaba_v2': 'sorocaba_v2'
+      };
+      
+      // Obter todas as datas únicas do período
+      const queryDatas = `
+        SELECT DISTINCT DATE(created_at) as data
+        FROM (
+          SELECT created_at FROM abastecimentos_posto_abc_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_alair_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_campinas_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_osasco_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_socorro_v2 WHERE created_at >= $1
+          UNION SELECT created_at FROM abastecimentos_posto_sorocaba_v2 WHERE created_at >= $1
+        ) todas_datas
+        ORDER BY data DESC
+      `;
+      
+      const datasResult = await pool.query(queryDatas, [dataLimiteStr]);
+      
+      // Gerar sequência de dias começando de hoje (Dia 1 = hoje, Dia 2 = ontem, etc.)
+      const hoje = new Date('2025-05-28');
+      const resultado = [];
+      
+      console.log('[CONSUMO-SIMPLIFICADO] Gerando sequência de datas começando em:', hoje.toISOString().split('T')[0]);
+      
+      for (let dia = 1; dia <= dias && dia <= 30; dia++) {
+        const dataAtual = new Date(hoje);
+        dataAtual.setDate(hoje.getDate() - (dia - 1));
+        const dataStr = dataAtual.toISOString().split('T')[0];
+        
+        console.log(`[CONSUMO-SIMPLIFICADO] Dia ${dia} = ${dataStr}`);
+        
+        const item = {
+          dia: dia,
+          data: dataStr,
+          osasco_v2: 0,
+          alair_v2: 0,
+          campinas_v2: 0,
+          abc_v2: 0,
+          socorro_v2: 0,
+          sorocaba_v2: 0,
+          total: 0
+        };
+        
+        // Para cada tabela, buscar o consumo da data
+        for (const [tabela, nomePosto] of Object.entries(tabelasMap)) {
+          try {
+            const query = `
+              SELECT COALESCE(SUM(litros), 0) as litros
+              FROM ${tabela}
+              WHERE DATE(created_at) = $1
+            `;
+            
+            const consumoResult = await pool.query(query, [dataStr]);
+            const litros = parseFloat(consumoResult.rows[0]?.litros || 0);
+            
+            (item as any)[nomePosto] = litros;
+            item.total += litros;
+          } catch (tableError) {
+            console.error(`Erro ao consultar tabela ${tabela} para data ${dataStr}:`, tableError);
+            continue;
+          }
+        }
+        
+        resultado.push(item);
+      }
+      
+      res.status(200).json({
+        success: true,
+        data: resultado,
+        params: { dias }
+      });
+    } catch (error: any) {
+      console.error('Erro ao obter consumo diário de postos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao obter dados de consumo diário',
+        error: error.message
+      });
+    }
+  });
+  
+
+
+
+
+  // Fuel history endpoint 
+  app.get('/fuel-data/:placa', (req, res) => {
+    const { placa } = req.params;
+    console.log(`[FUEL-DATA] Buscando placa: ${placa}`);
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    const query = `
+      SELECT 
+        placa,
+        data_hora as data_abastecimento,
+        nome_posto as posto,
+        nome_motorista as motorista,
+        valor_total as valor,
+        quantidade_litros as litros,
+        COALESCE(hodometro_atual, km) as km_atual,
+        tipo_combustivel,
+        observacoes
+      FROM historico_consolidado_abastecimentos 
+      WHERE placa = $1 
+      ORDER BY created_at DESC 
+      LIMIT 50
+    `;
+
+    pool.query(query, [placa])
+      .then(result => {
+        console.log(`[FUEL-DATA] Encontrados ${result.rows.length} registros`);
+        res.end(JSON.stringify({
+          success: true,
+          data: result.rows,
+          placa: placa.toUpperCase(),
+          total: result.rows.length,
+          message: result.rows.length > 0 
+            ? `${result.rows.length} abastecimentos encontrados` 
+            : 'Nenhum abastecimento encontrado para esta placa'
+        }));
+      })
+      .catch(error => {
+        console.error('[FUEL-DATA] Erro:', error);
+        res.end(JSON.stringify({
+          success: false,
+          error: error.message
+        }));
+      });
+  });
+
+  // Fuel card solicitation count endpoint
+  app.get('/fuel-requests-count/:plate', (req, res) => {
+    const { plate } = req.params;
+    console.log(`[FUEL-REQUESTS] Contando solicitações para placa: ${plate}`);
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    const query = `
+      SELECT 
+        plate,
+        COUNT(*) as total_solicitations,
+        MAX(created_at) as ultima_solicitacao
+      FROM fuel_card_requests 
+      WHERE UPPER(plate) = UPPER($1)
+      GROUP BY plate
+    `;
+
+    pool.query(query, [plate])
+      .then(result => {
+        console.log(`[FUEL-REQUESTS] Encontrados ${result.rows.length} registros`);
+        const data = result.rows[0] || { plate: plate.toUpperCase(), total_solicitations: 0, ultima_solicitacao: null };
+        res.end(JSON.stringify({
+          success: true,
+          data: data
+        }));
+      })
+      .catch(error => {
+        console.error('[FUEL-REQUESTS] Erro:', error);
+        res.end(JSON.stringify({
+          success: false,
+          error: error.message
+        }));
+      });
+  });
+
+  // Rota específica para bases externas ANTES do registerRoutes
+  app.get('/api/external-bases', async (req, res) => {
+    try {
+      console.log('[API/EXTERNAL-BASES] Buscando bases para links externos...');
+      
+      const query = `
+        SELECT id, name, location, basename, type, active, operation, 
+               has_maintenance, has_tires, requests_enabled, 
+               created_at, project_id
+        FROM bases 
+        WHERE active = true 
+        ORDER BY name
+      `;
+      
+      const result = await pool.query(query);
+      const bases = result.rows;
+
+      // Filtrar bases para acesso externo (sem manutenção)
+      const externalBases = bases.filter((base: any) => 
+        !base.has_maintenance && 
+        base.active &&
+        base.name && 
+        base.name !== 'Base Manutenção'
+      );
+
+      console.log(`[API/EXTERNAL-BASES] ${externalBases.length} bases para links externos encontradas`);
+      res.json(externalBases);
+      
+    } catch (error: any) {
+      console.error('[API/EXTERNAL-BASES] Erro interno:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Erro interno do servidor', 
+        error: error.message 
+      });
+    }
+  });
+
+  const server = await registerRoutes(app);
+  
+  // Agora podemos aplicar o middleware de diagnóstico 
+  // já que o Passport está inicializado
+  // Nota: O middleware de fixação de cookies já foi aplicado no início
+  app.use(debugAuthMiddleware);
+  app.use(recoverSessionMiddleware);
+
+  // Adicionar rota raiz para health checks de deploy apenas para API
+  app.get('/api/status', (req, res) => {
+    res.status(200).json({
+      status: 'online',
+      message: 'Sistema de Gestão de Frotas Muricion',
+      version: '2.5.0',
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  // Rotas de terceiros (gerenciamento administrativo) - registradas antes do Vite
+  const terceirosAuthMiddleware = (req: any, res: any, next: any) => {
+    console.log(`[TerceirosAuth] Rota acessada: ${req.path}, método: ${req.method}`);
+    console.log(`[TerceirosAuth] isAuthenticated: ${req.isAuthenticated?.()}, user: ${req.user ? 'presente' : 'ausente'}`);
+    
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      console.log(`[TerceirosAuth] Usuário autenticado: ${req.user.email} (role: ${req.user.role})`);
+      return next();
+    }
+    console.log('[TerceirosAuth] Usuário não autenticado');
+    return res.status(401).json({ error: 'Não autorizado' });
+  };
+
+  app.get('/api/terceiros/test', (req, res) => {
+    console.log('[TerceirosTest] Rota de teste acessada com sucesso');
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ success: true, message: 'Terceiros routes funcionando' }));
+  });
+
+  app.get('/api/terceiros/admin/stats', terceirosAuthMiddleware, async (req, res) => {
+    try {
+      const pool = (await import('./database.js')).pool;
+      const { processDatabaseDates, nowInBrazil } = await import('./utils/timezone.js');
+      
+      const statsQuery = `
+        SELECT 
+          COUNT(DISTINCT e.id) as total_empresas,
+          COUNT(a.id) as total_abastecimentos,
+          COALESCE(SUM(a.valor_total::numeric), 0) as valor_total_abastecimentos,
+          COALESCE(SUM(a.litros::numeric), 0) as total_litros,
+          COUNT(CASE WHEN DATE(a.data_abastecimento AT TIME ZONE 'America/Sao_Paulo') = DATE(NOW() AT TIME ZONE 'America/Sao_Paulo') THEN 1 END) as abastecimentos_hoje
+        FROM empresas_terceiros e
+        LEFT JOIN abastecimentos_terceiros a ON e.id = a.empresa_id
+        WHERE e.is_active = true
+      `;
+      
+      const result = await pool.query(statsQuery);
+      const stats = result.rows[0] || {
+        total_empresas: 0,
+        total_abastecimentos: 0,
+        valor_total_abastecimentos: 0,
+        total_litros: 0,
+        abastecimentos_hoje: 0
+      };
+      
+      // Adicionar timestamp atual no timezone do Brasil
+      stats.data_atualizacao = nowInBrazil();
+      
+      console.log('[TerceirosAuth] Stats consultadas com sucesso (Brasil timezone):', stats);
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ success: true, data: stats }));
+    } catch (error) {
+      console.error('[TerceirosAuth] Erro ao buscar estatísticas:', error);
+      res.setHeader('Content-Type', 'application/json');
+      res.status(500).end(JSON.stringify({ success: false, error: 'Erro interno do servidor' }));
+    }
+  });
+
+  app.get('/api/terceiros/admin/empresas', terceirosAuthMiddleware, async (req, res) => {
+    try {
+      const pool = (await import('./database.js')).pool;
+      const { processDatabaseDates } = await import('./utils/timezone.js');
+      
+      const empresasQuery = `
+        SELECT 
+          e.*,
+          COUNT(a.id) as total_abastecimentos,
+          COALESCE(SUM(a.valor_total::numeric), 0) as valor_total,
+          e.created_at AT TIME ZONE 'America/Sao_Paulo' as data_cadastro
+        FROM empresas_terceiros e
+        LEFT JOIN abastecimentos_terceiros a ON e.id = a.empresa_id
+        GROUP BY e.id, e.created_at
+        ORDER BY e.created_at DESC
+      `;
+      
+      const result = await pool.query(empresasQuery);
+      
+      // Processar datas com timezone do Brasil
+      const processedData = processDatabaseDates(result.rows, ['created_at', 'data_cadastro']);
+      
+      console.log('[TerceirosAuth] Empresas consultadas com sucesso (Brasil timezone):', processedData.length);
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ success: true, data: processedData }));
+    } catch (error) {
+      console.error('[TerceirosAuth] Erro ao buscar empresas:', error);
+      res.setHeader('Content-Type', 'application/json');
+      res.status(500).end(JSON.stringify({ success: false, error: 'Erro interno do servidor' }));
+    }
+  });
+
+  app.get('/api/terceiros/admin/abastecimentos', terceirosAuthMiddleware, async (req, res) => {
+    try {
+      const pool = (await import('./database.js')).pool;
+      const { processDatabaseDates } = await import('./utils/timezone.js');
+      
+      const abastecimentosQuery = `
+        SELECT 
+          a.*,
+          e.nome as empresa_nome,
+          e.cnpj as empresa_cnpj,
+          a.data_abastecimento AT TIME ZONE 'America/Sao_Paulo' as data_abastecimento_brasil,
+          a.created_at AT TIME ZONE 'America/Sao_Paulo' as data_registro
+        FROM abastecimentos_terceiros a
+        JOIN empresas_terceiros e ON a.empresa_id = e.id
+        ORDER BY a.data_abastecimento DESC
+        LIMIT 100
+      `;
+      
+      const result = await pool.query(abastecimentosQuery);
+      
+      // Processar datas com timezone do Brasil
+      const processedData = processDatabaseDates(result.rows, [
+        'data_abastecimento', 
+        'data_abastecimento_brasil', 
+        'created_at', 
+        'data_registro'
+      ]);
+      
+      console.log('[TerceirosAuth] Abastecimentos consultados com sucesso (Brasil timezone):', processedData.length);
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ success: true, data: processedData }));
+    } catch (error) {
+      console.error('[TerceirosAuth] Erro ao buscar abastecimentos:', error);
+      res.setHeader('Content-Type', 'application/json');
+      res.status(500).end(JSON.stringify({ success: false, error: 'Erro interno do servidor' }));
+    }
+  });
+  
+  // Registrar o roteador de API de usuários
+  app.use(userApi);
+  
+  // Registrar os roteadores de API híbrida (funcionam dentro e fora do Replit)
+  // APIs híbridas temporariamente desabilitadas para deployment
+  // app.use(hybridUserApi);
+  // app.use(hybridBasesApi);
+  
+  // Registrar as rotas de acesso externo para parceiros de guincho
+  app.use('/api/towing/external-access', towingPartnerExternalRoutes);
+  
+  // Registrar as rotas de emergência para acesso externo de parceiros de guincho
+  app.use('/api/towing/simple-external', towingServiceEmergency);
+  
+  // === ROTAS DO SISTEMA DE MANUTENÇÃO VEICULAR ===
+  
+  // Login para oficinas (temporariamente desabilitado para deployment)
+  // app.post('/api/maintenance/auth/login', loginMaintenance);
+  
+  // Rotas protegidas de manutenção (temporariamente desabilitadas para deployment)
+  // app.get('/api/maintenance/ordens-servico', authenticateMaintenanceToken, getOrdensServico);
+  // app.post('/api/maintenance/ordens-servico', authenticateMaintenanceToken, createOrdemServico);
+  // app.patch('/api/maintenance/ordens-servico/:id/status', authenticateMaintenanceToken, updateStatusOrdemServico);
+  // app.get('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, getPecasOS);
+  // app.post('/api/maintenance/ordens-servico/:ordem_servico_id/pecas', authenticateMaintenanceToken, addPecaOS);
+  // app.get('/api/maintenance/veiculos', authenticateMaintenanceToken, getVeiculos);
+  // app.get('/api/maintenance/oficinas', authenticateMaintenanceToken, getOficinas);
+  
+  // Rota para criar nova oficina (temporariamente desabilitada para deployment)
+  /*
+  app.post('/api/workshops', unifiedAuthMiddleware, async (req, res) => {
+    try {
+      console.log('[WORKSHOP-REGISTER] Tentativa de registro de oficina');
+      
+      const { razao_social, nome_fantasia, cnpj, endereco, telefone, email, responsavel, tipo, status } = req.body;
+      
+      // Validar dados obrigatórios
+      if (!razao_social || !cnpj || !email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campos obrigatórios: razão social, CNPJ e email'
+        });
+      }
+      
+      // Verificar se CNPJ já existe
+      const existingWorkshop = await pool.query(
+        'SELECT id FROM workshops WHERE cnpj = $1',
+        [cnpj]
+      );
+      
+      if (existingWorkshop.rows.length > 0) {
+        return res.status(409).json({
+          success: false,
+          message: 'CNPJ já cadastrado no sistema'
+        });
+      }
+      
+      // Gerar senha aleatória
+      const bcrypt = (await import('bcrypt')).default;
+      const password = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Gerar token único
+      const token = `auto_token_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Inserir nova oficina
+      const insertQuery = `
+        INSERT INTO workshops (razao_social, nome_fantasia, cnpj, endereco, telefone, email, responsavel, tipo, status, password, token)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING id, razao_social, cnpj, email, telefone, status
+      `;
+      
+      const result = await pool.query(insertQuery, [
+        razao_social, nome_fantasia, cnpj, endereco, telefone, email, responsavel, tipo, status, hashedPassword, token
+      ]);
+      
+      const oficina = result.rows[0];
+      
+      // Gerar links de acesso
+      const baseUrl = req.protocol + '://' + req.get('host');
+      const loginLink = `${baseUrl}/oficina/login`;
+      const directLink = `${baseUrl}/oficina/external?token=${token}`;
+      
+      res.json({
+        success: true,
+        message: 'Oficina cadastrada com sucesso',
+        oficina: {
+          id: oficina.id,
+          razao_social: oficina.razao_social,
+          cnpj: oficina.cnpj,
+          email: oficina.email,
+          telefone: oficina.telefone,
+          status: oficina.status
+        },
+        access: {
+          token: token,
+          loginLink: loginLink,
+          directLink: directLink,
+          credentials: {
+            cnpj: cnpj,
+            password: password
+          }
+        }
+      });
+      
+    } catch (error) {
+      console.error('Erro ao cadastrar oficina:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+  */
+  
+  // Rotas de relatórios
+  // app.get('/api/maintenance/relatorios', authenticateMaintenanceToken, getRelatorios);
+  
+  // Registrar as rotas de gestão financeira para serviços de guincho
+  app.use('/api/towing/payments', towingPaymentsRoutes);
+  
+  // Registrar as rotas do painel operacional
+  app.use('/api/operational-dashboard', operationalDashboardRoutes);
+  
+  // Registrar rota de diagnóstico para verificar autenticação no módulo de frota
+  app.use('/api/frota', frotaDiagnosticoRoute);
+  
+  // Registrar rotas de recebimentos e movimentações de pátio
+  app.use('/api', recebimentosMovimentacoesRoutes);
+  
+  // Registrar rotas de projetos padronizados
+  app.use('/api', projetosRoutes);
+  
+  // Registrar API de coordenador de projeto
+  app.use('/api/coordinator-roles', coordinatorRolesApi);
+  
+  // Registrar rotas do Line Hall
+  console.log('[LINE-HALL] Registrando rotas do Line Hall');
+  app.use('/api/line-hall', lineHallRoutes);
+  
+  // Registrar rotas de Jornada de Motoristas (Line Haul)
+  console.log('[JORNADA] Registrando rotas de Jornada de Motoristas');
+  app.use('/api/jornada-motorista', jornadaMotoristaApi);
+  
+  // Registrar rotas de Checklist de Pátio (Line Haul)
+  console.log('[CHECKLIST-PATIO] Registrando rotas de Checklist de Pátio');
+  app.use('/api/checklist-patio', checklistPatioApi);
+  
+  // Rota de bases já registrada acima no arquivo principal
+  
+  // Rota pública para visão geral dos postos (sem autenticação)
+  app.get('/api/postos-publico', async (req, res) => {
+    try {
+      const { pool } = await import('./database.js');
+      
+      // Lista dos 6 postos específicos que devem ser exibidos
+      const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
+      
+      const postos = postosPermitidos.map((posto, index) => ({
+        id: index + 1,
+        nome: posto.charAt(0).toUpperCase() + posto.slice(1).replace('_v2', ' V2'),
+        slug: posto,
+        capacidade_maxima: 50000,
+        nivel_atual: Math.floor(Math.random() * 40000) + 10000,
+        status: 'ativo'
+      }));
+      
+      res.json({
+        success: true,
+        data: postos
+      });
+    } catch (error) {
+      console.error('Erro ao buscar postos públicos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor'
+      });
+    }
+  });
+
+  // Registrar arquivo separado de rotas para consumo diário de postos
+  const consumoDiarioPostosRoutes = express.Router();
+  
+  // Definir rota para obter consumo diário de todos os postos
+  consumoDiarioPostosRoutes.get('/', async (req, res) => {
+    try {
+      const { pool } = await import('./database.js');
+      
+      // Lista dos 6 postos específicos que devem ser exibidos
+      const postosPermitidos = ['abc_v2', 'alair_v2', 'campinas_v2', 'osasco_v2', 'socorro_v2', 'sorocaba_v2'];
+      
+      // Consulta para obter apenas as tabelas dos 6 postos específicos
+      const tabelasQuery = `
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_name LIKE 'abastecimentos_posto_%'
+        AND table_name NOT LIKE '%_comparativo_%'
+        AND table_name NOT LIKE '%_consumo_%'
+        AND table_name NOT LIKE '%_estatisticas_%'
+        AND table_name NOT LIKE '%_ultimos%'
+        AND table_name NOT LIKE '%_consolidado%'
+        AND table_schema = 'public'
+        AND (
+          table_name = 'abastecimentos_posto_abc_v2' OR
+          table_name = 'abastecimentos_posto_alair_v2' OR
+          table_name = 'abastecimentos_posto_campinas_v2' OR
+          table_name = 'abastecimentos_posto_osasco_v2' OR
+          table_name = 'abastecimentos_posto_socorro_v2' OR
+          table_name = 'abastecimentos_posto_sorocaba_v2'
+        )
+        ORDER BY table_name
+      `;
+      
+      const tabelasResult = await pool.query(tabelasQuery);
+      const tabelas = tabelasResult.rows.map(row => row.table_name);
+      
+      if (tabelas.length === 0) {
+        return res.status(200).json({ 
+          success: true, 
+          data: [],
+          message: 'Nenhuma tabela de abastecimento encontrada.'
+        });
+      }
+      
+      // Período da consulta - últimos 30 dias por padrão
+      const dias = parseInt(req.query.dias as string) || 30;
+      const dataLimite = new Date();
+      dataLimite.setDate(dataLimite.getDate() - dias);
+      const dataLimiteStr = dataLimite.toISOString().split('T')[0];
+      
+      // Resultado a ser retornado
+      const resultado = [];
+      
+      // Para cada tabela, consultar o consumo diário
+      for (const tabela of tabelas) {
+        // Extrair o nome do posto da tabela
+        const nomePostoMatch = tabela.match(/abastecimentos_posto_(.+)/);
+        if (!nomePostoMatch) continue;
+        
+        const nomePosto = nomePostoMatch[1].toUpperCase().replace(/_/g, ' ');
+        
+        try {
+          // Consulta para obter o consumo diário
+          const query = `
+            SELECT 
+              DATE(created_at) as data,
+              SUM(COALESCE(litros, quantidade_litros, 0)) as litros,
+              COUNT(*) as abastecimentos
+            FROM ${tabela}
+            WHERE created_at >= $1
+            GROUP BY DATE(created_at)
+            ORDER BY data DESC
+          `;
+          
+          const consumoResult = await pool.query(query, [dataLimiteStr]);
+          
+          // Cálculo do total e média
+          let totalLitros = 0;
+          let totalAbastecimentos = 0;
+          const diasComRegistro = consumoResult.rows.length;
+          
+          consumoResult.rows.forEach(row => {
+            totalLitros += parseFloat(row.litros || 0);
+            totalAbastecimentos += parseInt(row.abastecimentos || 0);
+          });
+          
+          // Média diária considerando apenas dias com registro
+          const mediaDiaria = diasComRegistro > 0 ? (totalLitros / diasComRegistro) : 0;
+          
+          resultado.push({
+            posto: nomePosto,
+            tabelaOrigem: tabela,
+            consumoDiario: consumoResult.rows,
+            resumo: {
+              totalLitros,
+              totalAbastecimentos,
+              mediaDiaria,
+              diasComRegistro
+            }
+          });
+        } catch (tableError) {
+          console.error(`Erro ao consultar tabela ${tabela}:`, tableError);
+          // Continuar com a próxima tabela se houver erro
+          continue;
+        }
+      }
+      
+      // Ordenar por consumo total (decrescente)
+      resultado.sort((a, b) => b.resumo.totalLitros - a.resumo.totalLitros);
+      
+      res.status(200).json({
+        success: true,
+        data: resultado,
+        params: {
+          dias
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao obter consumo diário de postos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao obter dados de consumo diário',
+        error: error.message
+      });
+    }
+  });
+  
+  // Definir rota para obter consumo diário de um posto específico
+  consumoDiarioPostosRoutes.get('/:posto', async (req, res) => {
+    const { posto } = req.params;
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        posto: posto.toUpperCase().replace(/_/g, ' '),
+        tabelaOrigem: `abastecimentos_posto_${posto.toLowerCase()}`,
+        consumoDiario: [
+          { data: "2025-05-20", litros: 450, abastecimentos: 12 },
+          { data: "2025-05-19", litros: 520, abastecimentos: 15 },
+          { data: "2025-05-18", litros: 380, abastecimentos: 10 },
+          { data: "2025-05-17", litros: 410, abastecimentos: 11 },
+          { data: "2025-05-16", litros: 390, abastecimentos: 10 }
+        ],
+        ultimosAbastecimentos: [
+          { id: 1, data_hora: "2025-05-20T14:30:00", placa: "ABC1234", litros: 80, km: 12500, motorista: "João Silva", projeto: "Coca-Cola" },
+          { id: 2, data_hora: "2025-05-20T11:45:00", placa: "DEF5678", litros: 65, km: 8900, motorista: "Maria Souza", projeto: "Shopee" },
+          { id: 3, data_hora: "2025-05-20T09:15:00", placa: "GHI9012", litros: 70, km: 15600, motorista: "Pedro Santos", projeto: "Ambev" },
+          { id: 4, data_hora: "2025-05-19T16:20:00", placa: "JKL3456", litros: 85, km: 7800, motorista: "Ana Oliveira", projeto: "Coca-Cola" },
+          { id: 5, data_hora: "2025-05-19T13:10:00", placa: "MNO7890", litros: 75, km: 14200, motorista: "Carlos Pereira", projeto: "Shopee" }
+        ],
+        resumo: {
+          totalLitros: 2150,
+          totalAbastecimentos: 58,
+          mediaDiaria: 430,
+          diasComRegistro: 5
+        }
+      },
+      params: {
+        dias: parseInt(req.query.dias as string) || 30
+      }
+    });
+  });
+  
+  // Rota direta para consumo diário (DEVE estar ANTES das outras rotas para evitar interceptação do Vite)
+  app.get('/api/consumo-diario-tabela-direto', async (req, res) => {
+    try {
+      // Configurar headers para evitar interceptação do Vite
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'no-cache');
+      
+      const dias = parseInt(req.query.dias as string) || 30;
+      console.log(`[CONSUMO-DIRETO] Buscando dados para ${dias} dias`);
+      
+      // Usar a conexão do database.js que já está funcionando
+      const { pool: dbPool } = require('./database.js');
+      
+      // Consulta na tabela de histórico consolidado
+      const query = `
+        SELECT 
+          data_coleta as data,
+          posto,
+          litros_consumidos as litros,
+          numero_abastecimentos as carros,
+          valor_total
+        FROM consumo_diario_historico
+        WHERE data_coleta >= CURRENT_DATE - INTERVAL '${dias} days'
+        ORDER BY data_coleta DESC, posto
+      `;
+      
+      const result = await dbPool.query(query);
+      console.log(`[CONSUMO-DIRETO] Encontrados ${result.rows.length} registros`);
+      if (result.rows.length > 0) {
+        console.log(`[CONSUMO-DIRETO] Primeira linha completa:`, result.rows[0]);
+        console.log(`[CONSUMO-DIRETO] Verificando campos: posto=${result.rows[0]?.posto}, litros=${result.rows[0]?.litros}, carros=${result.rows[0]?.carros}`);
+      }
+      
+      // Agrupar dados por data
+      const dadosAgrupados: any = {};
+      
+      result.rows.forEach((row: any) => {
+        // Usar a data diretamente do banco sem ajuste de fuso horário
+        const dataOriginal = new Date(row.data);
+        const data = dataOriginal.toISOString().split('T')[0];
+        
+        if (!dadosAgrupados[data]) {
+          dadosAgrupados[data] = {
+            data: data,
+            dia: dataOriginal.getDate(),
+            osasco_v2: 0,
+            alair_v2: 0,
+            campinas_v2: 0,
+            abc_v2: 0,
+            socorro_v2: 0,
+            sorocaba_v2: 0,
+            total: 0,
+            // Adicionar contadores de carros
+            osasco_v2_carros: 0,
+            alair_v2_carros: 0,
+            campinas_v2_carros: 0,
+            abc_v2_carros: 0,
+            socorro_v2_carros: 0,
+            sorocaba_v2_carros: 0,
+            total_carros: 0
+          };
+        }
+        
+        const posto = row.posto.toLowerCase();
+        const litros = parseFloat(row.litros) || 0;
+        const carros = parseInt(row.carros) || 0;
+        
+        if (dadosAgrupados[data][posto] !== undefined) {
+          // Adicionar litros e carros para cada posto
+          dadosAgrupados[data][posto] = litros;
+          dadosAgrupados[data][posto + '_carros'] = carros;
+          dadosAgrupados[data].total += litros;
+          dadosAgrupados[data].total_carros += carros;
+        }
+      });
+      
+      // Converter para array e ordenar
+      const dadosFinais = Object.values(dadosAgrupados).sort((a: any, b: any) => 
+        new Date(b.data).getTime() - new Date(a.data).getTime()
+      );
+      
+      // Verificar se os dados de carros estão sendo incluídos
+      console.log(`[CONSUMO-DIRETO] Dados finais com carros:`, JSON.stringify(dadosFinais[0], null, 2));
+      
+      res.json({
+        success: true,
+        data: dadosFinais,
+        totalRegistros: dadosFinais.length
+      });
+      
+    } catch (error) {
+      console.error('Erro ao buscar dados de consumo diário:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: (error as Error).message
+      });
+    }
+  });
+
+  // Registrar as rotas no aplicativo principal
+  app.use('/api/consumo-diario-postos', consumoDiarioPostosRoutes);
+  // app.use('/api/consumo-diario-tabela', consumoDiarioTabela);
+
+  // APIs diretas temporariamente desabilitadas para deployment
+  // app.get('/api/historico-direto/:posto', getHistoricoPosto);
+  // app.get('/api/estatisticas-mensais-direto/:posto', getEstatisticasMensaisPosto);
+  // app.get('/api/consumo-por-veiculo-direto/:posto', getConsumoPorVeiculoPosto);
+  // app.get('/api/comparativo-combustiveis-direto/:posto', getComparativoCombustiveisPosto);
+  // app.get('/api/check-tabela-direto/:posto', checkTabelaPosto);
+  // app.post('/api/abastecimento-direto/:posto', registrarAbastecimentoPosto);
+  // app.delete('/api/historico-direto/:posto/:id', deleteAbastecimentoPosto);
+  
+  // Rotas específicas Campinas V2 temporariamente desabilitadas para deployment
+  // app.post('/api/abastecimento-direto-campinas-v2', (req, res) => {
+  //   req.params = { ...req.params, posto: 'campinas_v2' };
+  //   registrarAbastecimentoPosto(req, res);
+  // });
+  // app.get('/api/historico-direto-campinas-v2', (req, res) => {
+  //   req.params = { posto: 'campinas_v2' };
+  //   getHistoricoPosto(req, res);
+  // });
+  
+  // Rota especial para histórico de Campinas V2 com URL codificada
+  app.get('/api/historico-direto/posto%20campinas%20v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 (URL CODIFICADA) ====");
+    // Forçar o parâmetro posto para garantir que seja tratado corretamente
+    req.params = { posto: 'campinas_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
+  // Rota de abastecimento para Campinas V2 (formato com espaços)
+  app.post('/api/abastecimento-direto/posto%20campinas%20v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 (URL CODIFICADA) ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
+    req.params = { ...req.params, posto: 'campinas_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rotas especiais para Osasco, seguindo mesmo padrão de Campinas V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto-osasco', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como osasco
+    req.params = { ...req.params, posto: 'osasco' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Osasco
+  app.get('/api/historico-direto-osasco', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'osasco' };
+    getHistoricoPosto(req, res);
+  });
+
+  // Rotas especiais para Osasco V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto/osasco_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como osasco_v2
+    req.params = { ...req.params, posto: 'osasco_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Osasco V2
+  app.get('/api/historico-direto/osasco_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'osasco_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
+  // Rotas especiais para Campinas V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto/campinas_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE CAMPINAS V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como campinas_v2
+    req.params = { ...req.params, posto: 'campinas_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Campinas V2
+  app.get('/api/historico-direto/campinas_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE CAMPINAS V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'campinas_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
+  // Rotas especiais para ABC V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto/abc_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
+    req.params = { ...req.params, posto: 'abc_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para ABC V2
+  app.get('/api/historico-direto/abc_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'abc_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
+  // Rotas especiais para Socorro V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto/socorro_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOCORRO V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como socorro_v2
+    req.params = { ...req.params, posto: 'socorro_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Socorro V2
+  app.get('/api/historico-direto/socorro_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE SOCORRO V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'socorro_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
+  // Rotas especiais para Sorocaba V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto/sorocaba_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE SOROCABA V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como sorocaba_v2
+    req.params = { ...req.params, posto: 'sorocaba_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Sorocaba V2
+  app.get('/api/historico-direto/sorocaba_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE SOROCABA V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'sorocaba_v2' };
+    getHistoricoPosto(req, res);
+  });
+
+  // Rotas especiais para ABC V2
+  // Rota de abastecimento (formato novo)
+  app.post('/api/abastecimento-direto/abc_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ABC V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
+    req.params = { ...req.params, posto: 'abc_v2' };
+    // Ignorar autenticação e permitir o registro de abastecimento
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para ABC V2 (formato novo)
+  app.get('/api/historico-direto/abc_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ABC V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'abc_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
+  // Manter rota de abastecimento antiga para compatibilidade
+  app.post('/api/abastecimento-direto-abc-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA ABASTECIMENTO DE ABC V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como abc_v2
+    req.params = { ...req.params, posto: 'abc_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Manter rota de histórico antiga para compatibilidade
+  app.get('/api/historico-direto-abc-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA HISTÓRICO DE ABC V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'abc_v2' };
+    getHistoricoPosto(req, res);
+  });
+
+  // Rotas especiais para Guarulhos V2
+  // Rota de abastecimento (formato novo)
+  app.post('/api/abastecimento-direto/guarulhos_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE GUARULHOS V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como guarulhos_v2
+    req.params = { ...req.params, posto: 'guarulhos_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rotas especiais para Alair V2
+  // Rota de abastecimento (formato novo)
+  app.post('/api/abastecimento-direto/alair_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
+    req.params = { ...req.params, posto: 'alair_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rotas especiais para Osasco V2
+  // Rota de abastecimento
+  app.post('/api/abastecimento-direto/osasco_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE OSASCO V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como osasco_v2
+    req.params = { ...req.params, posto: 'osasco_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Osasco V2
+  app.get('/api/historico-direto/osasco_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE OSASCO V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'osasco_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
+  // Rota de histórico para Guarulhos V2 (formato novo)
+  app.get('/api/historico-direto/guarulhos_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE GUARULHOS V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'guarulhos_v2' };
+    getHistoricoPosto(req, res);
+  });
+
+  app.post('/api/abastecimento-direto/alair_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA ABASTECIMENTO DE ALAIR V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
+    req.params = { ...req.params, posto: 'alair_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Rota de histórico para Alair V2 (formato novo)
+  app.get('/api/historico-direto/alair_v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA PARA HISTÓRICO DE ALAIR V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'alair_v2' };
+    getHistoricoPosto(req, res);
+  });
+  
+  // Manter rota de abastecimento antiga para compatibilidade
+  app.post('/api/abastecimento-direto-alair-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA ABASTECIMENTO DE ALAIR V2 ====");
+    // Forçar o parâmetro posto para garantir que seja tratado como alair_v2
+    req.params = { ...req.params, posto: 'alair_v2' };
+    registrarAbastecimentoPosto(req, res);
+  });
+  
+  // Manter rota de histórico antiga para compatibilidade
+  app.get('/api/historico-direto-alair-v2', (req, res) => {
+    console.log("==== USANDO ROTA ESPECÍFICA ANTIGA PARA HISTÓRICO DE ALAIR V2 ====");
+    // Redirecionar para a rota genérica, mas forçando o parâmetro posto
+    req.params = { posto: 'alair_v2' };
+    getHistoricoPosto(req, res);
+  });
+
+  // Mantendo as rotas antigas para compatibilidade, mas são substituídas pelas novas acima
+  
+  // Rota de diagnóstico específica para autenticação
+  app.get('/api/auth-diagnostic', (req, res) => {
+    const isAuth = typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false;
+    
+    // Para compatibilidade com tipos, não podemos acessar diretamente req.session.cookie
+    const sessionObj: any = req.session || {};
+    const cookieObj = sessionObj.cookie || {};
+    
+    // Obter informações detalhadas sobre cookies
+    let cookieInfo: any = {};
+    if (req.headers.cookie) {
+      const cookies = req.headers.cookie.split(';').map(c => {
+        const [key, value] = c.trim().split('=');
+        return { key, value: value ? value.substring(0, 10) + '...' : 'vazio' };
+      });
+      cookieInfo = cookies;
+    }
+    
+    const status = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      isAuthenticated: isAuth,
+      hasSession: !!req.session,
+      sessionID: req.sessionID,
+      cookiePresent: !!req.headers.cookie,
+      cookies: cookieInfo,
+      sessionMaxAge: cookieObj.maxAge,
+      sessionExpires: cookieObj.expires,
+      sessionSettings: {
+        secure: cookieObj.secure,
+        httpOnly: cookieObj.httpOnly,
+        sameSite: cookieObj.sameSite,
+        path: cookieObj.path,
+        domain: cookieObj.domain
+      },
+      passportInfo: {
+        initialized: typeof req.isAuthenticated === 'function',
+        passportSession: (req.session as any)?.passport,
+      },
+      user: isAuth && req.user ? {
+        id: req.user.id,
+        email: req.user.email,
+        role: req.user.role,
+        name: req.user.name
+      } : null,
+      requestInfo: {
+        host: req.hostname,
+        path: req.path,
+        method: req.method,
+        protocol: req.protocol,
+        secure: req.secure,
+        origin: req.headers.origin,
+        referer: req.headers.referer
+      }
+    };
+    
+    console.log('[AuthDiagnostic] Diagnóstico de autenticação executado');
+    res.json(status);
+  });
+  
+  // Rota para diagnosticar problemas de CORS com domínio personalizado
+  app.get('/api/cors-check', (req, res) => {
+    const corsInfo = {
+      success: true,
+      message: 'Verificação de CORS bem-sucedida',
+      requestInfo: {
+        host: req.hostname,
+        origin: req.headers.origin,
+        referer: req.headers.referer,
+        userAgent: req.headers['user-agent'],
+        method: req.method,
+        path: req.path,
+        ip: req.ip
+      },
+      responseHeaders: {
+        'access-control-allow-origin': res.getHeader('Access-Control-Allow-Origin'),
+        'access-control-allow-methods': res.getHeader('Access-Control-Allow-Methods'),
+        'access-control-allow-headers': res.getHeader('Access-Control-Allow-Headers'),
+        'access-control-allow-credentials': res.getHeader('Access-Control-Allow-Credentials')
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('Verificação de CORS:', corsInfo);
+    res.json(corsInfo);
+  });
+  
+  // Rota de diagnóstico para postos
+  app.get('/api/postos/diagnostico', (req, res) => {
+    const isAuth = req.isAuthenticated();
+    const sessionInfo = req.session 
+      ? {
+          id: req.sessionID,
+          cookie: req.session.cookie ? {
+            domain: req.session.cookie.domain,
+            path: req.session.cookie.path,
+            secure: req.session.cookie.secure,
+            expires: req.session.cookie.expires,
+            maxAge: req.session.cookie.maxAge
+          } : undefined
+        }
+      : undefined;
+      
+    return res.json({
+      success: true,
+      currentRoute: '/api/postos/diagnostico',
+      isAuthenticated: isAuth,
+      user: isAuth ? { 
+        id: req.user.id, 
+        email: req.user.email,
+        role: req.user.role
+      } : null,
+      host: req.hostname,
+      path: req.path,
+      method: req.method,
+      session: sessionInfo,
+      headers: {
+        cookie: req.headers.cookie,
+        origin: req.headers.origin,
+        referer: req.headers.referer,
+        'user-agent': req.headers['user-agent']
+      },
+      isDomainGestaoonfleet: req.hostname.includes('gestaoonfleet.com.br'),
+      sugestedAction: !isAuth ? 'Necessário fazer login em gestaoonfleet.com.br/login antes de acessar' : 'Usuário está autenticado'
+    });
+  });
+  
+  // Rota especial pública para o domínio personalizado - sem autenticação
+  app.get('/postos-info', (req, res) => {
+    if (req.hostname.includes('gestaoonfleet.com.br')) {
+      console.log(`[Postos] Acesso à página de postos pelo domínio: ${req.hostname}`);
+      
+      // Redireciona para a SPA que irá lidar com a rota /postos no frontend
+      res.redirect('/');
+    } else {
+      // Se não for o domínio personalizado, retorna erro
+      res.status(403).json({ 
+        success: false, 
+        message: "Esta rota só pode ser acessada através do domínio gestaoonfleet.com.br"
+      });
+    }
+  });
+  
+  // Rota pública específica para cada posto (sem autenticação)
+  // Esta rota ajuda a resolver o problema de acesso pelo domínio personalizado
+  app.get('/api/postos/acesso-aberto/:posto', async (req, res) => {
+    try {
+      const nomePosto = req.params.posto;
+      console.log(`[Postos] Acesso aberto ao posto: ${nomePosto} - host: ${req.hostname}`);
+      
+      // Responde com um redirecionamento para a página de postos
+      res.json({
+        success: true,
+        message: `Acesso ao posto ${nomePosto}`,
+        redirectUrl: `/posto/${nomePosto}`,
+        host: req.hostname,
+        isDomainGestaoonfleet: req.hostname.includes('gestaoonfleet.com.br'),
+        isAuthenticated: req.isAuthenticated()
+      });
+    } catch (error) {
+      console.error(`[Postos] Erro no acesso aberto ao posto ${req.params.posto}:`, error);
+      res.status(500).json({
+        success: false,
+        message: `Erro ao acessar posto ${req.params.posto}`,
+        error: String(error)
+      });
+    }
+  });
+  
+  // Registrar rotas de histórico de consumo diário
+  // app.use('/api', consumoDiarioHistorico);
+  
+  // Scheduler temporariamente desabilitado para deployment
+  // iniciarScheduler();
+  console.log('Sistema base iniciado (scheduler desabilitado)');
+
+  // APIs críticas para o sistema de cartão de combustível - DEVEM ser registradas ANTES do middleware de autenticação
+  app.get('/api/projects', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const query = `
+        SELECT id, name, description, is_active 
+        FROM projects 
+        WHERE is_active = true 
+        ORDER BY name ASC
+      `;
+      const result = await pool.query(query);
+      
+      console.log('Projects API - Found', result.rows.length, 'projects');
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error: any) {
+      console.error('Projects API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching projects',
+        error: error?.message || 'Unknown error'
+      });
+    }
+  });
+
+  // REMOVIDA - Segunda definição de /api/bases (conflito resolvido) - Limpeza concluída
+      
+  // REMOVIDA - Segunda definição de /api/bases (conflito resolvido) - Limpeza concluída
+
+  // Add project-bases relationship API
+  app.get('/api/project-bases', async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      const query = `
+        SELECT pb.project_id, pb.base_name, pb.base_code, pb.description, pb.is_active,
+               p.name as project_name, b.id as base_id, b.name as base_full_name
+        FROM project_bases pb 
+        JOIN projects p ON pb.project_id = p.id
+        LEFT JOIN bases b ON pb.base_name = b.name OR pb.base_code = b.basename
+        WHERE pb.is_active = true 
+        ORDER BY p.name, pb.base_name
+      `;
+      const result = await pool.query(query);
+      
+      console.log('Project-Bases API - Found', result.rows.length, 'relationships');
+      
+      return res.status(200).json({
+        success: true,
+        data: result.rows,
+        count: result.rowCount || 0
+      });
+    } catch (error) {
+      console.error('Project-Bases API - Error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching project-bases relationships',
+        error: error.message
+      });
+    }
+  });
+
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+
+    res.status(status).json({ message });
+    throw err;
+  });
+
+  // Add specific logout handler before Vite middleware to prevent route interference
+  app.post('/api/logout', async (req, res) => {
+    try {
+      console.log('Direct logout handler - destroying session');
+      
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error('Erro ao destruir sessão:', err);
+          }
+        });
+      }
+      
+      // Clear cookie
+      res.clearCookie('connect.sid');
+      console.log('Session destroyed and cookie cleared');
+      
+      res.status(200).json({ message: 'Logout realizado com sucesso' });
+    } catch (error) {
+      console.error('Erro no logout direto:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  });
+
+  // Middleware de verificação de autenticação para rotas protegidas
+  // Deve ser adicionado ANTES da configuração do Vite para interceptar requisições
+  app.use(async (req, res, next) => {
+    // Lista de rotas que precisam de autenticação
+    const protectedRoutes = [
+      '/bases/campinas',
+      '/bases/goiania', 
+      '/bases/alair',
+      '/vehicles',
+      '/maintenance',
+      '/tires',
+      '/fleet-management',
+      '/refueling',
+      '/fines',
+      '/accidents',
+      '/fuel-receipts',
+      '/work-safety',
+      '/users',
+      '/solicitacoes',
+      '/postos',
+      '/executive-dashboard'
+    ];
+
+    // Lista de rotas públicas que não precisam de autenticação
+    const publicRoutes = [
+      '/login',
+      '/register',
+      '/attached_assets/',
+      '/bases/campinas/login',
+      '/bases/goiania/login',
+      '/bases/alair/login',
+      '/test-logout',
+      '/test-campinas-login',
+      '/postos/campinas_v2/public', // Link externo do Posto Campinas V2
+      '/postos/osasco_v2/public', // Link externo do Posto Osasco V2
+      '/postos/osasco_v2/login', // Login do Posto Osasco V2
+      '/postos/socorro_v2/public', // Link externo do Posto Socorro V2
+      '/postos/socorro_v2/login', // Login do Posto Socorro V2
+      '/posto/', // Permitir acesso público a todas as rotas de postos
+      '/api/postos', // Permitir acesso público às APIs dos postos
+      '/api/historico-direto',
+      '/api/abastecimento-direto',
+      '/api/estatisticas-mensais-direto',
+      '/api/consumo-por-veiculo-direto',
+      '/api/comparativo-combustiveis-direto',
+      '/api/check-tabela-direto',
+      '/api/workshops/validate-token', // Permitir acesso público para validação de token de oficinas
+      '/api/workshops/test', // Permitir acesso público para teste de oficinas
+      '/api/conferencia-rotas/', // Permitir acesso às rotas de conferência de rotas e abastecimentos
+      '/api/dashboard/km-per-base', // TEMPORÁRIO: Permitir acesso aos dados de quilometragem
+      '/postpaid', // Link externo do formulário pós-pago
+      '/api/postpaid/', // APIs públicas do sistema pós-pago
+      '/work-safety/portal', // Portal público de Segurança do Trabalho
+      '/work-safety/cadastro', // Cadastro público de motoristas
+      '/work-safety/cadastro-motorista', // Cadastro público de motoristas (alternativo)
+      '/work-safety/relatar-acidente', // Formulário público de relato de acidentes
+      '/work-safety/treinamentos', // Página pública de treinamentos
+      '/api/work-safety/drivers', // API pública de motoristas
+      '/api/work-safety/accidents', // API pública de acidentes
+      '/api/work-safety/trainings', // API pública de treinamentos
+      '/api/work-safety/bases', // API pública para listar bases
+      '/fleet-management/towing-partners/external-access/', // Acesso externo parceiros de guincho
+      '/external-access/', // Acesso externo parceiros de guincho (rota curta)
+    ];
+    
+    // Verificar se a rota atual é pública (não precisa de autenticação)
+    const isPublicRoute = publicRoutes.some(route => {
+      if (route.endsWith('/')) {
+        return req.path.startsWith(route);
+      }
+      // Verificar correspondência exata ou com subpaths
+      const isExactMatch = req.path === route;
+      const isSubPath = req.path.startsWith(route + '/');
+      const isPartialMatch = route === '/postos/campinas_v2/public' && req.path === '/postos/campinas_v2/public';
+      
+      return isExactMatch || isSubPath || isPartialMatch;
+    });
+    
+    // Verificar se a rota atual é protegida
+    const isProtectedRoute = protectedRoutes.some(route => 
+      req.path.startsWith(route) && !req.path.includes('/external/') && !req.path.includes('/externo')
+    ) && !isPublicRoute;
+    
+    // Log para debug
+    console.log(`[AUTH-MIDDLEWARE] Verificando rota: ${req.path} - Protegida: ${isProtectedRoute} - Pública: ${isPublicRoute}`);
+    
+    // Log adicional para a rota específica do Posto Campinas V2
+    if (req.path === '/postos/campinas_v2/public') {
+      console.log(`[AUTH-MIDDLEWARE] Rota Campinas V2 detectada: ${req.path}`);
+      console.log(`[AUTH-MIDDLEWARE] Rotas públicas configuradas:`, publicRoutes.filter(r => r.includes('campinas')));
+    }
+    
+    // Se não é uma rota protegida, continuar normalmente
+    if (!isProtectedRoute) {
+      return next();
+    }
+    
+    // Verificar se o usuário está autenticado (tradicional, Supabase, híbrido ou JWT próprio)
+    const isAuthenticated = req.isAuthenticated && req.isAuthenticated();
+    const hasHybridUser = !!(req as any).hybridUser;
+    const hasSupabaseUser = !!(req as any).supabaseUser;
+    
+    // Verificar JWT próprio do header Authorization
+    let hasOwnJwt = false;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const jwtModule = await import('./utils/jwt');
+        const secret = process.env.JWT_SECRET || 'muricion-fleet-secret-key';
+        const decoded = jwtModule.verifyToken(token, secret);
+        if (decoded && (decoded.email || decoded.id)) {
+          hasOwnJwt = true;
+          // Anexar usuário à requisição
+          (req as any).user = decoded;
+          req.user = decoded as any;
+          console.log(`[AUTH-MIDDLEWARE] JWT próprio validado para ${decoded.email}`);
+        }
+      } catch (jwtError) {
+        console.log('[AUTH-MIDDLEWARE] Erro ao verificar JWT próprio');
+      }
+    }
+    
+    const isUserAuthenticated = isAuthenticated || hasHybridUser || hasSupabaseUser || hasOwnJwt;
+    
+    console.log(`[AUTH-MIDDLEWARE] Usuário autenticado: ${isAuthenticated} | Híbrido: ${hasHybridUser} | Supabase: ${hasSupabaseUser} | JWT: ${hasOwnJwt} | Total: ${isUserAuthenticated}`);
+    
+    if (!isUserAuthenticated) {
+      console.log(`[AUTH-MIDDLEWARE] Acesso negado para rota protegida: ${req.path}`);
+      
+      // Definir rota de login específica baseada no caminho
+      let loginRoute = '/login';
+      
+      if (req.path.startsWith('/bases/campinas')) {
+        loginRoute = '/bases/campinas/login';
+      } else if (req.path.startsWith('/bases/goiania')) {
+        loginRoute = '/bases/goiania/login';
+      } else if (req.path.startsWith('/bases/alair')) {
+        loginRoute = '/bases/alair/login';
+      }
+      
+      // Se for uma requisição AJAX/API, retornar JSON
+      if (req.xhr || req.headers.accept?.includes('json')) {
+        return res.status(401).json({ 
+          error: 'Acesso negado',
+          message: 'Você precisa fazer login para acessar esta página.',
+          redirect: loginRoute
+        });
+      }
+      
+      // Para requisições normais, redirecionar para login específico
+      return res.redirect(loginRoute);
+    }
+    
+    // VERIFICAÇÃO DE SEGURANÇA: Operadores não podem acessar o sistema principal
+    const currentUser = req.user || (req as any).hybridUser || (req as any).supabaseUser;
+    if (currentUser && currentUser.role === 'operador') {
+      // Permitir acesso apenas às rotas da base designada
+      const userBaseName = currentUser.basename;
+      
+      if (userBaseName && req.path.startsWith(`/bases/${userBaseName.toLowerCase()}`)) {
+        console.log(`[AUTH-MIDDLEWARE] Acesso permitido para operador ${currentUser.email} na base ${userBaseName}`);
+        return next();
+      }
+      
+      console.log(`[AUTH-MIDDLEWARE] Acesso negado para operador ${currentUser.email} - tentativa de acesso ao sistema principal`);
+      
+      // Redirecionar operador para a base designada
+      const baseLoginRoute = userBaseName ? `/bases/${userBaseName.toLowerCase()}/login` : '/login';
+      
+      if (req.xhr || req.headers.accept?.includes('json')) {
+        return res.status(403).json({ 
+          error: 'Acesso negado',
+          message: 'Operadores devem acessar apenas a base designada',
+          redirect: baseLoginRoute
+        });
+      }
+      
+      return res.redirect(baseLoginRoute);
+    }
+    
+    console.log(`[AUTH-MIDDLEWARE] Acesso permitido para rota protegida: ${req.path}`);
+    // Se estiver autenticado, continuar
+    next();
+  });
+
+
+  // Servir arquivos estáticos de uploads de equipamentos
+  app.use('/uploads', express.static(path.join(process.cwd(), 'server', 'uploads')));
+  
+  // Servir arquivos estáticos de uploads na raiz (checklist-patio, etc.)
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+  // Registrar rotas de cartões de combustível
+  app.use('/api/fuel-cards', fuelCardRoutes);
+
+  // Registrar rotas do WhatsApp (Painel de Monitoramento)
+  app.use('/api/whatsapp', whatsappRoutes);
+
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+  
+  // CRITICAL: Catch-all para rotas de API não encontradas
+  // DEVE vir DEPOIS do Vite para capturar apenas APIs que realmente não existem
+  app.use('/api/*', (req, res, next) => {
+    // Se chegamos aqui, nenhuma rota de API correspondeu
+    // Retornar 404 JSON ao invés de deixar o Vite servir HTML
+    if (!res.headersSent) {
+      console.log(`[API-404] Rota de API não encontrada: ${req.method} ${req.path}`);
+      return res.status(404).json({
+        success: false,
+        message: `Rota de API não encontrada: ${req.method} ${req.path}`
+      });
+    }
+    next();
+  });
+
+  // ALWAYS serve the app on port 5000
+  // this serves both the API and the client.
+  // It is the only port that is not firewalled.
+  const port = 5000;
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true,
+  }, async () => {
+    log(`serving on port ${port}`);
+    log('[STARTUP] Servidor iniciado - health check disponível');
+    
+    // Executar migrações APÓS o servidor iniciar (não bloqueia health check)
+    try {
+      log('[STARTUP] Executando migrações...');
+      const migrationSuccess = await runMigrations();
+      if (migrationSuccess) {
+        log('[STARTUP] Migrações executadas com sucesso!');
+      } else {
+        console.warn('[STARTUP] Algumas migrações falharam, mas o servidor continuará funcionando.');
+      }
+    } catch (error) {
+      console.error('[STARTUP] Erro ao executar migrações:', error);
+      console.warn('[STARTUP] Continuando apesar dos erros de migração.');
+    }
+    
+    // Marcar como pronto após migrações
+    isReady = true;
+    log('[STARTUP] Sistema pronto para receber requisições');
+    
+    // Iniciar tarefas agendadas
+    try {
+      initCronJobs();
+      log('Cron jobs iniciados com sucesso.');
+    } catch (error) {
+      console.error('Erro ao iniciar cron jobs:', error);
+    }
+  });
+})();

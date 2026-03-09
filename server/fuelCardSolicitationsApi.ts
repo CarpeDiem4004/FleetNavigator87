@@ -1,0 +1,2679 @@
+import { Request, Response } from 'express';
+import { pool } from './db';
+import * as XLSX from 'xlsx';
+import { normalizeBaseName } from '../shared/baseNormalization';
+import { sendFuelCardRechargeNotificationZAPI, isZAPIConfigured } from './services/zapiWhatsAppService';
+
+/**
+ * Calcula a data de consulta na planilha com base no horário de abastecimento selecionado.
+ * Regra de negócio:
+ * - Até 16:00 → data atual
+ * - Após 18:00 → data atual + 1 dia (D+1)
+ * - Entre 16:01 e 17:59 → data atual
+ */
+export function calcularDataConsulta(horarioAbastecimento: string | null | undefined, dataBase?: string): string {
+  const hoje = dataBase ? new Date(dataBase + 'T12:00:00') : new Date();
+  const dataAtualStr = hoje.toISOString().split('T')[0];
+  
+  if (!horarioAbastecimento) {
+    return dataAtualStr;
+  }
+  
+  const horarioLower = horarioAbastecimento.toLowerCase().trim();
+  
+  const match = horarioAbastecimento.match(/^(\d{1,2}):(\d{2})$/);
+  if (match) {
+    const hora = parseInt(match[1]);
+    const minuto = parseInt(match[2]);
+    const totalMinutos = hora * 60 + minuto;
+    
+    if (totalMinutos >= 18 * 60) {
+      const amanha = new Date(hoje);
+      amanha.setDate(amanha.getDate() + 1);
+      const dataAmanha = amanha.toISOString().split('T')[0];
+      console.log(`[DATA-CONSULTA] Horário "${horarioAbastecimento}" (${hora}:${String(minuto).padStart(2,'0')}) → ≥18:00 → D+1: ${dataAmanha}`);
+      return dataAmanha;
+    }
+    
+    console.log(`[DATA-CONSULTA] Horário "${horarioAbastecimento}" (${hora}:${String(minuto).padStart(2,'0')}) → <18:00 → Data atual: ${dataAtualStr}`);
+    return dataAtualStr;
+  }
+  
+  if (horarioLower.includes('após 18') || horarioLower.includes('apos 18') || 
+      horarioLower === 'após 18h' || horarioLower === 'apos_18h' || 
+      horarioLower === 'depois_18h' || horarioLower === 'depois 18h') {
+    const amanha = new Date(hoje);
+    amanha.setDate(amanha.getDate() + 1);
+    const dataAmanha = amanha.toISOString().split('T')[0];
+    console.log(`[DATA-CONSULTA] Horário "${horarioAbastecimento}" → Token "Após 18h" → D+1: ${dataAmanha}`);
+    return dataAmanha;
+  }
+  
+  console.log(`[DATA-CONSULTA] Horário "${horarioAbastecimento}" → Formato não reconhecido → Data atual: ${dataAtualStr}`);
+  return dataAtualStr;
+}
+
+/**
+ * Valida solicitação de abastecimento com a planilha do Google Sheets
+ * Usa a API pública do Google Sheets para verificar se existe uma viagem
+ * programada para a data e placa informadas
+ * 
+ * Estrutura da planilha:
+ * - Coluna A: Data (formato DD/MM/AAAA)
+ * - Coluna B: Trip Number (número da viagem)
+ * - Coluna J: Placa do veículo
+ * - Coluna K: Origem
+ * - Coluna L: Destino
+ */
+async function validateWithGoogleSheet(placa: string, dataUso: string): Promise<{
+  liberado: boolean;
+  origem?: string;
+  destino?: string;
+  tripNumber?: string;
+  dataEncontrada?: string;
+  motivo: string;
+}> {
+  // ID da planilha de controle de viagens Line Haul
+  const SPREADSHEET_ID = '1LpUcSeFzvyqrkEjH5ORyEEfm0rfpqgOorYmIyNZLoks';
+  
+  // Verificar se a integração está habilitada
+  const integrationEnabled = process.env.GOOGLE_SHEETS_INTEGRATION_ENABLED !== 'false';
+  
+  if (!integrationEnabled) {
+    console.log('[GOOGLE_SHEETS] Integração desabilitada, liberando sem validação');
+    return { liberado: true, motivo: 'Validação desabilitada' };
+  }
+  
+  try {
+    // Formatar data para DD/MM/AAAA para comparação
+    let dataFormatada = dataUso;
+    if (dataUso && dataUso.includes('-')) {
+      const [ano, mes, dia] = dataUso.split('-');
+      dataFormatada = `${dia}/${mes}/${ano}`;
+    }
+    
+    // Normalizar placa para comparação (remover caracteres especiais)
+    const placaNormalizada = placa.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    
+    console.log(`[GOOGLE_SHEETS] Consultando planilha para placa ${placaNormalizada} na data ${dataFormatada}`);
+    
+    // Usar a API pública do Google Sheets (planilha deve estar compartilhada como "Qualquer pessoa com o link pode ver")
+    // Não especificar sheet para usar a aba padrão (primeira aba)
+    const apiUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json`;
+    
+    console.log('[GOOGLE_SHEETS] Fazendo requisição para:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('[GOOGLE_SHEETS] Erro na resposta:', response.status, response.statusText);
+      return { liberado: true, motivo: 'Erro ao acessar planilha, liberando por segurança' };
+    }
+    
+    const text = await response.text();
+    
+    // A resposta vem no formato: google.visualization.Query.setResponse({...})
+    // Precisamos extrair o JSON de dentro
+    const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?$/);
+    if (!jsonMatch) {
+      console.error('[GOOGLE_SHEETS] Formato de resposta inesperado');
+      return { liberado: true, motivo: 'Formato de resposta inesperado, liberando por segurança' };
+    }
+    
+    const jsonData = JSON.parse(jsonMatch[1]);
+    const rows = jsonData.table?.rows || [];
+    
+    console.log(`[GOOGLE_SHEETS] Total de linhas na planilha: ${rows.length}`);
+    
+    // Procurar linha que corresponde à data e placa
+    // Estrutura real da planilha:
+    // - A (índice 0): sta_origin_date - Data
+    // - F (índice 5): used_vehicle - Veículo usado (pode conter placa)
+    // - J (índice 9): vehicle_number - Número do veículo
+    // - K (índice 10): origin_station_code - Origem
+    // - L (índice 11): destination_station_code - Destino
+    let viagemEncontrada = false;
+    let origemEncontrada = '';
+    let destinoEncontrado = '';
+    let tripNumberEncontrado = '';
+    let dataEncontrada = '';
+    
+    console.log(`[GOOGLE_SHEETS] Buscando data EXATA: ${dataFormatada} (busca flexível removida - regra de horário já calcula data correta)`);
+    
+    for (const row of rows) {
+      const cells = row.c || [];
+      
+      // Pegar valor da data (coluna A - índice 0: sta_origin_date)
+      const dataCell = cells[0];
+      let dataLinha = '';
+      if (dataCell) {
+        if (dataCell.f) {
+          // Valor formatado
+          dataLinha = dataCell.f;
+        } else if (dataCell.v) {
+          // Valor bruto - pode ser Date ou string
+          if (typeof dataCell.v === 'string' && dataCell.v.startsWith('Date(')) {
+            // Formato Date(ano, mes, dia)
+            const match = dataCell.v.match(/Date\((\d+),(\d+),(\d+)\)/);
+            if (match) {
+              const dia = match[3].padStart(2, '0');
+              const mes = (parseInt(match[2]) + 1).toString().padStart(2, '0'); // Mês é 0-indexed
+              const ano = match[1];
+              dataLinha = `${dia}/${mes}/${ano}`;
+            }
+          } else {
+            dataLinha = String(dataCell.v);
+          }
+        }
+      }
+      
+      // Pegar valor da placa do veículo usado (coluna F - índice 5: used_vehicle)
+      const usedVehicleCell = cells[5];
+      let usedVehicle = '';
+      if (usedVehicleCell && usedVehicleCell.v) {
+        usedVehicle = String(usedVehicleCell.v).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      }
+      
+      // Também verificar vehicle_number (coluna J - índice 9)
+      const vehicleNumberCell = cells[9];
+      let vehicleNumber = '';
+      if (vehicleNumberCell && vehicleNumberCell.v) {
+        vehicleNumber = String(vehicleNumberCell.v).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      }
+      
+      // Comparar placa - IGUALDADE ESTRITA OBRIGATÓRIA
+      // Não usar includes pois causa falsos positivos
+      const placaMatch = usedVehicle === placaNormalizada || vehicleNumber === placaNormalizada;
+      
+      const dataMatch = dataLinha === dataFormatada;
+      
+      // Debug: mostrar comparações quando data corresponde
+      if (dataMatch && (usedVehicle || vehicleNumber)) {
+        console.log(`[GOOGLE_SHEETS] Comparando: buscando=${placaNormalizada}, usedVehicle=${usedVehicle}, vehicleNumber=${vehicleNumber}, placaMatch=${placaMatch}`);
+      }
+      
+      if (dataMatch && placaMatch) {
+        viagemEncontrada = true;
+        dataEncontrada = dataLinha;
+        
+        // Pegar trip_number (coluna B - índice 1)
+        const tripNumberCell = cells[1];
+        if (tripNumberCell && tripNumberCell.v) {
+          tripNumberEncontrado = String(tripNumberCell.v);
+        }
+        
+        // Pegar origem (coluna K - índice 10: origin_station_code)
+        const origemCell = cells[10];
+        if (origemCell && origemCell.v) {
+          origemEncontrada = String(origemCell.v);
+        }
+        
+        // Pegar destino (coluna L - índice 11: destination_station_code)
+        const destinoCell = cells[11];
+        if (destinoCell && destinoCell.v) {
+          destinoEncontrado = String(destinoCell.v);
+        }
+        
+        console.log(`[GOOGLE_SHEETS] Viagem encontrada! Data: ${dataEncontrada}, TripNumber: ${tripNumberEncontrado}, Veículo: ${usedVehicle || vehicleNumber}, Origem: ${origemEncontrada}, Destino: ${destinoEncontrado}`);
+        break;
+      }
+    }
+    
+    if (viagemEncontrada) {
+      return {
+        liberado: true,
+        origem: origemEncontrada,
+        destino: destinoEncontrado,
+        tripNumber: tripNumberEncontrado,
+        dataEncontrada: dataEncontrada,
+        motivo: 'Viagem autorizada na planilha'
+      };
+    } else {
+      console.log(`[GOOGLE_SHEETS] Viagem NÃO encontrada para ${placaNormalizada} em ${dataFormatada}`);
+      return {
+        liberado: false,
+        motivo: `Viagem não encontrada na planilha para a placa ${placa} na data ${dataFormatada}`
+      };
+    }
+    
+  } catch (error: any) {
+    console.error('[GOOGLE_SHEETS] Erro ao consultar planilha:', error.message);
+    return { liberado: true, motivo: 'Erro de conexão, liberando por segurança' };
+  }
+}
+
+/**
+ * Determina o consumo médio baseado no modelo do veículo
+ * Regras atualizadas conforme solicitação
+ */
+function getConsumoByModel(modelo: string): number {
+  const modeloUpper = modelo.toUpperCase();
+  
+  // Iveco: 2,5 km/l
+  if (modeloUpper.includes('IVECO')) {
+    return 2.5;
+  }
+  
+  // Volvo: 2,7 km/l  
+  if (modeloUpper.includes('VOLVO') || modeloUpper.includes('FH')) {
+    return 2.7;
+  }
+  
+  // Volkswagen Constellation: 2,0 km/l (atualizado)
+  if (modeloUpper.includes('VOLKSWAGEN') || modeloUpper.includes('CONSTELLATION')) {
+    return 2.0;
+  }
+  
+  // Volkswagen Meteor: 2,7 km/l
+  if (modeloUpper.includes('METEOR')) {
+    return 2.7;
+  }
+  
+  // Mercedes: 2,5 km/l
+  if (modeloUpper.includes('MERCEDES') || modeloUpper.includes('ACTROS') || modeloUpper.includes('M.BENZ')) {
+    return 2.5;
+  }
+  
+  // Man: 2,6 km/l
+  if (modeloUpper.includes('MAN')) {
+    return 2.6;
+  }
+  
+  // Scania: 2,7 km/l
+  if (modeloUpper.includes('SCANIA')) {
+    return 2.7;
+  }
+  
+  // Daf: 2,7 km/l
+  if (modeloUpper.includes('DAF')) {
+    return 2.7;
+  }
+  
+  // Padrão para cavalos mecânicos: 2,5 km/l
+  if (modeloUpper.includes('CAVALO') || modeloUpper.includes('MECÂNICO') || modeloUpper.includes('MECANICO')) {
+    return 2.5;
+  }
+  
+  // Padrão geral: 2,5 km/l
+  return 2.5;
+}
+
+/**
+ * Obtém todas as solicitações de cartão de combustível (incluindo Line Hall Shopee)
+ * Aplica filtros por base para usuários não-admin
+ */
+// Cache simples para melhorar performance
+let cacheData: { data: any[], timestamp: number } | null = null;
+const CACHE_TTL = 30000; // 30 segundos
+
+// Limpar cache após correção de ordenação FIFO (mais antigas primeiro)
+cacheData = null;
+
+export async function getFuelCardSolicitations(req: Request, res: Response) {
+  try {
+    // OTIMIZAÇÃO: Usar cache se disponível e não expirado
+    const now = Date.now();
+    if (cacheData && (now - cacheData.timestamp) < CACHE_TTL) {
+      console.log('[FUEL-CARD-API] Retornando dados do cache');
+      return res.json({
+        success: true,
+        data: cacheData.data,
+        fromCache: true
+      });
+    }
+
+    console.log('[FUEL-CARD-API] Buscando solicitações para usuário:', req.user);
+    
+    // Verificar se o usuário é admin, gestor do Grupo Pereira, gestor de combustível ou de uma base específica
+    const isAdmin = req.user?.role === 'admin';
+    const isGestorCombustivel = req.user?.role === 'gestor_combustivel';
+    const isGestorGrupoPereira = req.user?.role === 'gestor' && req.user?.basename === 'GRUPO_PEREIRA';
+    const userBaseId = req.user?.base_id;
+    const userBaseName = req.user?.basename;
+    
+    console.log('[FUEL-CARD-API] Permissões do usuário:', { 
+      isAdmin, 
+      isGestorCombustivel,
+      isGestorGrupoPereira,
+      userBaseId, 
+      userBaseName,
+      role: req.user?.role 
+    });
+
+    // Construir condições WHERE baseadas nas permissões do usuário
+    let whereConditions = '';
+    if (!isAdmin && !isGestorCombustivel && !isGestorGrupoPereira && userBaseName) {
+      // Mapear base names para filtros mais específicos
+      let baseFilter = '';
+      
+      switch (userBaseName.toUpperCase()) {
+        case 'GP03':
+          baseFilter = `(s.base ILIKE '%GP03%' OR s.base ILIKE '%HORTOLANDIA%')`;
+          break;
+        case 'GP02':
+          baseFilter = `(s.base ILIKE '%GP02%' OR s.base ILIKE '%JACAREI%')`;
+          break;
+        case 'GP01':
+          baseFilter = `(s.base ILIKE '%GP01%' OR s.base ILIKE '%VARGEM%')`;
+          break;
+        case 'SC_LAJEADO_SRS10SDD':
+        case 'SC':
+          baseFilter = `(s.base ILIKE '%SC%' OR s.base ILIKE '%LAJEADO%' OR s.base ILIKE '%JOINVILLE%')`;
+          break;
+        default:
+          // Para outras bases, usar filtro genérico
+          baseFilter = `(s.base ILIKE '%${userBaseName}%')`;
+      }
+      
+      whereConditions = `WHERE ${baseFilter}`;
+    } else if (isGestorGrupoPereira) {
+      // Gestor do Grupo Pereira tem acesso a GP01, GP02, GP03
+      whereConditions = `WHERE (s.base ILIKE '%GP01%' OR s.base ILIKE '%GP02%' OR s.base ILIKE '%GP03%' OR s.base ILIKE '%VARGEM%' OR s.base ILIKE '%JACAREI%' OR s.base ILIKE '%HORTOLANDIA%' OR s.base ILIKE '%PEREIRA%')`;
+    }
+    
+    // REMOVIDO: Limitação de paginação para mostrar todos os registros
+    // Usuário relatou que só estava mostrando 48 de 1505+ registros
+
+    const query = `
+      SELECT * FROM (
+        SELECT 
+          s.id::text as id,
+          COALESCE(s.placa, s.veiculo_placa, 'SEM-PLACA') as placa,
+          COALESCE(s.km, 0) as km,
+          COALESCE(s.tipo_cartao, 'Padrão') as tipo_cartao,
+          COALESCE(s.provedor_cartao, 'Padrão') as provedor_cartao,
+          COALESCE(s.numero_cartao, '') as numero_cartao,
+          COALESCE(s.motorista, 'Motorista não informado') as motorista,
+          COALESCE(s.solicitante, 'Nome não informado') as solicitante,
+          COALESCE(s.telefone_celular, '') as telefone_celular,
+          COALESCE(s.observacoes, 'Sem observações') as observacoes,
+          s.status,
+          s.data_solicitacao,
+          s.atendido_por,
+          s.data_atendimento,
+          s.created_at,
+          s.updated_at,
+          COALESCE(s.valor_solicitado, 0) as valor_solicitado,
+          COALESCE(s.base, 'Base Principal') as base,
+          COALESCE(s.id_rota, '') as id_rota,
+          COALESCE(s.origem_tipo, 'tradicional') as origem_tipo,
+          s.tipo_combustivel,
+          s.valor_litro,
+          s.litros_solicitados,
+          TO_CHAR(s.data_uso, 'YYYY-MM-DD') as data_uso,
+          s.turno,
+          -- Campos específicos do Line Hall (incluir dados reais se existirem)
+          s.veiculo_modelo,
+          s.rota_origem,
+          s.rota_destino,
+          COALESCE(s.km_total, s.km) as km_total,
+          s.telefone_celular as telefone_motorista,
+          s.horario_abastecimento,
+          COALESCE(s.valor_solicitado, 0) as valor_calculado,
+          NULL::json as calculo_detalhes,
+          -- Incluir cartão combustível do veículo
+          COALESCE(v.cartao_abastecimento, s.numero_cartao, '') as cartao_combustivel,
+          -- Campos de validação da planilha
+          s.planilha_origem,
+          s.planilha_destino,
+          s.planilha_data,
+          s.conferido_em,
+          s.rota_validada,
+          s.validacao_motivo
+        FROM solicitacoes_fuel_card s
+        LEFT JOIN veiculos v ON s.placa = v.placa
+        ${whereConditions}
+
+        UNION ALL
+
+        SELECT 
+          lh.id::text as id,
+          COALESCE(lh.veiculo_placa, 'LH-' || lh.id) as placa,
+          COALESCE(lh.km_total, 0) as km,
+          'Line Hall' as tipo_cartao,
+          'Line Hall Shopee' as provedor_cartao,
+          COALESCE(lhv.cartao_combustivel, v.cartao_abastecimento, lh.numero_cartao, '') as numero_cartao,
+          COALESCE(lh.motorista, lh.motorista_nome, 'Motorista não informado') as motorista,
+          'Line Hall Solicitante' as solicitante,
+          COALESCE(lh.telefone_motorista, '') as telefone_celular,
+          CONCAT('Rota: ', COALESCE(lh.rota_origem, 'N/I'), ' → ', COALESCE(lh.rota_destino, 'N/I'), 
+                 ' | Tel: ', COALESCE(lh.telefone_motorista, 'N/I'), ' | Horário: ', 
+                 CASE WHEN lh.horario_abastecimento = 'antes_17h' THEN 'Antes das 17h' 
+                      ELSE 'Após 18h' END) as observacoes,
+          lh.status,
+          COALESCE((lh.data_solicitacao + lh.horario_solicitacao)::timestamp, lh.created_at) as data_solicitacao,
+          COALESCE(lh.operador_aprovacao, 'Sistema') as atendido_por,
+          lh.updated_at as data_atendimento,
+          lh.created_at,
+          lh.updated_at,
+          COALESCE(lh.valor_calculado, 0) as valor_solicitado,
+          'Line Hall Shopee' as base,
+          '' as id_rota,
+          'line_hall' as origem_tipo,
+          NULL as tipo_combustivel,
+          NULL as valor_litro,
+          NULL as litros_solicitados,
+          NULL as data_uso,
+          NULL as turno,
+          -- Campos específicos do Line Hall
+          lh.veiculo_modelo,
+          lh.rota_origem,
+          lh.rota_destino,
+          lh.km_total,
+          lh.telefone_motorista,
+          lh.horario_abastecimento,
+          COALESCE(lh.valor_calculado, 0) as valor_calculado,
+          CASE 
+            WHEN lh.valor_calculado IS NOT NULL AND lh.valor_calculado > 0 THEN
+              JSON_BUILD_OBJECT(
+                'km_rota', COALESCE(lh.km_total, 0),
+                'km_acrescimo', 30,
+                'km_total', COALESCE(lh.km_total, 0) + 30,
+                'consumo_medio', 8,
+                'litros_necessarios', ROUND((COALESCE(lh.km_total, 0) + 30) / 8.0, 2),
+                'valor_por_litro', 6.50,
+                'valor_total', lh.valor_calculado
+              )
+            ELSE NULL
+          END as calculo_detalhes,
+          -- Incluir cartão combustível do veículo para Line Hall também
+          COALESCE(lhv.cartao_combustivel, v.cartao_abastecimento, lh.numero_cartao, '') as cartao_combustivel,
+          -- Campos de validação da planilha (N/A para Line Hall Shopee direto)
+          NULL::varchar as planilha_origem,
+          NULL::varchar as planilha_destino,
+          NULL::varchar as planilha_data,
+          NULL::timestamp as conferido_em,
+          NULL::boolean as rota_validada,
+          NULL::text as validacao_motivo
+        FROM linehall_fuel_card_requests lh
+        LEFT JOIN linehall_vehicles lhv ON lh.veiculo_placa = lhv.placa
+        LEFT JOIN veiculos v ON lh.veiculo_placa = v.placa
+
+        UNION ALL
+
+        -- Adicionar solicitações das bases (nova tabela fuel_card_requests)
+        SELECT 
+          fcr.id::text as id,
+          COALESCE(fcr.plate, 'SEM-PLACA') as placa,
+          COALESCE(fcr.odometer, 0) as km,
+          COALESCE(fcr.card_type, 'Padrão') as tipo_cartao,
+          COALESCE(fcr.provider, 'Padrão') as provedor_cartao,
+          COALESCE(fcr.card_number, '') as numero_cartao,
+          COALESCE(fcr.driver_name, 'Motorista não informado') as motorista,
+          COALESCE(fcr.requested_by, 'Nome não informado') as solicitante,
+          COALESCE(fcr.driver_phone, '') as telefone_celular,
+          COALESCE(fcr.reason, 'Sem observações') as observacoes,
+          fcr.status,
+          fcr.requested_at as data_solicitacao,
+          fcr.approved_by as atendido_por,
+          fcr.approved_at as data_atendimento,
+          fcr.created_at,
+          fcr.updated_at,
+          COALESCE(fcr.amount::numeric, 0) as valor_solicitado,
+          COALESCE(b.name, 'Base Principal') as base,
+          '' as id_rota,
+          'base_system' as origem_tipo,
+          fcr.fuel_type as tipo_combustivel,
+          fcr.valor_litro as valor_litro,
+          fcr.litros_solicitados as litros_solicitados,
+          NULL as data_uso,
+          NULL as turno,
+          -- Campos específicos do Line Hall (NULL para solicitações das bases)
+          NULL::varchar as veiculo_modelo,
+          NULL::varchar as rota_origem,
+          NULL::varchar as rota_destino,
+          COALESCE(fcr.odometer, 0) as km_total,
+          fcr.driver_phone as telefone_motorista,
+          fcr.fuel_time as horario_abastecimento,
+          COALESCE(fcr.amount::numeric, 0) as valor_calculado,
+          NULL::json as calculo_detalhes,
+          -- Incluir cartão combustível do veículo
+          COALESCE(v.cartao_abastecimento, fcr.card_number, '') as cartao_combustivel,
+          -- Campos de validação da planilha (N/A para base_system)
+          NULL::varchar as planilha_origem,
+          NULL::varchar as planilha_destino,
+          NULL::varchar as planilha_data,
+          NULL::timestamp as conferido_em,
+          NULL::boolean as rota_validada,
+          NULL::text as validacao_motivo
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        LEFT JOIN veiculos v ON fcr.plate = v.placa
+        ${!isAdmin && !isGestorGrupoPereira && userBaseId ? `WHERE fcr.base_id = ${userBaseId}` : 
+          isGestorGrupoPereira ? `WHERE fcr.base_id IN (SELECT id FROM bases WHERE name ILIKE '%GP0%' OR name ILIKE '%PEREIRA%')` : ''}
+      ) unified_requests
+      ORDER BY 
+        CASE 
+          WHEN status IN ('pendente', 'pending') THEN 1
+          WHEN status IN ('em_analise', 'aprovada', 'approved') THEN 2
+          ELSE 3
+        END,
+        data_solicitacao ASC NULLS LAST
+    `;
+    
+    const result = await pool.query(query);
+    
+    // OTIMIZAÇÃO: Salvar no cache
+    cacheData = {
+      data: result.rows,
+      timestamp: now
+    };
+    
+    // Normalizar os status para consistência
+    const normalizedData = result.rows.map(row => ({
+      ...row,
+      status: normalizeStatus(row.status, row.origem_tipo)
+    }));
+    
+    // Debug: verificar se dados estão sendo retornados
+    console.log(`[FUEL-CARD-API] Total de solicitações retornadas: ${normalizedData.length}`);
+    console.log(`[FUEL-CARD-API] Filtros aplicados:`, { 
+      isAdmin, 
+      userBaseId, 
+      userBaseName, 
+      whereConditions: whereConditions || 'Nenhum (admin)' 
+    });
+    
+    // Verificar se há dados para a base específica
+    if (!isAdmin && !isGestorCombustivel && normalizedData.length === 0) {
+      console.log(`[FUEL-CARD-API] ATENÇÃO: Nenhuma solicitação encontrada para base ${userBaseName} (ID: ${userBaseId})`);
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: normalizedData,
+      count: normalizedData.length,
+      user_info: {
+        is_admin: isAdmin,
+        base_id: userBaseId,
+        base_name: userBaseName
+      }
+    });
+  } catch (error: any) {
+    console.error('Erro ao buscar solicitações de cartão:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar solicitações',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Normaliza o status das solicitações para exibição consistente
+ */
+function normalizeStatus(status: string, origem: string): string {
+  if (origem === 'line_hall') {
+    switch (status) {
+      case 'pendente':
+      case 'pending':
+        return 'Pendente';
+      case 'aprovada':
+      case 'approved':
+        return 'Recarga Efetuada';
+      case 'rejeitada':
+      case 'rejected':
+        return 'Negado';
+      default:
+        return status;
+    }
+  } else if (origem === 'base_system') {
+    // Status das bases (nova tabela fuel_card_requests)
+    switch (status) {
+      case 'pendente':
+        return 'Pendente';
+      case 'aprovado':
+      case 'approved':
+        return 'Recarga Efetuada';
+      case 'rejeitado':
+      case 'rejected':
+        return 'Negado';
+      default:
+        return status;
+    }
+  } else {
+    // Status tradicionais
+    switch (status) {
+      case 'pendente':
+        return 'Pendente';
+      case 'em_analise':
+        return 'Em Análise';
+      case 'atendido':
+        return 'Recarga Efetuada';
+      case 'rejeitado':
+        return 'Negado';
+      default:
+        return status;
+    }
+  }
+}
+
+/**
+ * Cria uma nova solicitação de cartão de combustível
+ */
+export async function createFuelCardSolicitation(req: Request, res: Response) {
+  const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  console.log(`🚀 [BOLSÃO-BACKEND-${requestId}] Nova solicitação recebida`);
+  
+  try {
+    console.log(`📦 [BOLSÃO-BACKEND-${requestId}] Corpo da requisição:`, JSON.stringify(req.body, null, 2));
+    
+    let { 
+      placa, 
+      km, 
+      tipo_cartao, 
+      provedor_cartao, 
+      numero_cartao, 
+      motorista, 
+      observacoes,
+      valor_solicitado,
+      valor_litro,
+      tipo_combustivel,
+      litros_solicitados,
+      base,
+      id_rota,
+      origem_tipo,
+      data_uso,
+      turno
+    } = req.body;
+    
+    // CORREÇÃO DE TIMEZONE: Converter data_uso para formato brasileiro
+    let data_uso_corrigida = null;
+    if (data_uso) {
+      // Se a data vier como string YYYY-MM-DD, garantir que seja interpretada no timezone do Brasil
+      const dataStr = data_uso.includes('T') ? data_uso.split('T')[0] : data_uso;
+      data_uso_corrigida = dataStr; // Salvar apenas a data, sem hora
+      console.log('[FUEL-CARD] Data original:', data_uso, '→ Data corrigida:', data_uso_corrigida);
+    }
+    
+    // Debug completo - verificando valores antes do processamento
+    console.log("Valor solicitado antes do processamento:", {
+      valor: valor_solicitado,
+      tipo: typeof valor_solicitado,
+      isNull: valor_solicitado === null,
+      isUndefined: valor_solicitado === undefined
+    });
+    
+    // Valor padrão se for null ou undefined
+    if (valor_solicitado === null || valor_solicitado === undefined) {
+      valor_solicitado = 0;
+      console.log("Aplicando valor padrão para valor_solicitado:", valor_solicitado);
+    }
+    // Assegurar que seja um número quando for string
+    else if (typeof valor_solicitado === 'string') {
+      const valorParseado = parseFloat(valor_solicitado);
+      console.log("Convertendo string para número:", valor_solicitado, "->", valorParseado);
+      valor_solicitado = !isNaN(valorParseado) ? valorParseado : 0;
+    }
+    
+    // Log para depuração
+    console.log("Dados processados na API:", {
+      placa, 
+      km, 
+      tipo_cartao, 
+      provedor_cartao, 
+      numero_cartao, 
+      motorista, 
+      observacoes,
+      valor_solicitado // Já convertido para número
+    });
+    
+    // Validações básicas
+    if (!placa) {
+      return res.status(400).json({
+        success: false,
+        message: 'A placa do veículo é obrigatória'
+      });
+    }
+    
+    if (!km) {
+      return res.status(400).json({
+        success: false,
+        message: 'A quilometragem (KM) é obrigatória'
+      });
+    }
+    
+    if (!motorista) {
+      return res.status(400).json({
+        success: false,
+        message: 'O nome do motorista é obrigatório'
+      });
+    }
+    
+    if (tipo_cartao === 'numero' && !numero_cartao) {
+      return res.status(400).json({
+        success: false,
+        message: `Placa ${placa}: O cartão é diferente do veículo, falta a placa do cartão que receberá o saldo!`
+      });
+    }
+    
+    if (!valor_solicitado || valor_solicitado <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'O valor solicitado deve ser maior que zero'
+      });
+    }
+    
+    // CORREÇÃO: data_uso e turno são obrigatórios apenas para o sistema principal (bolsão)
+    // Bases (origem_tipo = 'base_system') podem criar solicitações sem esses campos
+    const isBaseSystem = origem_tipo === 'base_system';
+    
+    if (!isBaseSystem && !data_uso) {
+      return res.status(400).json({
+        success: false,
+        message: 'A data de uso é obrigatória'
+      });
+    }
+    
+    if (!isBaseSystem && (!turno || (turno !== 'AM' && turno !== 'PM'))) {
+      return res.status(400).json({
+        success: false,
+        message: 'O turno (AM ou PM) é obrigatório'
+      });
+    }
+    
+    // VALIDAÇÃO COM PLANILHA GOOGLE SHEETS
+    // Apenas para solicitações do Line Haul (origem_tipo = 'line_hall')
+    let rotaOrigem = '';
+    let rotaDestino = '';
+    
+    // REGRA DE HORÁRIO: Calcular data de consulta com base no horário de abastecimento
+    // Até 16h → hoje | Após 18h → D+1 | 16:01-17:59 → hoje
+    const horarioAbastecimentoReq = req.body.horario_abastecimento;
+    if (origem_tipo === 'line_hall' && horarioAbastecimentoReq) {
+      const dataConsultaPlanilha = calcularDataConsulta(horarioAbastecimentoReq, data_uso_corrigida || undefined);
+      if (dataConsultaPlanilha !== data_uso_corrigida) {
+        console.log(`[FUEL-CARD] Regra de horário aplicada: data_uso original=${data_uso_corrigida} → data_consulta=${dataConsultaPlanilha} (horário=${horarioAbastecimentoReq})`);
+        data_uso_corrigida = dataConsultaPlanilha;
+      }
+    }
+    
+    if (origem_tipo === 'line_hall' && data_uso_corrigida) {
+      console.log(`[GOOGLE_SHEETS] Iniciando validação para Line Haul - Placa: ${placa}, Data: ${data_uso_corrigida}`);
+      
+      const validacaoGoogle = await validateWithGoogleSheet(placa, data_uso_corrigida);
+      
+      if (!validacaoGoogle.liberado) {
+        console.log(`[GOOGLE_SHEETS] ❌ Abastecimento NEGADO: ${validacaoGoogle.motivo}`);
+        return res.status(400).json({
+          success: false,
+          message: `Abastecimento não autorizado: ${validacaoGoogle.motivo}`,
+          validacao_google: false
+        });
+      }
+      
+      // Se encontrou, pegar origem e destino da planilha
+      rotaOrigem = validacaoGoogle.origem || '';
+      rotaDestino = validacaoGoogle.destino || '';
+      console.log(`[GOOGLE_SHEETS] ✅ Abastecimento LIBERADO - Origem: ${rotaOrigem}, Destino: ${rotaDestino}`);
+    }
+    
+    const query = `
+      INSERT INTO solicitacoes_fuel_card
+        (placa, km, km_veiculo, tipo_cartao, provedor_cartao, numero_cartao, motorista, solicitante, telefone_celular, observacoes, status, data_solicitacao, valor_solicitado, valor_litro, litros_solicitados, tipo_combustivel, base, id_rota, origem_tipo, data_uso, turno, rota_origem, rota_destino)
+      VALUES
+        ($1, $2, $2, $3, $4, $5, $6, $7, $8, $9, 'pendente', NOW(), $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      RETURNING *
+    `;
+    
+    // Log do corpo completo da requisição para fins de depuração
+    console.log("Corpo da requisição:", JSON.stringify(req.body, null, 2));
+    
+    // VERIFICAÇÃO CRÍTICA DE OBSERVAÇÕES
+    console.log("🔍 [DEBUG-OBSERVAÇÕES] Valor recebido:", {
+      observacoes,
+      tipo: typeof observacoes,
+      comprimento: observacoes?.length,
+      vazio: observacoes === '',
+      null: observacoes === null,
+      undefined: observacoes === undefined
+    });
+    
+    // Usar o nome do usuário logado quando não há solicitante informado
+    const user = req.user as any;
+    const solicitanteName = req.body.solicitante || req.body.nomeSolicitante || req.body.requesterName || 
+                           (user?.name ? user.name.trim() : 'Nome não informado');
+    
+    console.log("Nome do solicitante identificado:", solicitanteName);
+    
+    // Usando o valor real enviado pelo usuário
+    const valorFinal = valor_solicitado;
+    
+    console.log("Valor solicitado final que será inserido no banco:", valorFinal);
+    console.log("📊 [VALOR_LITRO] Valor do litro recebido:", valor_litro, "| Tipo:", typeof valor_litro);
+    
+    // Normalizar nome da base para formato canônico
+    const baseNormalizada = base ? normalizeBaseName(base) : null;
+    console.log("Base normalizada:", { original: base, normalizada: baseNormalizada });
+    
+    const values = [
+      placa,
+      km,
+      tipo_cartao,
+      provedor_cartao,
+      numero_cartao || null,
+      motorista,
+      solicitanteName,
+      req.body.telefone_celular || null,
+      observacoes || null,
+      valorFinal, // Valor garantido como número fixo
+      valor_litro || null, // Valor do litro do combustível
+      litros_solicitados || null, // Quantidade de litros calculada
+      tipo_combustivel || 'diesel',
+      baseNormalizada, // Base normalizada para consistência
+      id_rota || null,
+      origem_tipo || 'tradicional', // Padrão para 'tradicional' se não informado
+      data_uso_corrigida, // Data prevista de uso do saldo (corrigida para timezone BR)
+      turno || null, // Turno (AM/PM)
+      rotaOrigem || null, // Origem da rota (da planilha Google)
+      rotaDestino || null // Destino da rota (da planilha Google)
+    ];
+    
+    console.log(`🔄 [BOLSÃO-BACKEND-${requestId}] Executando INSERT no banco de dados...`);
+    const result = await pool.query(query, values);
+    
+    const createdId = result.rows[0]?.id;
+    console.log(`✅ [BOLSÃO-BACKEND-${requestId}] Solicitação inserida com SUCESSO! ID: ${createdId}, Placa: ${placa}, Valor: ${valorFinal}`);
+    console.log(`📊 [BOLSÃO-BACKEND-${requestId}] Registro completo:`, result.rows[0]);
+    
+    return res.status(201).json({
+      success: true,
+      message: 'Solicitação criada com sucesso',
+      data: result.rows[0],
+      id: createdId
+    });
+  } catch (error: any) {
+    console.error(`❌ [BOLSÃO-BACKEND-${requestId}] ERRO ao criar solicitação:`, {
+      mensagem: error.message,
+      stack: error.stack,
+      placa: req.body.placa,
+      valor: req.body.valor_solicitado
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao criar solicitação',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Atualiza o status de uma solicitação de cartão de combustível
+ */
+export async function updateFuelCardSolicitationStatus(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { status, origem_tipo, motivo_negacao } = req.body;
+    const user = req.user as any;
+    
+    console.log(`🔄 [UPDATE-STATUS] ID: ${id}, Status: ${status}, Origem: ${origem_tipo}, User: ${user?.name}`);
+    
+    if (!id || !status) {
+      console.error('❌ [UPDATE-STATUS] ID ou status não fornecido');
+      return res.status(400).json({
+        success: false,
+        message: 'ID e status são obrigatórios'
+      });
+    }
+    
+    // Validar motivo de negação se o status for "Negado"
+    if (status === 'Negado' && !motivo_negacao?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Motivo da negação é obrigatório'
+      });
+    }
+    
+    // IMPORTANTE: Todas as solicitações com origem_tipo = 'line_hall' estão em solicitacoes_fuel_card
+    // A tabela linehall_fuel_card_requests é legada e não deve ser usada
+    let isGPBase = origem_tipo === 'base_system';
+    let isTradicional = !isGPBase; // Line Hall está em solicitacoes_fuel_card com origem_tipo = 'line_hall'
+    
+    if (!isGPBase) {
+      // Verificar se existe na tabela principal (inclui Line Hall via origem_tipo)
+      const checkTradicionalQuery = `SELECT * FROM solicitacoes_fuel_card WHERE id = $1`;
+      const checkTradicionalResult = await pool.query(checkTradicionalQuery, [id]);
+      
+      if (checkTradicionalResult.rowCount === 0) {
+        // Verificar se existe na tabela GP Base (fuel_card_requests)
+        const checkGPBaseQuery = `SELECT * FROM fuel_card_requests WHERE id = $1`;
+        const checkGPBaseResult = await pool.query(checkGPBaseQuery, [id]);
+        
+        if (checkGPBaseResult.rowCount === 0) {
+          return res.status(404).json({
+            success: false,
+            message: 'Solicitação não encontrada'
+          });
+        }
+        
+        isGPBase = true;
+        isTradicional = false;
+      }
+    }
+    
+    let query;
+    let values;
+    let tableName;
+    let statusField;
+    
+    console.log(`📊 [UPDATE-STATUS] Tipo detectado - isTradicional: ${isTradicional}, isGPBase: ${isGPBase}, origem_tipo: ${origem_tipo}`);
+    
+    if (isGPBase) {
+      // Lógica para solicitações GP Base (fuel_card_requests)
+      tableName = 'fuel_card_requests';
+      console.log(`🔷 [UPDATE-STATUS] Usando tabela GP Base`);
+      
+      // Mapear status da interface para o banco GP Base
+      let dbStatus;
+      switch (status) {
+        case 'Recarga Efetuada':
+          dbStatus = 'aprovado';
+          break;
+        case 'Negado':
+          dbStatus = 'rejeitado';
+          break;
+        case 'Em Análise':
+          dbStatus = 'em_analise';
+          break;
+        case 'Pendente':
+          dbStatus = 'pendente';
+          break;
+        default:
+          dbStatus = status; // Para compatibilidade com status já no formato do banco
+          break;
+      }
+      
+      if (dbStatus === 'aprovado') {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1, 
+            approved_by = $2, 
+            approved_at = NOW(),
+            updated_at = NOW()
+          WHERE id = $3
+          RETURNING *
+        `;
+        values = [dbStatus, user?.name || 'Sistema', id];
+      } else if (dbStatus === 'rejeitado') {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1,
+            rejected_by = $2,
+            rejected_at = NOW(),
+            rejection_reason = $3,
+            updated_at = NOW()
+          WHERE id = $4
+          RETURNING *
+        `;
+        values = [dbStatus, user?.name || 'Sistema', motivo_negacao || req.body.observacoes || 'Rejeitado pela gestão', id];
+      } else {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1,
+            updated_at = NOW()
+          WHERE id = $2
+          RETURNING *
+        `;
+        values = [dbStatus, id];
+      }
+    } else {
+      // Lógica para solicitações tradicionais
+      tableName = 'solicitacoes_fuel_card';
+      console.log(`🔵 [UPDATE-STATUS] Usando tabela tradicional`);
+      
+      // Mapear status da interface para o banco
+      let dbStatus;
+      switch (status) {
+        case 'Recarga Efetuada':
+          dbStatus = 'atendido';
+          console.log(`✅ [UPDATE-STATUS] Status mapeado: ${status} → ${dbStatus}`);
+          break;
+        case 'Negado':
+          dbStatus = 'rejeitado';
+          break;
+        case 'Em Análise':
+          dbStatus = 'em_analise';
+          break;
+        case 'Pendente':
+          dbStatus = 'pendente';
+          break;
+        default:
+          dbStatus = status; // Para compatibilidade com status já no formato do banco
+          break;
+      }
+      
+      if (dbStatus === 'atendido') {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1, 
+            atendido_por = $2, 
+            data_atendimento = NOW(),
+            updated_at = NOW()
+          WHERE id = $3
+          RETURNING *
+        `;
+        values = [dbStatus, user?.name || 'Sistema', id];
+      } else if (dbStatus === 'rejeitado') {
+        // Para status negado, salvar motivo de negação
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1,
+            atendido_por = $2,
+            motivo_negacao = $3,
+            updated_at = NOW()
+          WHERE id = $4
+          RETURNING *
+        `;
+        values = [dbStatus, user?.name || 'Sistema', motivo_negacao || 'Não informado', id];
+      } else {
+        query = `
+          UPDATE ${tableName} 
+          SET 
+            status = $1,
+            atendido_por = $2,
+            updated_at = NOW()
+          WHERE id = $3
+          RETURNING *
+        `;
+        values = [dbStatus, user?.name || 'Sistema', id];
+      }
+    }
+    
+    console.log(`💾 [UPDATE-STATUS] Executando query na tabela: ${tableName}`);
+    console.log(`📝 [UPDATE-STATUS] Valores: ${JSON.stringify(values)}`);
+    
+    const result = await pool.query(query, values);
+    
+    console.log(`✅ [UPDATE-STATUS] UPDATE executado com sucesso! Linhas afetadas: ${result.rowCount}`);
+    console.log(`📊 [UPDATE-STATUS] Dados atualizados:`, result.rows[0]);
+    
+    // NOTIFICAÇÃO AUTOMÁTICA DESATIVADA - Usar apenas encaminhamento manual via WhatsApp
+    // const updatedRecord = result.rows[0];
+    // const shouldNotify = (status === 'Recarga Efetuada' || status === 'aprovado' || status === 'Negado' || status === 'rejeitado');
+    // 
+    // if (shouldNotify && isZAPIConfigured()) {
+    //   const telefone = updatedRecord.telefone_celular || updatedRecord.telefone_motorista || updatedRecord.phone;
+    //   
+    //   if (telefone) {
+    //     const isAprovado = status === 'Recarga Efetuada' || status === 'aprovado';
+    //     
+    //     console.log(`📱 [WHATSAPP-NOTIF] Enviando notificação para ${telefone} - Status: ${isAprovado ? 'aprovado' : 'negado'}`);
+    //     
+    //     try {
+    //       const notificationResult = await sendFuelCardRechargeNotificationZAPI({
+    //         phone: telefone,
+    //         placa: updatedRecord.placa || updatedRecord.veiculo_placa || 'N/A',
+    //         motorista: updatedRecord.motorista || 'Motorista',
+    //         valorSolicitado: parseFloat(updatedRecord.valor_solicitado) || 0,
+    //         operador: user?.name || 'Sistema',
+    //         status: isAprovado ? 'aprovado' : 'negado',
+    //         provedor: updatedRecord.provedor_cartao || undefined,
+    //         dataUso: updatedRecord.data_uso || undefined,
+    //         observacoes: updatedRecord.motivo_negacao || updatedRecord.rejection_reason || undefined
+    //       });
+    //       
+    //       if (notificationResult.success) {
+    //         console.log(`✅ [WHATSAPP-NOTIF] Notificação enviada com sucesso! MessageId: ${notificationResult.messageId}`);
+    //       } else {
+    //         console.error(`❌ [WHATSAPP-NOTIF] Falha ao enviar: ${notificationResult.error}`);
+    //       }
+    //     } catch (whatsappError: any) {
+    //       console.error(`❌ [WHATSAPP-NOTIF] Erro ao enviar notificação:`, whatsappError.message);
+    //     }
+    //   } else {
+    //     console.log(`⚠️ [WHATSAPP-NOTIF] Sem telefone para notificação`);
+    //   }
+    // }
+    console.log(`ℹ️ [WHATSAPP-NOTIF] Notificação automática desativada - usar encaminhamento manual`)
+    
+    return res.status(200).json({
+      success: true,
+      message: `Status atualizado para ${status}`,
+      data: result.rows[0],
+      isTradicional,
+      isGPBase
+    });
+  } catch (error: any) {
+    console.error('❌ [UPDATE-STATUS] Erro ao atualizar status da solicitação:', error);
+    console.error('❌ [UPDATE-STATUS] Stack:', error.stack);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao atualizar status',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Mapeia status da interface principal para Line Hall
+ */
+function mapStatusToLineHall(status: string): string {
+  switch (status) {
+    case 'atendido':
+    case 'Recarga Efetuada':
+      return 'aprovada';
+    case 'rejeitado':
+    case 'Negado':
+      return 'rejeitada';
+    case 'em_analise':
+    case 'Em Análise':
+      return 'pendente';
+    case 'pendente':
+    case 'Pendente':
+      return 'pendente';
+    default:
+      return 'pendente';
+  }
+}
+
+/**
+ * Obtém uma solicitação de cartão de combustível pelo ID
+ */
+export async function getFuelCardSolicitationById(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    const query = `SELECT * FROM solicitacoes_fuel_card WHERE id = $1`;
+    const result = await pool.query(query, [id]);
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Solicitação não encontrada'
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error: any) {
+    console.error('Erro ao buscar solicitação:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar solicitação',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Cria a tabela solicitacoes_fuel_card se não existir
+ */
+export async function setupFuelCardTable() {
+  try {
+    console.log("Verificando se a tabela solicitacoes_fuel_card existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'solicitacoes_fuel_card'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela solicitacoes_fuel_card já existe, verificando estrutura...");
+      
+      // Verificar se todas as colunas necessárias existem, adicionando se necessário
+      const columns = [
+        { name: 'placa', type: 'VARCHAR(20)' },
+        { name: 'km', type: 'INTEGER' },
+        { name: 'tipo_cartao', type: 'VARCHAR(50)' },
+        { name: 'provedor_cartao', type: 'VARCHAR(50)' },
+        { name: 'numero_cartao', type: 'VARCHAR(100)' },
+        { name: 'motorista', type: 'VARCHAR(100)' },
+        { name: 'observacoes', type: 'TEXT' },
+        { name: 'status', type: 'VARCHAR(20)' },
+        { name: 'data_solicitacao', type: 'TIMESTAMP' },
+        { name: 'atendido_por', type: 'VARCHAR(100)' },
+        { name: 'data_atendimento', type: 'TIMESTAMP' },
+        { name: 'updated_at', type: 'TIMESTAMP' }
+      ];
+      
+      for (const column of columns) {
+        const checkColumnQuery = `
+          SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_name = 'solicitacoes_fuel_card' AND column_name = '${column.name}'
+          );
+        `;
+        
+        const checkColumnResult = await pool.query(checkColumnQuery);
+        const columnExists = checkColumnResult.rows[0].exists;
+        
+        if (!columnExists) {
+          console.log(`Adicionando coluna ${column.name} à tabela solicitacoes_fuel_card...`);
+          
+          const addColumnQuery = `
+            ALTER TABLE solicitacoes_fuel_card 
+            ADD COLUMN ${column.name} ${column.type}
+          `;
+          
+          await pool.query(addColumnQuery);
+        }
+      }
+      
+      return;
+    }
+    
+    console.log("Criando tabela solicitacoes_fuel_card...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE solicitacoes_fuel_card (
+        id SERIAL PRIMARY KEY,
+        placa VARCHAR(20) NOT NULL,
+        km INTEGER NOT NULL,
+        tipo_cartao VARCHAR(50) NOT NULL,
+        provedor_cartao VARCHAR(50) NOT NULL,
+        numero_cartao VARCHAR(100),
+        motorista VARCHAR(100) NOT NULL,
+        observacoes TEXT,
+        status VARCHAR(20) DEFAULT 'pendente',
+        data_solicitacao TIMESTAMP DEFAULT NOW(),
+        atendido_por VARCHAR(100),
+        data_atendimento TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela solicitacoes_fuel_card criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao verificar/criar tabela solicitacoes_fuel_card:", error);
+  }
+}
+
+/**
+ * Cria uma solicitação específica do Line Hall Shopee com cálculo automático
+ */
+export async function createLineHallFuelCardRequest(req: Request, res: Response) {
+  try {
+    const {
+      motorista_id,
+      motorista_nome,
+      motorista_cpf,
+      veiculo_placa,
+      veiculo_modelo,
+      rota_origem,
+      rota_destino,
+      data_solicitacao,
+      horario_solicitacao,
+      km_total,
+      horario_abastecimento,
+      telefone_motorista,
+      operacao_id,
+      numero_cartao,
+      bandeira_cartao,
+      incluir_arla
+    } = req.body;
+
+    if (!motorista_nome || !veiculo_placa || !km_total) {
+      return res.status(400).json({
+        success: false,
+        message: 'Motorista, placa e KM total são obrigatórios'
+      });
+    }
+
+    // Buscar consumo médio do veículo nas diferentes tabelas
+    let consumoMedio = 2.5; // Valor padrão para cavalos mecânicos
+    
+    // Primeiro tenta na tabela veiculos
+    const vehicleQuery1 = `
+      SELECT media_consumo_combustivel, modelo 
+      FROM veiculos 
+      WHERE placa = $1
+    `;
+    const vehicleResult1 = await pool.query(vehicleQuery1, [veiculo_placa]);
+    
+    if (vehicleResult1.rows.length > 0) {
+      if (vehicleResult1.rows[0].media_consumo_combustivel) {
+        consumoMedio = parseFloat(vehicleResult1.rows[0].media_consumo_combustivel);
+      } else {
+        // Determinar consumo por modelo se não estiver definido
+        const modelo = vehicleResult1.rows[0].modelo?.toUpperCase() || '';
+        consumoMedio = getConsumoByModel(modelo);
+      }
+    } else {
+      // Tenta na tabela vehicles
+      const vehicleQuery2 = `
+        SELECT consumo_medio_km_l, model 
+        FROM vehicles 
+        WHERE plate = $1
+      `;
+      const vehicleResult2 = await pool.query(vehicleQuery2, [veiculo_placa]);
+      
+      if (vehicleResult2.rows.length > 0 && vehicleResult2.rows[0].consumo_medio_km_l) {
+        consumoMedio = parseFloat(vehicleResult2.rows[0].consumo_medio_km_l);
+      } else if (vehicleResult2.rows.length > 0) {
+        const modelo = vehicleResult2.rows[0].model?.toUpperCase() || '';
+        consumoMedio = getConsumoByModel(modelo);
+      } else {
+        // Por último, usa o modelo informado na solicitação
+        const modelo = veiculo_modelo?.toUpperCase() || '';
+        consumoMedio = getConsumoByModel(modelo);
+      }
+    }
+
+    // Gerar ID único para o motorista se não fornecido
+    const motoristaIdGerado = motorista_id || Math.floor(Math.random() * 1000000);
+    const dataAtual = data_solicitacao || new Date().toISOString().split('T')[0];
+    const horarioAtual = horario_solicitacao || new Date().toTimeString().split(' ')[0];
+
+    // Calcular valor segundo a regra:
+    // (KM da rota + 30km) ÷ Consumo médio × R$ 6,50
+    const kmComAcrescimo = parseInt(km_total) + 30;
+    const litrosNecessarios = kmComAcrescimo / consumoMedio;
+    const valorCalculado = litrosNecessarios * 6.50;
+
+    // Inserir na tabela Line Hall (usando valores padrão para data/hora)
+    // IMPORTANTE: operacao_id vincula a solicitação a uma operação específica
+    // Isso permite que a mesma rota seja repetida em dias diferentes sem conflito
+    const query = `
+      INSERT INTO linehall_fuel_card_requests (
+        motorista_id, motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
+        rota_origem, rota_destino, km_total, horario_abastecimento, 
+        telefone_motorista, valor_calculado, status, operacao_id,
+        numero_cartao, bandeira_cartao, incluir_arla
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pendente', $12, $13, $14, $15)
+      RETURNING *
+    `;
+
+    const values = [
+      motorista_id || null,
+      motorista_nome, motorista_cpf, veiculo_placa, veiculo_modelo,
+      rota_origem, rota_destino, km_total, horario_abastecimento, 
+      telefone_motorista, parseFloat(valorCalculado.toFixed(2)),
+      operacao_id || null,
+      numero_cartao || null,
+      bandeira_cartao || null,
+      incluir_arla || false
+    ];
+
+    const result = await pool.query(query, values);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Solicitação Line Hall criada com sucesso',
+      data: {
+        ...result.rows[0],
+        calculo_detalhes: {
+          km_rota: km_total,
+          km_acrescimo: 30,
+          km_total: kmComAcrescimo,
+          consumo_medio: consumoMedio,
+          litros_necessarios: litrosNecessarios.toFixed(2),
+          valor_por_litro: 6.50,
+          valor_total: valorCalculado.toFixed(2)
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Erro ao criar solicitação Line Hall:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao criar solicitação Line Hall',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Exporta solicitações de cartão de combustível para Excel
+ */
+export async function exportFuelCardSolicitationsToExcel(req: Request, res: Response) {
+  try {
+    // Obter filtros de query params
+    const { data_inicio, data_fim, base } = req.query;
+    
+    console.log('[EXPORT-EXCEL] Iniciando exportação com filtros:', { data_inicio, data_fim, base });
+    
+    // Construir cláusula WHERE para datas
+    let dateFilter = '';
+    const queryParams: any[] = [];
+    let paramIndex = 1;
+    
+    if (data_inicio && data_fim) {
+      dateFilter = ` WHERE data_uso IS NOT NULL AND data_uso >= $${paramIndex}::date AND data_uso <= $${paramIndex + 1}::date`;
+      queryParams.push(data_inicio, data_fim);
+      paramIndex += 2;
+    }
+    
+    // Filtro de base
+    let baseFilter = '';
+    if (base && base !== 'all') {
+      if (dateFilter) {
+        baseFilter = ` AND LOWER(COALESCE(base, '')) LIKE LOWER($${paramIndex})`;
+      } else {
+        baseFilter = ` WHERE LOWER(COALESCE(base, '')) LIKE LOWER($${paramIndex})`;
+      }
+      queryParams.push(`%${base}%`);
+      paramIndex++;
+    }
+    
+    console.log('[EXPORT-EXCEL] Filtros aplicados:', { dateFilter, baseFilter, queryParams });
+    
+    // Buscar dados de cada tabela separadamente e depois unir
+    const allSolicitations = [];
+    
+    // 1. Tabela tradicional (solicitacoes_fuel_card)
+    try {
+      const traditionalQuery = `
+        SELECT 
+          id::text as id,
+          placa,
+          motorista as nome_motorista,
+          COALESCE(solicitante, '') as nome_solicitante,
+          COALESCE(telefone_celular, '') as telefone_solicitante,
+          COALESCE(valor_solicitado::text, '0') as valor_solicitado,
+          COALESCE(valor_litro::text, '0') as valor_litro,
+          COALESCE(litros_solicitados::text, '0') as litros_solicitados,
+          COALESCE(km, 0) as km,
+          tipo_cartao,
+          numero_cartao,
+          provedor_cartao,
+          status,
+          data_solicitacao,
+          atendido_por,
+          data_atendimento,
+          observacoes,
+          'sistema_principal' as origem_tipo,
+          '' as veiculo_modelo,
+          '' as rota_origem,
+          '' as rota_destino,
+          '' as telefone_motorista,
+          '' as horario_abastecimento,
+          COALESCE(base, 'Base Principal') as base
+        FROM solicitacoes_fuel_card
+        ${dateFilter}${baseFilter}
+        ORDER BY data_uso DESC
+      `;
+      
+      const traditionalResult = await pool.query(traditionalQuery, queryParams);
+      allSolicitations.push(...traditionalResult.rows);
+      console.log('[EXPORT-EXCEL] Registros tabela tradicional:', traditionalResult.rows.length);
+    } catch (err) {
+      console.log('Tabela tradicional não encontrada ou erro:', err);
+    }
+    
+    // 2. Tabela Line Hall (linehall_fuel_card_requests)
+    try {
+      let lineHallDateFilter = '';
+      const lineHallParams: any[] = [];
+      let lhParamIndex = 1;
+      
+      if (data_inicio && data_fim) {
+        lineHallDateFilter = ` WHERE created_at >= $${lhParamIndex}::date AND created_at < ($${lhParamIndex + 1}::date + interval '1 day')`;
+        lineHallParams.push(data_inicio, data_fim);
+        lhParamIndex += 2;
+      }
+      
+      const lineHallQuery = `
+        SELECT 
+          id::text as id,
+          veiculo_placa as placa,
+          COALESCE(motorista_nome, '') as nome_motorista,
+          COALESCE(motorista_nome, '') as nome_solicitante,
+          COALESCE(valor_calculado::text, '0') as valor_solicitado,
+          '0' as valor_litro,
+          '0' as litros_solicitados,
+          COALESCE(km_total, 0) as km,
+          'vinculado' as tipo_cartao,
+          veiculo_placa as numero_cartao,
+          'Alelo' as provedor_cartao,
+          status,
+          created_at as data_solicitacao,
+          '' as atendido_por,
+          updated_at as data_atendimento,
+          '' as observacoes,
+          'line_hall' as origem_tipo,
+          COALESCE(veiculo_modelo, '') as veiculo_modelo,
+          COALESCE(rota_origem, '') as rota_origem,
+          COALESCE(rota_destino, '') as rota_destino,
+          COALESCE(telefone_motorista, '') as telefone_motorista,
+          COALESCE(horario_abastecimento, '') as horario_abastecimento,
+          'Line Hall Shopee' as base
+        FROM linehall_fuel_card_requests
+        ${lineHallDateFilter}
+        ORDER BY created_at DESC
+      `;
+      
+      const lineHallResult = await pool.query(lineHallQuery, lineHallParams);
+      allSolicitations.push(...lineHallResult.rows);
+      console.log('[EXPORT-EXCEL] Registros tabela Line Hall:', lineHallResult.rows.length);
+    } catch (err) {
+      console.log('Tabela Line Hall não encontrada ou erro:', err);
+    }
+    
+    // 3. Tabela base system (fuel_card_requests) - incluindo informações da base
+    try {
+      let baseSystemDateFilter = '';
+      const baseSystemParams: any[] = [];
+      let bsParamIndex = 1;
+      
+      if (data_inicio && data_fim) {
+        baseSystemDateFilter = ` WHERE fcr.requested_at >= $${bsParamIndex}::date AND fcr.requested_at < ($${bsParamIndex + 1}::date + interval '1 day')`;
+        baseSystemParams.push(data_inicio, data_fim);
+        bsParamIndex += 2;
+      }
+      
+      if (base && base !== 'all') {
+        if (baseSystemDateFilter) {
+          baseSystemDateFilter += ` AND LOWER(COALESCE(b.location, fcr.base_name, '')) LIKE LOWER($${bsParamIndex})`;
+        } else {
+          baseSystemDateFilter = ` WHERE LOWER(COALESCE(b.location, fcr.base_name, '')) LIKE LOWER($${bsParamIndex})`;
+        }
+        baseSystemParams.push(`%${base}%`);
+        bsParamIndex++;
+      }
+      
+      const baseSystemQuery = `
+        SELECT 
+          fcr.id::text as id,
+          fcr.plate as placa,
+          COALESCE(fcr.driver_name, '') as nome_motorista,
+          COALESCE(fcr.requested_by, '') as nome_solicitante,
+          COALESCE(fcr.amount::text, '0') as valor_solicitado,
+          '0' as valor_litro,
+          '0' as litros_solicitados,
+          COALESCE(fcr.odometer, 0) as km,
+          fcr.card_type as tipo_cartao,
+          fcr.card_number as numero_cartao,
+          fcr.provider as provedor_cartao,
+          fcr.status,
+          fcr.requested_at as data_solicitacao,
+          fcr.approved_by as atendido_por,
+          fcr.approved_at as data_atendimento,
+          fcr.reason as observacoes,
+          'base_system' as origem_tipo,
+          '' as veiculo_modelo,
+          '' as rota_origem,
+          '' as rota_destino,
+          COALESCE(fcr.driver_phone, '') as telefone_motorista,
+          COALESCE(fcr.fuel_time, '') as horario_abastecimento,
+          COALESCE(b.location, fcr.base_name, 'Base Principal') as base
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        ${baseSystemDateFilter}
+        ORDER BY fcr.requested_at DESC
+      `;
+      
+      const baseSystemResult = await pool.query(baseSystemQuery, baseSystemParams);
+      allSolicitations.push(...baseSystemResult.rows);
+      console.log('[EXPORT-EXCEL] Registros tabela Base System:', baseSystemResult.rows.length);
+    } catch (err) {
+      console.log('Tabela base system não encontrada ou erro:', err);
+    }
+    
+    // Ordenar por data
+    const solicitations = allSolicitations.sort((a, b) => {
+      const dateA = new Date(a.data_solicitacao);
+      const dateB = new Date(b.data_solicitacao);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    // Preparar dados para Excel com formatação mais robusta
+    const excelData = solicitations.map((sol: any) => {
+      const valorFormatado = parseFloat(sol.valor_solicitado) || 0;
+      const valorLitroFormatado = parseFloat(sol.valor_litro) || 0;
+      const litrosTotalFormatado = parseFloat(sol.litros_solicitados) || 0;
+      const dataFormatada = sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleDateString('pt-BR') : '';
+      const dataAtendimentoFormatada = sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleDateString('pt-BR') : '';
+      
+      return {
+        'ID': String(sol.id || ''),
+        'Placa': String(sol.placa || '').toUpperCase(),
+        'Nome do Solicitante': String(sol.nome_solicitante || '').toUpperCase(),
+        'Telefone do Solicitante': String(sol.telefone_solicitante || ''),
+        'Motorista do Veiculo': String(sol.nome_motorista || '').toUpperCase(),
+        'Valor Solicitado': valorFormatado,
+        'Valor Litro': valorLitroFormatado,
+        'Litros Total': litrosTotalFormatado,
+        'KM': parseInt(sol.km || '0') || 0,
+        'Tipo Cartao': (sol.tipo_cartao === 'numero' ? 'CARTÃO NUMERADO' : 
+                       sol.tipo_cartao === 'placa' ? 'CARTÃO POR PLACA' : 
+                       String(sol.tipo_cartao || 'PADRÃO')).toUpperCase(),
+        'Numero Cartao': String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || '').toUpperCase(),
+        'Provedor': String(sol.provedor_cartao || 'PADRÃO').toUpperCase(),
+        'Status': String(sol.status || '').toUpperCase(),
+        'Data Solicitacao': dataFormatada,
+        'Atendido Por': String(sol.atendido_por || '').toUpperCase(),
+        'Data Atendimento': dataAtendimentoFormatada,
+        'Base': String(sol.base || '').toUpperCase(),
+        'Observacoes': String(sol.observacoes || '').toUpperCase(),
+        'Origem': (sol.origem_tipo === 'line_hall' ? 'LINE HALL SHOPEE' : 
+                  sol.origem_tipo === 'base_system' ? 'SISTEMA DE BASES' : 'SISTEMA PRINCIPAL').toUpperCase(),
+        'Modelo Veiculo': String(sol.veiculo_modelo || '').toUpperCase(),
+        'Rota Origem': String(sol.rota_origem || '').toUpperCase(),
+        'Rota Destino': String(sol.rota_destino || '').toUpperCase(),
+        'Telefone Motorista': String(sol.telefone_motorista || ''),
+        'Horario Abastecimento': String(sol.horario_abastecimento || '').toUpperCase()
+      };
+    });
+
+    console.log('[EXPORT-EXCEL] Dados formatados para Excel, total:', excelData.length);
+
+    // Criar workbook e worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Configurar largura das colunas
+    const columnWidths = [
+      { wch: 8 },   // ID
+      { wch: 12 },  // Placa
+      { wch: 25 },  // Nome do Solicitante
+      { wch: 18 },  // Telefone do Solicitante
+      { wch: 25 },  // Motorista do Veiculo
+      { wch: 15 },  // Valor Solicitado
+      { wch: 12 },  // Valor Litro
+      { wch: 12 },  // Litros Total
+      { wch: 10 },  // KM
+      { wch: 18 },  // Tipo Cartao
+      { wch: 20 },  // Numero Cartao
+      { wch: 12 },  // Provedor
+      { wch: 15 },  // Status
+      { wch: 15 },  // Data Solicitacao
+      { wch: 15 },  // Atendido Por
+      { wch: 15 },  // Data Atendimento
+      { wch: 20 },  // Base
+      { wch: 30 },  // Observacoes
+      { wch: 18 },  // Origem
+      { wch: 15 },  // Modelo Veiculo
+      { wch: 20 },  // Rota Origem
+      { wch: 20 },  // Rota Destino
+      { wch: 15 },  // Telefone Motorista
+      { wch: 18 },  // Horario Abastecimento
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Adicionar worksheet ao workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitacoes');
+
+    // Gerar buffer do Excel com configurações mais robustas
+    const excelBuffer = XLSX.write(workbook, { 
+      type: 'buffer', 
+      bookType: 'xlsx',
+      bookSST: false,
+      compression: true
+    });
+
+    // Configurar headers para download com nome de arquivo mais simples
+    const fileName = `solicitacoes-cartao-combustivel-${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    console.log('[EXPORT-EXCEL] Enviando arquivo:', fileName, 'Tamanho:', excelBuffer.length, 'bytes');
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', excelBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    // Enviar arquivo
+    res.end(excelBuffer);
+
+  } catch (error: any) {
+    console.error('Erro ao exportar Excel:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar arquivo Excel',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * NOVO ENDPOINT: Batch de contadores para múltiplas placas
+ * Otimização para reduzir requisições individuais
+ */
+export async function getFuelCardSolicitationsCounts(req: Request, res: Response) {
+  try {
+    const { plates } = req.body;
+    
+    if (!plates || !Array.isArray(plates) || plates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Array de placas é obrigatório'
+      });
+    }
+
+    console.log('[FUEL-CARD-COUNTS] Processando contadores para', plates.length, 'placas');
+    
+    // Query corrigida usando apenas as tabelas e colunas que existem
+    const query = `
+      SELECT 
+        placa,
+        COUNT(*) as total_solicitations
+      FROM (
+        SELECT placa FROM solicitacoes_fuel_card WHERE placa = ANY($1) AND placa IS NOT NULL
+        UNION ALL
+        SELECT plate as placa FROM fuel_card_requests WHERE plate = ANY($1) AND plate IS NOT NULL
+      ) all_requests
+      GROUP BY placa
+    `;
+
+    const result = await pool.query(query, [plates]);
+    
+    // Converter resultado em objeto chave-valor
+    const counts: Record<string, number> = {};
+    plates.forEach(plate => {
+      counts[plate] = 0; // Inicializar com zero
+    });
+    
+    result.rows.forEach(row => {
+      counts[row.placa] = parseInt(row.total_solicitations) || 0;
+    });
+
+    res.json({
+      success: true,
+      counts,
+      message: `Contadores processados para ${plates.length} placas`
+    });
+    
+  } catch (error: any) {
+    console.error('Erro ao buscar contadores batch:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao processar contadores',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Exclui uma solicitação de cartão de combustível (tradicional ou Line Hall)
+ */
+export async function deleteFuelCardSolicitation(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const user = req.user || (req as any).supabaseUser || (req as any).hybridUser;
+
+    console.log(`[DELETE-FUEL-CARD] Tentativa de exclusão da solicitação ID: ${id} por usuário:`, user?.email);
+
+    // Verificar se o usuário é administrador
+    if (!user || user.role !== 'admin') {
+      console.log('[DELETE-FUEL-CARD] Acesso negado - usuário não é administrador');
+      return res.status(403).json({
+        success: false,
+        message: 'Apenas administradores podem excluir solicitações'
+      });
+    }
+
+    if (!id || isNaN(Number(id))) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID da solicitação inválido'
+      });
+    }
+
+    // Primeiro, verificar se a solicitação existe em qualquer uma das tabelas
+    let tableName = '';
+    let solicitationData = null;
+
+    // Verificar na tabela tradicional
+    try {
+      const traditionalCheck = await pool.query(
+        'SELECT * FROM solicitacoes_fuel_card WHERE id = $1',
+        [id]
+      );
+      if (traditionalCheck.rows.length > 0) {
+        tableName = 'solicitacoes_fuel_card';
+        solicitationData = traditionalCheck.rows[0];
+      }
+    } catch (err) {
+      console.log('[DELETE-FUEL-CARD] Tabela tradicional não encontrada ou erro:', err);
+    }
+
+    // Se não encontrou na tradicional, verificar na Line Hall
+    if (!solicitationData) {
+      try {
+        const lineHallCheck = await pool.query(
+          'SELECT * FROM linehall_fuel_card_requests WHERE id = $1',
+          [id]
+        );
+        if (lineHallCheck.rows.length > 0) {
+          tableName = 'linehall_fuel_card_requests';
+          solicitationData = lineHallCheck.rows[0];
+        }
+      } catch (err) {
+        console.log('[DELETE-FUEL-CARD] Tabela Line Hall não encontrada ou erro:', err);
+      }
+    }
+
+    // Se não encontrou na Line Hall, verificar na tabela das bases
+    if (!solicitationData) {
+      try {
+        const baseCheck = await pool.query(
+          'SELECT * FROM fuel_card_requests WHERE id = $1',
+          [id]
+        );
+        if (baseCheck.rows.length > 0) {
+          tableName = 'fuel_card_requests';
+          solicitationData = baseCheck.rows[0];
+        }
+      } catch (err) {
+        console.log('[DELETE-FUEL-CARD] Tabela bases não encontrada ou erro:', err);
+      }
+    }
+
+    if (!solicitationData) {
+      return res.status(404).json({
+        success: false,
+        message: 'Solicitação não encontrada'
+      });
+    }
+
+    console.log(`[DELETE-FUEL-CARD] Solicitação encontrada na tabela: ${tableName}`);
+
+    // Executar a exclusão
+    const deleteQuery = `DELETE FROM ${tableName} WHERE id = $1`;
+    const deleteResult = await pool.query(deleteQuery, [id]);
+
+    if (deleteResult.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Solicitação não encontrada para exclusão'
+      });
+    }
+
+    console.log(`[DELETE-FUEL-CARD] Solicitação ${id} excluída com sucesso da tabela ${tableName} pelo usuário ${user.email}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Solicitação excluída com sucesso',
+      deletedFrom: tableName,
+      deletedId: id
+    });
+
+  } catch (error: any) {
+    console.error('[DELETE-FUEL-CARD] Erro ao excluir solicitação:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor ao excluir solicitação',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Criar uma nova solicitação de cartão de combustível na tabela fuel_card_requests
+ */
+export async function createFuelCardRequest(req: Request, res: Response) {
+  try {
+    console.log('[CREATE-FUEL-CARD-REQUEST] Criando nova solicitação:', req.body);
+    
+    const {
+      plate,
+      odometer,
+      amount,
+      valorLitro,
+      litros_solicitados,
+      card_type,
+      provider,
+      card_number,
+      driver_name,
+      driver_phone,
+      fuel_type,
+      fuel_time,
+      reason,
+      project_id,
+      base_id,
+      status = 'pendente'
+    } = req.body;
+
+    // Validações básicas
+    if (!plate || !driver_name || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Placa, motorista e valor são obrigatórios'
+      });
+    }
+
+    if (!project_id || !base_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Projeto e base são obrigatórios'
+      });
+    }
+
+    // Verificar se a base existe
+    const baseCheckQuery = `SELECT name FROM bases WHERE id = $1`;
+    const baseResult = await pool.query(baseCheckQuery, [base_id]);
+    
+    let base_name = null;
+    if (baseResult.rows.length > 0) {
+      base_name = baseResult.rows[0].name;
+    }
+
+    // Calcular litros se não informados
+    const valorLitroNum = valorLitro ? parseFloat(valorLitro) : null;
+    const litrosCalc = litros_solicitados ? parseFloat(litros_solicitados) : 
+                       (valorLitroNum && valorLitroNum > 0 ? parseFloat((amount / valorLitroNum).toFixed(2)) : null);
+
+    // Inserir na tabela solicitacoes_fuel_card (tabela principal do painel)
+    const insertQuery = `
+      INSERT INTO solicitacoes_fuel_card (
+        placa, km, km_veiculo, numero_cartao, tipo_cartao, valor_solicitado, valor_litro, litros_solicitados,
+        provedor_cartao, tipo_combustivel, motorista, solicitante, telefone_celular, observacoes,
+        status, data_solicitacao, base, origem_tipo
+      ) VALUES (
+        $1, $2, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pendente', NOW(), $14, 'base_system'
+      ) RETURNING *
+    `;
+
+    const values = [
+      plate,                              // $1 - placa
+      odometer || 0,                      // $2 - km
+      card_number || plate,               // $3 - numero_cartao
+      card_type || 'vinculado',           // $4 - tipo_cartao
+      amount,                             // $5 - valor_solicitado
+      valorLitroNum,                      // $6 - valor_litro
+      litrosCalc,                         // $7 - litros_solicitados
+      provider || 'Ticket',               // $8 - provedor_cartao
+      fuel_type || 'Diesel',              // $9 - tipo_combustivel
+      driver_name,                        // $10 - motorista
+      req.user?.name || 'Sistema SC',     // $11 - solicitante
+      driver_phone || '',                 // $12 - telefone_celular
+      reason || 'Solicitação de recarga', // $13 - observacoes
+      base_name || 'Base SC'              // $14 - base
+    ];
+
+    console.log('[CREATE-FUEL-CARD-REQUEST] Inserindo com valor_litro:', valorLitroNum, 'litros:', litrosCalc);
+
+    const result = await pool.query(insertQuery, values);
+    const newRequest = result.rows[0];
+
+    console.log('[CREATE-FUEL-CARD-REQUEST] Solicitação criada com sucesso:', newRequest.id);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Solicitação criada com sucesso',
+      data: newRequest
+    });
+
+  } catch (error: any) {
+    console.error('[CREATE-FUEL-CARD-REQUEST] Erro ao criar solicitação:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao criar solicitação',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Exporta solicitações de cartão de combustível filtradas por período para Excel
+ */
+export async function exportFuelCardSolicitationsByDate(req: Request, res: Response) {
+  try {
+    const { startDate, endDate, status, projectId, base } = req.query;
+
+    console.log('[EXPORT-BY-DATE] Parâmetros recebidos:', { startDate, endDate, status, projectId, base });
+
+    // Validação dos parâmetros obrigatórios
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Datas de início e fim são obrigatórias'
+      });
+    }
+
+    // Validar formato das datas
+    const start = new Date(startDate as string);
+    const end = new Date(endDate as string);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de data inválido'
+      });
+    }
+
+    if (start > end) {
+      return res.status(400).json({
+        success: false,
+        message: 'Data de início deve ser anterior à data de fim'
+      });
+    }
+
+    // Buscar dados de cada tabela separadamente com filtros de data
+    const allSolicitations = [];
+    
+    // Decodificar e NORMALIZAR filtro de base (pode vir URL encoded com acentos/parênteses)
+    const decodedBase = base ? decodeURIComponent(String(base)) : null;
+    const normalizedBase = decodedBase && decodedBase !== 'all' ? normalizeBaseName(decodedBase) : null;
+    console.log('[EXPORT-BY-DATE] Base original:', base);
+    console.log('[EXPORT-BY-DATE] Base decodificada:', decodedBase);
+    console.log('[EXPORT-BY-DATE] Base normalizada:', normalizedBase);
+
+    // 1. Tabela tradicional (solicitacoes_fuel_card)
+    try {
+      let paramIndex = 3;
+      const params: any[] = [startDate, endDate];
+      let conditionals = '';
+      
+      if (status && status !== 'all') {
+        conditionals += ` AND status = $${paramIndex}`;
+        params.push(status);
+        paramIndex++;
+      }
+      
+      if (normalizedBase) {
+        conditionals += ` AND base = $${paramIndex}`;
+        params.push(normalizedBase);
+        paramIndex++;
+      }
+
+      const traditionalQuery = `
+        SELECT 
+          id::text as id,
+          placa,
+          motorista,
+          COALESCE(motorista, '') as nome_solicitante,
+          COALESCE(solicitante, '') as solicitante,
+          COALESCE(telefone_celular, '') as telefone_celular,
+          COALESCE(valor_solicitado::text, '0') as valor_solicitado,
+          COALESCE(valor_litro::text, '0') as valor_litro,
+          COALESCE(litros_solicitados::text, '0') as litros_solicitados,
+          COALESCE(km, 0) as km,
+          tipo_cartao,
+          numero_cartao,
+          provedor_cartao,
+          status,
+          data_solicitacao,
+          atendido_por,
+          data_atendimento,
+          observacoes,
+          'sistema_principal' as origem_tipo,
+          '' as veiculo_modelo,
+          '' as rota_origem,
+          '' as rota_destino,
+          '' as telefone_motorista,
+          '' as horario_abastecimento,
+          COALESCE(base, 'Base Principal') as base,
+          data_uso
+        FROM solicitacoes_fuel_card
+        WHERE data_uso IS NOT NULL
+          AND data_uso >= $1::date 
+          AND data_uso <= $2::date
+          ${conditionals}
+        ORDER BY data_uso DESC
+      `;
+      
+      console.log('[EXPORT-BY-DATE] Query tradicional params:', params);
+      const traditionalResult = await pool.query(traditionalQuery, params);
+      console.log('[EXPORT-BY-DATE] Tradicional encontrados:', traditionalResult.rows.length);
+      allSolicitations.push(...traditionalResult.rows);
+    } catch (err) {
+      console.log('Tabela tradicional não encontrada ou erro:', err);
+    }
+    
+    // 2. Tabela Line Hall (linehall_fuel_card_requests)
+    try {
+      let lhParamIndex = 3;
+      const lhParams: any[] = [startDate, endDate];
+      let lhConditionals = '';
+      
+      if (status && status !== 'all') {
+        lhConditionals += ` AND status = $${lhParamIndex}`;
+        lhParams.push(status);
+        lhParamIndex++;
+      }
+
+      const lineHallQuery = `
+        SELECT 
+          id::text as id,
+          veiculo_placa as placa,
+          motorista_nome as motorista,
+          COALESCE(motorista_nome, '') as nome_solicitante,
+          '' as solicitante,
+          '' as telefone_celular,
+          COALESCE(valor_calculado::text, '0') as valor_solicitado,
+          '0' as valor_litro,
+          '0' as litros_solicitados,
+          COALESCE(km_total, 0) as km,
+          'vinculado' as tipo_cartao,
+          veiculo_placa as numero_cartao,
+          'Alelo' as provedor_cartao,
+          status,
+          created_at as data_solicitacao,
+          '' as atendido_por,
+          updated_at as data_atendimento,
+          '' as observacoes,
+          'line_hall' as origem_tipo,
+          COALESCE(veiculo_modelo, '') as veiculo_modelo,
+          COALESCE(rota_origem, '') as rota_origem,
+          COALESCE(rota_destino, '') as rota_destino,
+          COALESCE(telefone_motorista, '') as telefone_motorista,
+          COALESCE(horario_abastecimento, '') as horario_abastecimento,
+          'Line Hall Shopee' as base
+        FROM linehall_fuel_card_requests
+        WHERE (created_at AT TIME ZONE 'America/Sao_Paulo')::date >= $1::date 
+          AND (created_at AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
+          ${lhConditionals}
+        ORDER BY created_at DESC
+      `;
+      
+      const lineHallResult = await pool.query(lineHallQuery, lhParams);
+      console.log('[EXPORT-BY-DATE] Line Hall encontrados:', lineHallResult.rows.length);
+      allSolicitations.push(...lineHallResult.rows);
+    } catch (err) {
+      console.log('Tabela Line Hall não encontrada ou erro:', err);
+    }
+    
+    // 3. Tabela base system (fuel_card_requests)
+    try {
+      let bsParamIndex = 3;
+      const bsParams: any[] = [startDate, endDate];
+      let bsConditionals = '';
+
+      // Adicionar filtro de projeto se especificado
+      if (projectId && projectId !== 'all') {
+        bsConditionals += ` AND fcr.project_id = $${bsParamIndex}`;
+        bsParams.push(projectId);
+        bsParamIndex++;
+      }
+
+      // Adicionar filtro de base se especificado (usar base normalizada)
+      if (normalizedBase) {
+        bsConditionals += ` AND (b.location = $${bsParamIndex} OR fcr.base_name = $${bsParamIndex})`;
+        bsParams.push(normalizedBase);
+        bsParamIndex++;
+      }
+
+      // Adicionar filtro de status se especificado
+      if (status && status !== 'all') {
+        bsConditionals += ` AND fcr.status = $${bsParamIndex}`;
+        bsParams.push(status);
+        bsParamIndex++;
+      }
+
+      const baseSystemQuery = `
+        SELECT 
+          fcr.id::text as id,
+          fcr.plate as placa,
+          fcr.driver_name as motorista,
+          COALESCE(fcr.requested_by, fcr.driver_name, '') as nome_solicitante,
+          COALESCE(fcr.requested_by, '') as solicitante,
+          COALESCE(fcr.driver_phone, '') as telefone_celular,
+          COALESCE(fcr.amount::text, '0') as valor_solicitado,
+          '0' as valor_litro,
+          '0' as litros_solicitados,
+          COALESCE(fcr.odometer, 0) as km,
+          fcr.card_type as tipo_cartao,
+          fcr.card_number as numero_cartao,
+          fcr.provider as provedor_cartao,
+          fcr.status,
+          fcr.requested_at as data_solicitacao,
+          fcr.approved_by as atendido_por,
+          fcr.approved_at as data_atendimento,
+          fcr.reason as observacoes,
+          'base_system' as origem_tipo,
+          '' as veiculo_modelo,
+          '' as rota_origem,
+          '' as rota_destino,
+          COALESCE(fcr.driver_phone, '') as telefone_motorista,
+          COALESCE(fcr.fuel_time, '') as horario_abastecimento,
+          COALESCE(b.location, fcr.base_name, 'Base Principal') as base
+        FROM fuel_card_requests fcr
+        LEFT JOIN bases b ON fcr.base_id = b.id
+        WHERE (fcr.requested_at AT TIME ZONE 'America/Sao_Paulo')::date >= $1::date 
+          AND (fcr.requested_at AT TIME ZONE 'America/Sao_Paulo')::date <= $2::date
+          ${bsConditionals}
+        ORDER BY fcr.requested_at DESC
+      `;
+      
+      console.log('[EXPORT-BY-DATE] Base system params:', bsParams);
+      const baseSystemResult = await pool.query(baseSystemQuery, bsParams);
+      console.log('[EXPORT-BY-DATE] Base system encontrados:', baseSystemResult.rows.length);
+      allSolicitations.push(...baseSystemResult.rows);
+    } catch (err) {
+      console.log('Tabela base system não encontrada ou erro:', err);
+    }
+    
+    // Ordenar por data
+    const solicitations = allSolicitations.sort((a, b) => {
+      const dateA = new Date(a.data_solicitacao);
+      const dateB = new Date(b.data_solicitacao);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    console.log(`[EXPORT-BY-DATE] Total de registros encontrados no período: ${solicitations.length}`);
+
+    // Preparar dados para Excel (mesmo se vazio, gera planilha com cabeçalhos)
+    const excelData = solicitations.map((sol: any) => {
+      const valorFormatado = parseFloat(sol.valor_solicitado) || 0;
+      const valorLitroFormatado = parseFloat(sol.valor_litro) || 0;
+      const litrosTotalFormatado = parseFloat(sol.litros_solicitados) || 0;
+      const dataFormatada = sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleDateString('pt-BR') : '';
+      const horaFormatada = sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+      const dataAtendimentoFormatada = sol.data_atendimento ? new Date(sol.data_atendimento).toLocaleDateString('pt-BR') : '';
+      
+      return {
+        'Data da Solicitacao': dataFormatada + ', ' + horaFormatada,
+        'Nome do Solicitante': String(sol.solicitante || sol.nome_solicitante || '').toUpperCase(),
+        'Telefone': String(sol.telefone_celular || sol.telefone_motorista || ''),
+        'Placa do Carro': String(sol.placa || '').toUpperCase(),
+        'Nome do Motorista': String(sol.motorista || '').toUpperCase(),
+        'Provedor do Cartao': String(sol.provedor_cartao || 'PADRÃO').toUpperCase(),
+        'Vinculado/Nao Vinculado': (sol.tipo_cartao === 'placa' ? 'PLACA' : 'NUMERO'),
+        'Placa do Cartao': String(sol.tipo_cartao === 'placa' ? sol.placa : sol.numero_cartao || '').toUpperCase(),
+        'Valor': valorFormatado,
+        'Valor Litro': valorLitroFormatado,
+        'Litros Total': litrosTotalFormatado,
+        'Data de Uso': dataAtendimentoFormatada,
+        'Nome da Base': String(sol.base || '').toUpperCase(),
+        'Status': String(sol.status || '').toUpperCase(),
+        'Observacao': String(sol.observacoes || '').toUpperCase()
+      };
+    });
+
+    // Criar workbook e worksheet
+    const workbook = XLSX.utils.book_new();
+    
+    // Definir headers para garantir que apareçam mesmo sem dados
+    const headers = [
+      'Data da Solicitacao', 'Nome do Solicitante', 'Telefone', 'Placa do Carro',
+      'Nome do Motorista', 'Provedor do Cartao', 'Vinculado/Nao Vinculado', 'Placa do Cartao',
+      'Valor', 'Valor Litro', 'Litros Total', 'Data de Uso', 'Nome da Base', 'Status', 'Observacao'
+    ];
+    
+    // Criar worksheet com headers
+    const worksheet = excelData.length > 0 
+      ? XLSX.utils.json_to_sheet(excelData, { header: headers })
+      : XLSX.utils.aoa_to_sheet([headers]);
+
+    // Configurar largura das colunas
+    const columnWidths = [
+      { wch: 22 },  // Data da Solicitacao
+      { wch: 25 },  // Nome do Solicitante
+      { wch: 16 },  // Telefone
+      { wch: 14 },  // Placa do Carro
+      { wch: 30 },  // Nome do Motorista
+      { wch: 15 },  // Provedor do Cartao
+      { wch: 20 },  // Vinculado/Nao Vinculado
+      { wch: 16 },  // Placa do Cartao
+      { wch: 12 },  // Valor
+      { wch: 12 },  // Valor Litro
+      { wch: 12 },  // Litros Total
+      { wch: 15 },  // Data de Uso
+      { wch: 25 },  // Nome da Base
+      { wch: 15 },  // Status
+      { wch: 30 },  // Observacao
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Adicionar worksheet ao workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitacoes_Periodo');
+
+    // Gerar buffer do Excel
+    const excelBuffer = XLSX.write(workbook, { 
+      type: 'buffer', 
+      bookType: 'xlsx',
+      bookSST: false,
+      compression: true
+    });
+
+    // Configurar headers para download
+    const fileName = `relatorio-cartao-combustivel-${startDate}-${endDate}.xlsx`;
+    
+    console.log('[EXPORT-BY-DATE] Enviando arquivo:', fileName, 'Tamanho:', excelBuffer.length, 'bytes');
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Length', excelBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    // Enviar arquivo
+    res.end(excelBuffer);
+
+  } catch (error: any) {
+    console.error('[EXPORT-BY-DATE] Erro ao exportar por data:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar relatório por período',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Exporta solicitações de cartão de combustível filtradas por data de abastecimento (data_uso) para Excel
+ */
+export async function exportFuelCardSolicitationsByFuelDate(req: Request, res: Response) {
+  try {
+    const { fuelDate, status, projectId, base } = req.query;
+
+    console.log('[EXPORT-BY-FUEL-DATE] Parâmetros recebidos:', { fuelDate, status, projectId, base });
+
+    // Validação do parâmetro obrigatório
+    if (!fuelDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Data de abastecimento é obrigatória'
+      });
+    }
+
+    // Validar formato da data
+    const targetDate = new Date(fuelDate as string);
+    
+    if (isNaN(targetDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de data inválido'
+      });
+    }
+
+    // Buscar dados de cada tabela separadamente com filtros de data_uso
+    const allSolicitations = [];
+    
+    // Construir filtros adicionais
+    let statusFilter = '';
+    let baseFilter = '';
+
+    if (status && status !== 'all') {
+      statusFilter = ` AND status = '${status}'`;
+    }
+
+    if (base && base !== 'all') {
+      baseFilter = ` AND base = '${base}'`;
+    }
+
+    // 1. Tabela tradicional (solicitacoes_fuel_card)
+    try {
+      const traditionalQuery = `
+        SELECT 
+          id::text as id,
+          data_solicitacao,
+          COALESCE(solicitante, motorista, '') as nome_solicitante,
+          COALESCE(telefone_celular, '') as telefone,
+          COALESCE(placa, veiculo_placa, '') as placa,
+          COALESCE(motorista, '') as motorista,
+          COALESCE(provedor_cartao, '') as provedor_cartao,
+          COALESCE(tipo_cartao, '') as tipo_cartao,
+          COALESCE(numero_cartao, '') as numero_cartao,
+          COALESCE(valor_solicitado::text, '0') as valor_solicitado,
+          COALESCE(valor_litro::text, '0') as valor_litro,
+          COALESCE(litros_solicitados::text, '0') as litros_solicitados,
+          data_uso,
+          COALESCE(base, 'Base Principal') as base,
+          COALESCE(turno, '') as turno,
+          status,
+          observacoes
+        FROM solicitacoes_fuel_card
+        WHERE data_uso IS NOT NULL
+          AND data_uso = $1::date
+          ${statusFilter}
+          ${baseFilter}
+        ORDER BY data_solicitacao DESC
+      `;
+      
+      const traditionalResult = await pool.query(traditionalQuery, [fuelDate]);
+      console.log('[EXPORT-BY-FUEL-DATE] Registros tabela tradicional:', traditionalResult.rows.length);
+      allSolicitations.push(...traditionalResult.rows);
+    } catch (err) {
+      console.log('[EXPORT-BY-FUEL-DATE] Erro tabela tradicional:', err);
+    }
+    
+    // Nota: A tabela fuel_card_requests não possui o campo data_uso/fuel_date
+    // Por isso, não é possível filtrar por data de abastecimento nessa tabela
+    // Apenas a tabela solicitacoes_fuel_card possui esse campo
+
+    console.log('[EXPORT-BY-FUEL-DATE] Total de registros encontrados:', allSolicitations.length);
+
+    // Criar planilha Excel (mesmo se estiver vazia)
+    const workbook = XLSX.utils.book_new();
+    
+    // Formatar dados para a planilha (TODOS EM CAIXA ALTA)
+    const formattedData = allSolicitations.map((sol: any) => {
+      // Se tipo_cartao for "placa", usar a placa do carro na coluna "Placa do Cartão"
+      const placaCartao = sol.tipo_cartao?.toLowerCase() === 'placa' 
+        ? (sol.placa || '').toUpperCase() 
+        : (sol.numero_cartao || '').toUpperCase();
+      
+      return {
+        'Data da Solicitação': sol.data_solicitacao ? new Date(sol.data_solicitacao).toLocaleString('pt-BR') : '',
+        'Nome do Solicitante': String(sol.nome_solicitante || '').toUpperCase(),
+        'Telefone': sol.telefone || '',
+        'Placa do Carro': String(sol.placa || '').toUpperCase(),
+        'Nome do Motorista': String(sol.motorista || '').toUpperCase(),
+        'Provedor do Cartão': String(sol.provedor_cartao || '').toUpperCase(),
+        'Vinculado/Não Vinculado': String(sol.tipo_cartao || '').toUpperCase(),
+        'Placa do Cartão': placaCartao,
+        'Valor': Number(sol.valor_solicitado || 0),
+        'Valor Litro': Number(sol.valor_litro || 0),
+        'Litros Total': Number(sol.litros_solicitados || 0),
+        'Data de Uso': sol.data_uso ? new Date(sol.data_uso).toLocaleDateString('pt-BR') : '',
+        'Nome da Base': String(sol.base || '').toUpperCase(),
+        'AM/PM': String(sol.turno || '').toUpperCase(),
+        'Status': String(sol.status || '').toUpperCase(),
+        'Observação': String(sol.observacoes || '').toUpperCase()
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    
+    // Ajustar largura das colunas
+    const colWidths = [
+      { wch: 18 }, // Data da Solicitação
+      { wch: 25 }, // Nome do Solicitante
+      { wch: 15 }, // Telefone
+      { wch: 12 }, // Placa do Carro
+      { wch: 25 }, // Nome do Motorista
+      { wch: 18 }, // Provedor do Cartão
+      { wch: 22 }, // Vinculado/Não Vinculado
+      { wch: 18 }, // Placa do Cartão
+      { wch: 15 }, // Valor
+      { wch: 12 }, // Valor Litro
+      { wch: 12 }, // Litros Total
+      { wch: 15 }, // Data de Uso
+      { wch: 20 }, // Nome da Base
+      { wch: 10 }, // AM/PM
+      { wch: 18 }, // Status
+      { wch: 40 }  // Observação
+    ];
+    worksheet['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitações');
+
+    // Gerar buffer do Excel
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Configurar headers para download (sem cache)
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=solicitacoes-abastecimento-${fuelDate}.xlsx`);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    console.log('[EXPORT-BY-FUEL-DATE] Exportação concluída com sucesso');
+    res.send(excelBuffer);
+
+  } catch (error: any) {
+    console.error('[EXPORT-BY-FUEL-DATE] Erro ao exportar:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao exportar solicitações por data de abastecimento',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Consulta a planilha Google Sheets para verificar viagem de uma placa/data
+ * Rota: GET /api/fuel-card-solicitations/validate-sheet
+ */
+export async function validateSheetForRequest(req: Request, res: Response) {
+  try {
+    const { placa, data_uso } = req.query;
+    
+    if (!placa || !data_uso) {
+      return res.status(400).json({
+        success: false,
+        message: 'Placa e data_uso são obrigatórios'
+      });
+    }
+    
+    const resultado = await validateWithGoogleSheet(String(placa), String(data_uso));
+    
+    return res.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[VALIDATE-SHEET] Erro:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao consultar planilha',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Valida múltiplas solicitações pendentes com a planilha Google Sheets
+ * Rota: POST /api/fuel-card-solicitations/validate-pending
+ */
+export async function validatePendingSolicitations(req: Request, res: Response) {
+  try {
+    const { solicitations } = req.body;
+    
+    if (!solicitations || !Array.isArray(solicitations)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Lista de solicitações é obrigatória'
+      });
+    }
+    
+    console.log(`[VALIDATE-PENDING] Validando ${solicitations.length} solicitações`);
+    
+    // Busca flexível: valida considerando hoje e amanhã na planilha
+    console.log(`[VALIDATE-PENDING] Iniciando validação flexível (hoje/amanhã)`);
+    
+    const results: any[] = [];
+    
+    for (const sol of solicitations) {
+      const { id, placa, data_uso, horario_abastecimento } = sol;
+      
+      if (!placa) {
+        results.push({
+          id,
+          placa,
+          validado: false,
+          motivo: 'Placa não informada'
+        });
+        continue;
+      }
+      
+      // REGRA DE HORÁRIO: Calcular data de consulta com base no horário de abastecimento
+      // Até 16h → hoje | Após 18h → D+1 | 16:01-17:59 → hoje
+      const dataBaseParaCalculo = data_uso || new Date().toISOString().split('T')[0];
+      const dataParaValidar = horario_abastecimento 
+        ? calcularDataConsulta(horario_abastecimento, dataBaseParaCalculo)
+        : dataBaseParaCalculo;
+      
+      if (dataParaValidar !== dataBaseParaCalculo) {
+        console.log(`[VALIDATE-PENDING] Regra de horário aplicada para ID ${id}: ${dataBaseParaCalculo} → ${dataParaValidar} (horário=${horario_abastecimento})`);
+      }
+      
+      const resultado = await validateWithGoogleSheet(placa, dataParaValidar);
+      
+      results.push({
+        id,
+        placa,
+        data_uso,
+        validado: resultado.liberado,
+        origem: resultado.origem || '',
+        destino: resultado.destino || '',
+        tripNumber: resultado.tripNumber || '',
+        dataEncontrada: resultado.dataEncontrada || '',
+        motivo: resultado.motivo
+      });
+      
+      // Salvar dados da planilha em campos SEPARADOS (nunca modificar rota_origem/rota_destino originais)
+      // SEMPRE salvar resultado da validação, tanto para rotas encontradas quanto não encontradas
+      try {
+        await pool.query(`
+          UPDATE solicitacoes_fuel_card 
+          SET trip_number = COALESCE($1, trip_number), 
+              planilha_origem = $2, 
+              planilha_destino = $3, 
+              planilha_data = $4,
+              conferido_em = NOW(),
+              rota_validada = $5,
+              validacao_motivo = $6,
+              data_uso = COALESCE(data_uso, $8)
+          WHERE id = $7
+        `, [
+          resultado.tripNumber || null,
+          resultado.origem || null,
+          resultado.destino || null,
+          resultado.dataEncontrada || null,
+          resultado.liberado,
+          resultado.motivo || null,
+          id,
+          dataParaValidar
+        ]);
+        
+        // Também atualizar histórico se existir
+        if (resultado.liberado) {
+          await pool.query(`
+            UPDATE historico_rotas_linehaul 
+            SET planilha_trip_number = $1, 
+                planilha_origem = $2, 
+                planilha_destino = $3, 
+                planilha_data = $4,
+                conferido_em = NOW()
+            WHERE solicitacao_id = $5
+          `, [
+            resultado.tripNumber || null,
+            resultado.origem || null,
+            resultado.destino || null,
+            resultado.dataEncontrada || null,
+            id
+          ]);
+        }
+        
+        console.log(`[VALIDATE-PENDING] Dados da validação salvos para ID ${id}: encontrada=${resultado.liberado}, tripNumber=${resultado.tripNumber}, origem=${resultado.origem}, destino=${resultado.destino}, motivo=${resultado.motivo}`);
+      } catch (updateError: any) {
+        console.error(`[VALIDATE-PENDING] Erro ao salvar dados da planilha ID ${id}:`, updateError.message);
+      }
+    }
+    
+    // Limpar cache para refletir atualizações
+    cacheData = null;
+    
+    return res.json({
+      success: true,
+      data: results,
+      total: results.length,
+      validados: results.filter(r => r.validado).length,
+      nao_validados: results.filter(r => !r.validado).length
+    });
+  } catch (error: any) {
+    console.error('[VALIDATE-PENDING] Erro:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao validar solicitações',
+      error: error.message
+    });
+  }
+}

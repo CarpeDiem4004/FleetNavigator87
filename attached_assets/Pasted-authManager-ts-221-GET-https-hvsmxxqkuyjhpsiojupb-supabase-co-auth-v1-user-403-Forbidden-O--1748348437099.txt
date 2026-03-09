@@ -1,0 +1,60 @@
+authManager.ts:221 
+ GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+
+
+O ChatGPT disse:
+O erro:
+
+bash
+Copiar
+Editar
+GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+significa que a requisição feita para obter os dados do usuário autenticado falhou por falta de permissões ou token inválido/ausente.
+
+✅ O que esse endpoint faz?
+Esse endpoint (/auth/v1/user) retorna os dados do usuário logado com base no token de acesso (Bearer Token). Ele só funciona se o cabeçalho Authorization for enviado corretamente com um token válido.
+
+🔍 Causas mais comuns desse erro 403:
+1. Token de sessão ausente ou inválido
+Se você não está autenticando corretamente com Supabase, esse erro acontece.
+
+2. O usuário deslogou ou a sessão expirou
+Isso faz com que o token usado nas requisições não tenha mais validade.
+
+3. O authManager.ts está chamando .getUser() sem token
+Por exemplo:
+
+ts
+Copiar
+Editar
+const { data: user, error } = await supabase.auth.getUser();
+Isso só vai funcionar se o Supabase tiver o token de sessão carregado no localStorage (no navegador). Se não tiver, ou se estiver rodando isso em ambiente server-side (Node), vai dar 403.
+
+✅ Solução recomendada
+🔐 Verifique se a sessão está ativa
+Antes de chamar .getUser(), obtenha a sessão atual:
+
+ts
+Copiar
+Editar
+const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+if (!session) {
+  console.error("Usuário não autenticado ou sessão expirada");
+  // redirecionar para login, talvez
+  return;
+}
+
+// Agora pode obter dados do usuário (mas provavelmente nem vai precisar se já tiver na session)
+const { user } = session;
+🔁 Alternativa: reautenticar o usuário
+Se você está tentando acessar .getUser() diretamente, garanta que o usuário fez login e o token está atualizado. Exemplo com login:
+
+ts
+Copiar
+Editar
+const { data, error } = await supabase.auth.signInWithPassword({
+  email: 'usuario@exemplo.com',
+  password: 'senha'
+});
+Depois disso, o supabase.auth.getUser() deve funcionar corretamente.

@@ -1,0 +1,482 @@
+Bora fazer isso acontecer, João! 👇
+Vou te entregar um desenho completo + SQL do Supabase + políticas de segurança + um formulário público (sem login) que funciona em qualquer aparelho + views/consultas pro painel “Abastecimento Pós‑Pago”.
+
+⸻
+
+1) Esquema no Supabase (tabelas & enums)
+
+Copie e rode no SQL Editor do Supabase.
+
+-- ENUNS
+create type public.tipo_motorista as enum ('frota','agregado');
+create type public.tipo_combustivel as enum ('gasolina','etanol','diesel','gnv','adblue');
+create type public.modalidade_pagamento as enum ('pos_pago','avista');
+create type public.status_faturamento as enum ('pendente','faturado','pago');
+
+-- TABELAS DE APOIO (assumindo que projeto & base já existem; se já tiver, ignore estas)
+-- create table public.projetos(id uuid primary key default gen_random_uuid(), nome text not null);
+-- create table public.bases(id uuid primary key default gen_random_uuid(), nome text not null);
+
+create table if not exists public.postos (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  cnpj text,
+  ativo boolean not null default true
+);
+
+-- TOKENS para link público sem senha (pode criar 1 por base/projeto)
+create table if not exists public.form_tokens (
+  id uuid primary key default gen_random_uuid(),
+  token text unique not null,           -- ex.: uuid v4 ou string longa aleatória
+  base_id uuid not null references public.bases(id) on delete restrict,
+  projeto_id uuid not null references public.projetos(id) on delete restrict,
+  ativo boolean not null default true,
+  expires_at timestamptz
+);
+
+-- TABELA PRINCIPAL
+create table if not exists public.abastecimentos (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  nome text not null,
+  cpf text not null,
+  placa text not null,
+  km integer not null check (km >= 0),
+  tipo_motorista public.tipo_motorista not null,
+  projeto_id uuid not null references public.projetos(id) on delete restrict,
+  base_id uuid not null references public.bases(id) on delete restrict,
+  tipo_combustivel public.tipo_combustivel not null,
+  valor_unit numeric(12,4) not null check (valor_unit > 0),
+  litros numeric(12,3) generated always as (nullif(round((case when valor_unit>0 then (valor_total/valor_unit) else 0 end)::numeric, 3),0)) stored,
+  valor_total numeric(14,2) not null check (valor_total > 0),
+  posto_id uuid references public.postos(id) on delete set null,
+  modalidade public.modalidade_pagamento not null default 'pos_pago',
+  status public.status_faturamento not null default 'pendente',
+  -- rastreabilidade do formulário público:
+  form_token text,
+  constraint valor_coerente check (valor_total >= 0.01)
+);
+
+-- ÍNDICES úteis
+create index if not exists idx_abast_created_at on public.abastecimentos(created_at desc);
+create index if not exists idx_abast_base on public.abastecimentos(base_id);
+create index if not exists idx_abast_projeto on public.abastecimentos(projeto_id);
+create index if not exists idx_abast_posto on public.abastecimentos(posto_id);
+create index if not exists idx_abast_status on public.abastecimentos(status);
+
+
+⸻
+
+2) Segurança (RLS) para permitir link público sem senha com controle
+
+A ideia: NÃO liberar insert direto para anon na tabela.
+Vamos usar uma Edge Function com a service key que valida um token (ligado a uma base + projeto) e insere. Assim o link é “sem senha”, mas seguro.
+	1.	Ative RLS:
+
+alter table public.abastecimentos enable row level security;
+alter table public.form_tokens enable row level security;
+
+-- form_tokens: só o serviço (Edge Function com service key) pode ler
+create policy "no read tokens for anon" on public.form_tokens
+  for select to anon using (false);
+
+-- abastecimentos:
+-- leitura: apenas usuários logados do app principal (role authenticated)
+create policy "read for app users" on public.abastecimentos
+  for select to authenticated using (true);
+
+-- insert/update/delete: ninguém via anon
+create policy "no iud for anon" on public.abastecimentos
+  for all to anon using (false) with check (false);
+
+Resultado: o form público chama a Edge Function (que usa a service role key, ignora RLS) e insere; o painel (usuários logados) lê normalmente.
+
+⸻
+
+3) Edge Function “create_fueling”
+
+No Supabase Studio: Functions > New Edge Function com nome create_fueling.
+Código (Deno) para supabase/functions/create_fueling/index.ts:
+
+// deno.json já vem; use o template HTTP standard
+// IMPORTANTE: configure a SERVICE_ROLE_KEY no ambiente da Function.
+
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+serve(async (req) => {
+  try {
+    if (req.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
+    }
+
+    const url = new URL(req.url);
+    // Token pode vir no header X-Form-Token OU na query ?t=
+    const token =
+      req.headers.get("X-Form-Token") ||
+      url.searchParams.get("t") ||
+      "";
+
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Missing token" }), { status: 401 });
+    }
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY")!;
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    // valida token
+    const { data: tokenRows, error: tokenErr } = await supabase
+      .from("form_tokens")
+      .select("id, base_id, projeto_id, ativo, expires_at")
+      .eq("token", token)
+      .limit(1);
+
+    if (tokenErr) throw tokenErr;
+    const tk = tokenRows?.[0];
+    const now = new Date();
+
+    if (!tk || !tk.ativo || (tk.expires_at && new Date(tk.expires_at) < now)) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), { status: 401 });
+    }
+
+    const payload = await req.json();
+    // Validações mínimas
+    const required = ["nome","cpf","placa","km","tipo_motorista","tipo_combustivel","valor_unit","valor_total"];
+    for (const f of required) {
+      if (payload[f] === undefined || payload[f] === null || payload[f] === "") {
+        return new Response(JSON.stringify({ error: `Campo obrigatório: ${f}` }), { status: 400 });
+      }
+    }
+
+    // Força base/projeto a partir do token (evita adulteração)
+    const insertData = {
+      nome: String(payload.nome).trim(),
+      cpf: String(payload.cpf).replace(/\D/g,""),
+      placa: String(payload.placa).toUpperCase().trim(),
+      km: Number(payload.km),
+      tipo_motorista: payload.tipo_motorista,              // 'frota' | 'agregado'
+      projeto_id: tk.projeto_id,
+      base_id: tk.base_id,
+      tipo_combustivel: payload.tipo_combustivel,          // conforme enum
+      valor_unit: Number(payload.valor_unit),
+      valor_total: Number(payload.valor_total),
+      posto_id: payload.posto_id ?? null,
+      modalidade: 'pos_pago',
+      status: 'pendente',
+      form_token: token
+    };
+
+    const { data, error } = await supabase
+      .from("abastecimentos")
+      .insert(insertData)
+      .select("id, created_at");
+
+    if (error) throw error;
+
+    return new Response(JSON.stringify({ ok: true, registro: data?.[0] }), { status: 201 });
+
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String(e?.message || e) }), { status: 500 });
+  }
+});
+
+Variáveis de ambiente da Function:
+	•	SUPABASE_URL
+	•	SERVICE_ROLE_KEY (a “chave secreta” do projeto — somente na função, nunca no front)
+
+⸻
+
+4) Link público (form sem login)
+
+Você pode hospedar como Static Site (ex.: no próprio Supabase/Storage, Vercel, Netlify) e apontar a URL do formulário.
+O token vem na URL, por exemplo: https://seu-dominio.com/abastecer?t=<TOKEN-DO-FORM>
+
+HTML responsivo minimalista (funciona em qualquer aparelho):
+
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Abastecimento - Murici On Fleet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-md mx-auto p-4">
+    <h1 class="text-xl font-semibold mb-4">Registrar Abastecimento</h1>
+
+    <form id="form" class="space-y-3">
+      <input class="w-full border p-3 rounded" name="nome" placeholder="Nome do motorista" required />
+      <input class="w-full border p-3 rounded" name="cpf" placeholder="CPF (somente números)" inputmode="numeric" required />
+      <input class="w-full border p-3 rounded uppercase" name="placa" placeholder="Placa" maxlength="7" required />
+      <input class="w-full border p-3 rounded" name="km" placeholder="KM" inputmode="numeric" required />
+
+      <select class="w-full border p-3 rounded" name="tipo_motorista" required>
+        <option value="" disabled selected>Frota ou agregado</option>
+        <option value="frota">Frota</option>
+        <option value="agregado">Agregado</option>
+      </select>
+
+      <!-- Projeto e Base são inferidos pelo token; se quiser exibir (readonly), pode puxar de uma pequena API/Function de leitura -->
+      <select class="w-full border p-3 rounded" name="tipo_combustivel" required>
+        <option value="" disabled selected>Tipo de combustível</option>
+        <option value="gasolina">Gasolina</option>
+        <option value="etanol">Etanol</option>
+        <option value="diesel">Diesel</option>
+        <option value="gnv">GNV</option>
+        <option value="adblue">Arla/AdBlue</option>
+      </select>
+
+      <input class="w-full border p-3 rounded" name="valor_unit" placeholder="Valor unitário (R$ / litro)" inputmode="decimal" required />
+      <input class="w-full border p-3 rounded" name="valor_total" placeholder="Valor total (R$)" inputmode="decimal" required />
+
+      <!-- opcional: posto -->
+      <input class="w-full border p-3 rounded" name="posto_id" placeholder="ID do posto (opcional)" />
+
+      <button class="w-full bg-black text-white py-3 rounded font-semibold">Enviar</button>
+      <p id="msg" class="text-sm mt-2"></p>
+    </form>
+  </div>
+
+  <script>
+    const endpoint = "https://<SEU-PROJETO>.supabase.co/functions/v1/create_fueling";
+
+    const qs = new URLSearchParams(location.search);
+    const token = qs.get("t");
+
+    const form = document.getElementById("form");
+    const msg  = document.getElementById("msg");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.textContent = "Enviando...";
+      const data = Object.fromEntries(new FormData(form).entries());
+
+      // Limpezas rápidas
+      data.cpf = (data.cpf || "").replace(/\D/g,"");
+      data.placa = (data.placa || "").toUpperCase().trim();
+      data.km = Number(data.km);
+      data.valor_unit = Number(String(data.valor_unit).replace(",", "."));
+      data.valor_total = Number(String(data.valor_total).replace(",", "."));
+      if (!token) { msg.textContent = "Link inválido (sem token)."; return; }
+
+      try {
+        const res = await fetch(`${endpoint}?t=${encodeURIComponent(token)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        const js = await res.json();
+        if (!res.ok) throw new Error(js.error || "Erro ao enviar");
+        msg.textContent = "Registro salvo com sucesso!";
+        form.reset();
+      } catch (err) {
+        msg.textContent = "Falha: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
+
+Como gerar os tokens do link público:
+
+-- exemplo simples de criação de token
+insert into public.form_tokens (token, base_id, projeto_id, ativo, expires_at)
+values (gen_random_uuid()::text, '<UUID-DA-BASE>', '<UUID-DO-PROJETO>', true, now() + interval '90 days')
+returning token;
+
+📌 O link que você envia para os motoristas é algo como:
+https://seu-dominio.com/abastecer?t=O-TOKEN-RETORNADO-AQUI
+
+Você pode criar um token por base. Se precisar bloquear um link: update form_tokens set ativo=false where token='...'.
+
+⸻
+
+5) Painel “Abastecimento Pós‑Pago” (consultas e views)
+
+5.1. Views para somatórios por base, por posto e pendências
+
+-- Consumo (R$ e litros) por base e mês
+create or replace view public.vw_consumo_por_base_mes as
+select
+  b.nome as base,
+  date_trunc('month', a.created_at)::date as mes,
+  sum(a.valor_total) as total_r$,
+  sum(a.litros) as total_litros
+from public.abastecimentos a
+join public.bases b on b.id = a.base_id
+group by 1,2
+order by 2 desc, 1;
+
+-- Consumo por posto e mês (útil pra conciliação do boleto)
+create or replace view public.vw_consumo_por_posto_mes as
+select
+  coalesce(p.nome,'(sem posto)') as posto,
+  date_trunc('month', a.created_at)::date as mes,
+  sum(a.valor_total) as total_r$,
+  sum(a.litros) as total_litros
+from public.abastecimentos a
+left join public.postos p on p.id = a.posto_id
+group by 1,2
+order by 2 desc, 1;
+
+-- Pendências do pós-pago (não faturadas/pagas)
+create or replace view public.vw_pendencias_pos_pago as
+select
+  a.id, a.created_at, a.placa, a.km, a.valor_total, a.litros,
+  b.nome as base, pr.nome as projeto,
+  coalesce(p.nome,'(sem posto)') as posto,
+  a.status
+from public.abastecimentos a
+join public.bases b on b.id = a.base_id
+join public.projetos pr on pr.id = a.projeto_id
+left join public.postos p on p.id = a.posto_id
+where a.modalidade = 'pos_pago' and a.status in ('pendente','faturado')
+order by a.created_at desc;
+
+5.2. Exemplos de consultas (para cards do dashboard)
+	•	Total mensal por base (mês atual):
+
+select base, total_r$
+from public.vw_consumo_por_base_mes
+where mes = date_trunc('month', now())::date
+order by total_r$ desc;
+
+	•	Top 5 postos no mês:
+
+select posto, total_r$
+from public.vw_consumo_por_posto_mes
+where mes = date_trunc('month', now())::date
+order by total_r$ desc
+limit 5;
+
+	•	Pendências (contas a pagar do pós-pago):
+
+select * from public.vw_pendencias_pos_pago limit 100;
+
+	•	Marcar como faturado/pago (workflow simples):
+
+update public.abastecimentos
+set status = 'faturado'
+where id = '<UUID-DO-REGISTRO>';
+
+update public.abastecimentos
+set status = 'pago'
+where id = '<UUID-DO-REGISTRO>';
+
+Se quiser, crie um campo boleto_id e uma tabela boletos para agrupar abastecimentos por fatura/nota.
+
+⸻
+
+6) Componente rápido do painel (React + Supabase-js)
+
+No app principal (usuário logado), exemplo para puxar os cards:
+
+// exemplo: DashboardAbastecimento.tsx
+import { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(import.meta.env.VITE_SUPABASE_URL!, import.meta.env.VITE_SUPABASE_ANON_KEY!);
+
+export default function DashboardAbastecimento() {
+  const [porBase, setPorBase] = useState<any[]>([]);
+  const [porPosto, setPorPosto] = useState<any[]>([]);
+  const [pendencias, setPendencias] = useState<any[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data: a } = await supabase
+        .from("vw_consumo_por_base_mes")
+        .select("*")
+        .eq("mes", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10));
+      setPorBase(a || []);
+
+      const { data: b } = await supabase
+        .from("vw_consumo_por_posto_mes")
+        .select("*")
+        .eq("mes", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10))
+        .order("total_r$", { ascending: false })
+        .limit(5);
+      setPorPosto(b || []);
+
+      const { data: c } = await supabase
+        .from("vw_pendencias_pos_pago")
+        .select("*")
+        .limit(100);
+      setPendencias(c || []);
+    })();
+  }, []);
+
+  return (
+    <div className="grid gap-6">
+      <section>
+        <h2 className="font-semibold mb-2">Consumo por Base (mês atual)</h2>
+        <ul className="divide-y border rounded bg-white">
+          {porBase.map((r, i) => (
+            <li key={i} className="p-3 flex justify-between">
+              <span>{r.base}</span>
+              <strong>R$ {Number(r.total_r$).toFixed(2)}</strong>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="font-semibold mb-2">Top 5 Postos (mês atual)</h2>
+        <ul className="divide-y border rounded bg-white">
+          {porPosto.map((r, i) => (
+            <li key={i} className="p-3 flex justify-between">
+              <span>{r.posto}</span>
+              <strong>R$ {Number(r.total_r$).toFixed(2)}</strong>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="font-semibold mb-2">Pendências Pós‑Pago</h2>
+        <table className="w-full text-sm border rounded bg-white">
+          <thead>
+            <tr className="bg-gray-100 text-left">
+              <th className="p-2">Data</th>
+              <th className="p-2">Base</th>
+              <th className="p-2">Placa</th>
+              <th className="p-2">KM</th>
+              <th className="p-2">Posto</th>
+              <th className="p-2">Valor</th>
+              <th className="p-2">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pendencias.map((r, i) => (
+              <tr key={i} className="border-t">
+                <td className="p-2">{new Date(r.created_at).toLocaleString()}</td>
+                <td className="p-2">{r.base}</td>
+                <td className="p-2">{r.placa}</td>
+                <td className="p-2">{r.km}</td>
+                <td className="p-2">{r.posto}</td>
+                <td className="p-2">R$ {Number(r.valor_total).toFixed(2)}</td>
+                <td className="p-2">{r.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  );
+}
+
+
+⸻
+
+7) Boas práticas rápidas
+	•	Token por base/projeto com validade (90 dias) → renove e invalide quando necessário.
+	•	Sem expor service key no front; apenas na Edge Function.
+	•	Validação: máscara de CPF/placa/KM/valor; impedir valores absurdos; opcional: foto do cupom (pode adicionar Storage depois).
+	•	Auditoria: created_at já registra horário; se quiser, adicione user_agent, ip (via req.headers.get('x-forwarded-for')).
+	•	Conciliação do boleto: cadastre postos e, se o boleto vier com número, relacione via boleto_id para travar período.
+
+⸻
+
+Se quiser, já te mando um pacote .sql com tudo pronto + HTML do formulário para você subir de imediato. Quer que eu compacte isso num arquivo único com as instruções no topo?

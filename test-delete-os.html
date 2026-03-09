@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de Exclusão de OS</title>
+</head>
+<body>
+    <h1>Teste de Exclusão de OS</h1>
+    <p>Esta página testa a exclusão da OS #31 (III9999) que estava com erro 404.</p>
+    
+    <button onclick="testDeleteOS()">Testar Exclusão da OS #31</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function testDeleteOS() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testando exclusão da OS #31...</p>';
+            
+            try {
+                const response = await fetch('/api/maintenance/31', {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p style="color: green;">✅ SUCESSO: OS #31 excluída com sucesso!</p>
+                        <p>Resposta: ${JSON.stringify(data)}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p style="color: red;">❌ ERRO: ${response.status} - ${data.message}</p>
+                        <p>Resposta completa: ${JSON.stringify(data)}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p style="color: red;">❌ ERRO DE REDE: ${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

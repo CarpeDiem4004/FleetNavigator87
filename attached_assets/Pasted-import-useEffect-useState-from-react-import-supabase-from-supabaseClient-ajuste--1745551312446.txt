@@ -1,0 +1,98 @@
+import { useEffect, useState } from 'react';
+import { supabase } from './supabaseClient'; // ajuste o caminho se necessário
+
+export default function FormularioAbastecimento() {
+  const [postos, setPostos] = useState<{ id: string; nome: string }[]>([]);
+  const [selectedPostoId, setSelectedPostoId] = useState('');
+  const [litros, setLitros] = useState('');
+  const [valor, setValor] = useState('');
+
+  // Carregar postos do Supabase
+  useEffect(() => {
+    const fetchPostos = async () => {
+      const { data, error } = await supabase
+        .from('postos')
+        .select('id, nome');
+
+      if (error) console.error('Erro ao buscar postos:', error);
+      else setPostos(data);
+    };
+
+    fetchPostos();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // 1. Inserir abastecimento
+    const { data: abastecimento, error: errorAbast } = await supabase
+      .from('abastecimentos')
+      .insert({
+        data: new Date().toISOString(),
+        litros: parseFloat(litros),
+        valor: parseFloat(valor)
+      })
+      .select()
+      .single();
+
+    if (errorAbast) {
+      console.error('Erro ao criar abastecimento:', errorAbast);
+      return;
+    }
+
+    // 2. Relacionar com posto
+    const { error: errorRel } = await supabase
+      .from('abastecimentos_postos')
+      .insert({
+        abastecimento_id: abastecimento.id, // use o nome correto da coluna aqui
+        posto_id: selectedPostoId
+      });
+
+    if (errorRel) {
+      console.error('Erro ao associar posto:', errorRel);
+    } else {
+      alert('Abastecimento registrado com sucesso!');
+      setLitros('');
+      setValor('');
+      setSelectedPostoId('');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="formulario-abastecimento">
+      <div>
+        <label>Posto:</label>
+        <select value={selectedPostoId} onChange={(e) => setSelectedPostoId(e.target.value)} required>
+          <option value="">Selecione um posto</option>
+          {postos.map((posto) => (
+            <option key={posto.id} value={posto.id}>
+              {posto.nome}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label>Litros:</label>
+        <input
+          type="number"
+          value={litros}
+          onChange={(e) => setLitros(e.target.value)}
+          required
+        />
+      </div>
+
+      <div>
+        <label>Valor:</label>
+        <input
+          type="number"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          required
+        />
+      </div>
+
+      <button type="submit">Salvar</button>
+    </form>
+  );
+}

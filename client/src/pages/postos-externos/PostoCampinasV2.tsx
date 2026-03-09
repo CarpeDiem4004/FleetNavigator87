@@ -1,0 +1,306 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckCircle, TruckIcon } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
+
+interface RecebimentoData {
+  tipo_produto: string;
+  litros_recebidos: string;
+  valor_total: string;
+  numero_nota_fiscal: string;
+  nome_fornecedor: string;
+  nome_operador: string;
+  observacoes: string;
+}
+
+export default function PostoCampinasV2() {
+  const { user } = useAuth();
+  const operatorName = user?.name || 'Operador Campinas V2';
+  
+  const [formData, setFormData] = useState<RecebimentoData>({
+    tipo_produto: '',
+    litros_recebidos: '',
+    valor_total: '',
+    numero_nota_fiscal: '',
+    nome_fornecedor: '',
+    nome_operador: operatorName, // Preenchimento automático baseado no usuário logado
+    observacoes: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [valorPorLitro, setValorPorLitro] = useState<string>('');
+  const { toast } = useToast();
+
+  // Calcular valor por litro automaticamente
+  React.useEffect(() => {
+    const litros = parseFloat(formData.litros_recebidos);
+    const total = parseFloat(formData.valor_total);
+    if (litros > 0 && total > 0) {
+      const valorLitro = total / litros;
+      setValorPorLitro(valorLitro.toFixed(4));
+    } else {
+      setValorPorLitro('');
+    }
+  }, [formData.litros_recebidos, formData.valor_total]);
+
+  // Atualizar nome do operador quando o usuário mudar
+  React.useEffect(() => {
+    if (user?.name) {
+      setFormData(prev => ({
+        ...prev,
+        nome_operador: user.name
+      }));
+    }
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Preparar dados para a API existente
+      const apiData = {
+        posto: 'campinas_v2',
+        tipo_produto: formData.tipo_produto,
+        litros_recebidos: formData.litros_recebidos,
+        valor_total: formData.valor_total,
+        nome_fornecedor: formData.nome_fornecedor,
+        nome_operador: formData.nome_operador,
+        observacoes: formData.observacoes,
+        numero_nota_fiscal: formData.numero_nota_fiscal
+      };
+
+      const response = await fetch('/recebimentos-combustivel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao registrar recebimento');
+      }
+
+      setIsSubmitted(true);
+      toast({
+        title: "Recebimento registrado com sucesso!",
+        description: "Os dados foram salvos no sistema.",
+      });
+
+      // Reset form
+      setFormData({
+        tipo_produto: '',
+        litros_recebidos: '',
+        valor_total: '',
+        numero_nota_fiscal: '',
+        nome_fornecedor: '',
+        nome_operador: operatorName, // Mantém preenchimento automático baseado no usuário logado
+        observacoes: ''
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao registrar recebimento",
+        description: "Tente novamente ou entre em contato com o suporte.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => setIsSubmitted(false), 3000);
+    }
+  };
+
+  const handleInputChange = (field: keyof RecebimentoData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Success Alert */}
+        {isSubmitted && (
+          <Alert className="mb-6 border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              Recebimento registrado com sucesso! Os dados foram salvos no sistema.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Formulário Principal */}
+        <Card className="shadow-lg border border-gray-200 rounded-xl">
+          <CardContent className="p-8">
+            <div className="space-y-6">
+              {/* Header do formulário */}
+              <div className="flex items-center gap-3 mb-8">
+                <TruckIcon className="w-6 h-6 text-blue-600" />
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900">
+                    Recebimento de Combustível no Tanque
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    Registre o recebimento de combustível no tanque do posto campinas_v2.
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Tipo de Produto */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Tipo de Produto Recebido
+                    </Label>
+                    <Select 
+                      value={formData.tipo_produto} 
+                      onValueChange={(value) => handleInputChange('tipo_produto', value)}
+                    >
+                      <SelectTrigger className="h-12 bg-blue-100 border-blue-200">
+                        <SelectValue placeholder="Selecione o produto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="diesel">Diesel</SelectItem>
+                        <SelectItem value="arla32">ARLA 32</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500">Selecione o tipo de produto recebido</p>
+                  </div>
+
+                  {/* Quantidade Recebida */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Quantidade Recebida (Litros)
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="1000"
+                      value={formData.litros_recebidos}
+                      onChange={(e) => handleInputChange('litros_recebidos', e.target.value)}
+                      required
+                      className="h-12 bg-blue-100 border-blue-200"
+                    />
+                    <p className="text-xs text-gray-500">Digite a quantidade em litros</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Valor Total */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Valor Total (R$)
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="5000,00"
+                      value={formData.valor_total}
+                      onChange={(e) => handleInputChange('valor_total', e.target.value)}
+                      required
+                      className="h-12 bg-blue-100 border-blue-200"
+                    />
+                    <p className="text-xs text-gray-500">Digite o valor total da compra</p>
+                  </div>
+
+                  {/* Número da Nota Fiscal */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Número da Nota Fiscal
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="NF123456"
+                      value={formData.numero_nota_fiscal}
+                      onChange={(e) => handleInputChange('numero_nota_fiscal', e.target.value)}
+                      required
+                      className="h-12 bg-blue-100 border-blue-200"
+                    />
+                    <p className="text-xs text-gray-500">Digite o número da nota fiscal</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Nome do Fornecedor */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Nome do Fornecedor
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="Petrobras, Shell, etc"
+                      value={formData.nome_fornecedor}
+                      onChange={(e) => handleInputChange('nome_fornecedor', e.target.value)}
+                      required
+                      className="h-12 bg-blue-100 border-blue-200"
+                    />
+                    <p className="text-xs text-gray-500">Digite o nome do fornecedor</p>
+                  </div>
+
+                  {/* Nome do Operador - Preenchimento Automático */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Nome do Operador
+                    </Label>
+                    <Input
+                      type="text"
+                      placeholder="Operador Campinas V2"
+                      value={formData.nome_operador}
+                      onChange={(e) => handleInputChange('nome_operador', e.target.value)}
+                      required
+                      className="h-12 bg-blue-100 border-blue-200"
+                      disabled
+                    />
+                    <p className="text-xs text-gray-500">Preenchimento automático - Nome do operador responsável</p>
+                  </div>
+                </div>
+
+                {/* Observações */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Observações (Opcional)
+                  </Label>
+                  <Textarea
+                    placeholder="Observações adicionais sobre o recebimento..."
+                    value={formData.observacoes}
+                    onChange={(e) => handleInputChange('observacoes', e.target.value)}
+                    className="min-h-[80px] bg-blue-100 border-blue-200"
+                  />
+                  <p className="text-xs text-gray-500">Informações adicionais relevantes</p>
+                </div>
+
+                {/* Botão de Submit */}
+                <div className="flex justify-end pt-6">
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium"
+                  >
+                    {isLoading ? "Registrando..." : "Registrar Recebimento no Tanque"}
+                  </Button>
+                </div>
+
+                {/* Footer Info */}
+                <div className="flex justify-between items-center text-xs text-gray-500 pt-4 border-t border-gray-200">
+                  <span>Data e hora serão registradas automaticamente.</span>
+                  {valorPorLitro && (
+                    <span className="font-medium">
+                      Valor por litro: R$ {valorPorLitro}
+                    </span>
+                  )}
+                </div>
+              </form>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

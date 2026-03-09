@@ -1,0 +1,96 @@
+// Rota para consumir combustível do tanque
+  app.post('/api/configuracao-tanques/:posto/consume', async (req, res) => {
+    try {
+      const { posto } = req.params;
+      const { tipo_combustivel, litros } = req.body;
+      
+      if (!tipo_combustivel || !litros || isNaN(Number(litros))) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados incompletos ou inválidos para atualização do tanque'
+        });
+      }
+      
+      // Formatar nome do posto (primeira letra maiúscula)
+      const formattedPosto = posto.charAt(0).toUpperCase() + posto.slice(1);
+      
+      console.log(`Consumindo ${litros} litros de ${tipo_combustivel} do posto ${formattedPosto}`);
+      
+      // Verificar se existe configuração para o posto
+      const configQuery = `
+        SELECT * FROM configuracao_tanques 
+        WHERE posto = $1
+      `;
+      
+      const configResult = await pool.query(configQuery, [formattedPosto]);
+      
+      if (configResult.rowCount === 0) {
+        console.log(`Configuração não encontrada para posto ${formattedPosto}, criando...`);
+        
+        // Criar configuração padrão para o posto
+        const createConfigQuery = `
+          INSERT INTO configuracao_tanques 
+          (posto, diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel, created_at, updated_at)
+          VALUES ($1, 20000, 15000, 1000, 750, NOW(), NOW())
+          RETURNING *;
+        `;
+        
+        const createResult = await pool.query(createConfigQuery, [formattedPosto]);
+        
+        if (createResult.rowCount === 0) {
+          throw new Error(`Falha ao criar configuração para posto ${formattedPosto}`);
+        }
+      }
+      
+      // Determinar qual campo atualizar baseado no tipo de combustível
+      const campoNivel = tipo_combustivel === 'ARLA' ? 'arla_nivel' : 'diesel_nivel';
+      
+      // Buscar nível atual
+      const nivelQuery = `
+        SELECT ${campoNivel} FROM configuracao_tanques
+        WHERE posto = $1
+      `;
+      
+      const nivelResult = await pool.query(nivelQuery, [formattedPosto]);
+      const nivelAtual = Number(nivelResult.rows[0][campoNivel]);
+      
+      // Calcular novo nível (nunca permitir que fique negativo)
+      const novoNivel = Math.max(0, nivelAtual - Number(litros));
+      
+      console.log(`Atualizando nível de ${tipo_combustivel} para posto ${formattedPosto}: ${nivelAtual} -> ${novoNivel}`);
+      
+      // Atualizar o nível
+      const updateQuery = `
+        UPDATE configuracao_tanques
+        SET ${campoNivel} = $1, updated_at = NOW()
+        WHERE posto = $2
+        RETURNING *;
+      `;
+      
+      const updateResult = await pool.query(updateQuery, [novoNivel, formattedPosto]);
+      
+      if (updateResult.rowCount === 0) {
+        throw new Error(`Falha ao atualizar nível para posto ${formattedPosto}`);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: `Nível de ${tipo_combustivel} atualizado com sucesso`,
+        data: {
+          posto: formattedPosto,
+          tipo: tipo_combustivel,
+          nivelAnterior: nivelAtual,
+          nivelAtual: novoNivel,
+          consumido: Number(litros)
+        }
+      });
+      
+    } catch (error) {
+      console.error('Erro ao atualizar nível do tanque:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao atualizar nível do tanque',
+        error: String(error)
+      });
+    }
+  });

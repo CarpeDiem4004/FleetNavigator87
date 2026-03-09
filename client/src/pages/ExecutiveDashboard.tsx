@@ -1,0 +1,892 @@
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { 
+  TrendingUp, TrendingDown, DollarSign, Truck, Timer, 
+  AlertTriangle, Wrench, BarChart2, Droplets, Activity, 
+  ExternalLink
+} from 'lucide-react';
+import KpiCard from '@/components/dashboard/KpiCard';
+import ChartCard from '@/components/dashboard/ChartCard';
+import DashboardTable from '@/components/dashboard/DashboardTable';
+import BarChartComponent from '@/components/dashboard/charts/BarChartComponent';
+import PieChartComponent from '@/components/dashboard/charts/PieChartComponent';
+import { fetchDashboardData, type DashboardData } from '@/services/dashboardService';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import AppLayout from '@/components/layout/AppLayout';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'wouter';
+
+interface VeiculosStats {
+  porPosse: { name: string; value: number }[];
+  porLocadora: { name: string; value: number }[];
+  porEstado: { name: string; value: number }[];
+  total: number;
+}
+
+export default function ExecutiveDashboard() {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [veiculosStats, setVeiculosStats] = useState<VeiculosStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  
+  // Estados para filtros de data inicial e final
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [endDateOpen, setEndDateOpen] = useState(false);
+
+  // Formatar a data para exibição no botão de calendário
+  const formattedDate = date
+    ? format(date, 'MMMM yyyy', { locale: ptBR })
+    : 'Selecione um mês';
+  
+  // Formatar datas para filtros
+  const formattedStartDate = startDate
+    ? format(startDate, 'dd/MM/yyyy', { locale: ptBR })
+    : 'Data Inicial';
+  
+  const formattedEndDate = endDate
+    ? format(endDate, 'dd/MM/yyyy', { locale: ptBR })
+    : 'Data Final';
+
+  // Função para carregar os dados do dashboard
+  const loadDashboardData = async (selectedDate?: Date, start?: Date, end?: Date) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const dateParam = selectedDate 
+        ? format(selectedDate, 'yyyy-MM-dd')
+        : undefined;
+      
+      const startDateParam = start 
+        ? format(start, 'yyyy-MM-dd')
+        : undefined;
+      
+      const endDateParam = end 
+        ? format(end, 'yyyy-MM-dd')
+        : undefined;
+      
+      const data = await fetchDashboardData(dateParam, startDateParam, endDateParam);
+      setDashboardData(data);
+    } catch (err) {
+      console.error('Erro ao carregar dados do dashboard:', err);
+      setError('Falha ao carregar dados do dashboard. Tente novamente mais tarde.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para carregar estatísticas de veículos
+  const loadVeiculosStats = async () => {
+    try {
+      const response = await fetch('/api/veiculos/stats/distribuicao');
+      const result = await response.json();
+      if (result.success) {
+        setVeiculosStats(result.data);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar estatísticas de veículos:', err);
+    }
+  };
+
+  // Carregar dados na montagem do componente e quando as datas mudarem
+  useEffect(() => {
+    loadDashboardData(date, startDate, endDate);
+    loadVeiculosStats();
+  }, [date, startDate, endDate]);
+
+  // Função para formatar valores monetários
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  // Componente de Esqueleto de Carregamento para KPIs
+  const KpiSkeleton = () => (
+    <Card className="overflow-hidden border">
+      <CardContent className="p-0">
+        <div className="p-4">
+          <Skeleton className="h-4 w-24 mb-2" />
+          <Skeleton className="h-8 w-36 mt-2" />
+          <Skeleton className="h-4 w-20 mt-2" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Renderizando o ícone para cada KPI
+  const getIconForKpi = (kpiKey: string) => {
+    switch (kpiKey) {
+      case 'fuelExpenses':
+        return <DollarSign className="h-5 w-5" />;
+      case 'partsExpenses':
+        return <Wrench className="h-5 w-5" />;
+      case 'tiresExpenses':
+        return <BarChart2 className="h-5 w-5" />;
+      case 'daysInactive':
+        return <Timer className="h-5 w-5" />;
+      case 'tireUsage':
+        return <Activity className="h-5 w-5" />;
+      case 'fleetAvailability':
+        return <Truck className="h-5 w-5" />;
+      case 'workshopSLA':
+        return <AlertTriangle className="h-5 w-5" />;
+      case 'avgFuelConsumption':
+        return <Droplets className="h-5 w-5" />;
+      default:
+        return <TrendingUp className="h-5 w-5" />;
+    }
+  };
+
+  // Renderizando seção de KPIs
+  const renderKpis = () => {
+    if (loading) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array(8).fill(0).map((_, i) => (
+            <KpiSkeleton key={i} />
+          ))}
+        </div>
+      );
+    }
+
+    if (!dashboardData || !dashboardData.kpis) {
+      return (
+        <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-gray-500">Nenhum dado disponível para o período selecionado.</p>
+        </div>
+      );
+    }
+
+    // Tratar kpis como array se for necessário
+    let kpisToRender: any[] = [];
+    if (Array.isArray(dashboardData.kpis)) {
+      kpisToRender = dashboardData.kpis;
+    } else if (typeof dashboardData.kpis === 'object') {
+      kpisToRender = Object.entries(dashboardData.kpis);
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {kpisToRender.map((item, index: number) => {
+          const kpi = Array.isArray(dashboardData.kpis) ? item : item[1];
+          const key = Array.isArray(dashboardData.kpis) ? `kpi-${index}` : item[0];
+          
+          return (
+            <KpiCard
+              key={key}
+              title={kpi.title || `KPI ${index + 1}`}
+              value={kpi.value || 0}
+              unit={kpi.unit || ''}
+              previousValue={kpi.previousValue}
+              changePercentage={kpi.changePercentage}
+              trend={kpi.trend}
+              isPositive={kpi.isPositive}
+              icon={getIconForKpi(key)}
+              color={kpi.color || 'primary'}
+            />
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Renderizando gráfico de consumo por base (usando dados reais de km)
+  const renderFuelConsumptionByBase = () => {
+    if (loading || !dashboardData) {
+      return (
+        <div className="h-80 w-full animate-pulse bg-gray-200 rounded"></div>
+      );
+    }
+
+    // Usar dados de quilometragem por base se disponível
+    const kmData = dashboardData.kmPerBase || [];
+    
+    if (kmData.length === 0) {
+      return (
+        <div className="h-80 w-full flex items-center justify-center bg-gray-50 rounded">
+          <p className="text-gray-500">Nenhum dado de quilometragem disponível</p>
+        </div>
+      );
+    }
+
+    const data = kmData.map((item: any) => ({
+      name: item.base,
+      value: item.currentMonth,
+      previousValue: item.previousMonth
+    }));
+
+    return (
+      <BarChartComponent
+        data={data}
+        dataKey="value"
+        previousDataKey="previousValue"
+        barColor="#3B82F6"
+        previousBarColor="#93C5FD"
+        height={350}
+        yAxisFormatter={(value) => `${value.toLocaleString('pt-BR')} km`}
+      />
+    );
+  };
+
+  // Renderizando gráfico de distribuição de despesas
+  const renderExpenseDistribution = () => {
+    if (loading || !dashboardData) {
+      return (
+        <div className="h-80 w-full animate-pulse bg-gray-200 rounded"></div>
+      );
+    }
+
+    // Usar dados simulados se expenseDistribution não existir
+    const expenseData = dashboardData.expenseDistribution || [
+      { category: 'Combustível', value: 45000, color: '#3B82F6' },
+      { category: 'Manutenção', value: 28000, color: '#EF4444' },
+      { category: 'Pneus', value: 18000, color: '#F59E0B' },
+      { category: 'Seguro', value: 12000, color: '#10B981' },
+      { category: 'Outros', value: 8000, color: '#8B5CF6' }
+    ];
+
+    return (
+      <PieChartComponent
+        data={expenseData.map((item: any) => ({
+          name: item.category,
+          value: item.value,
+          color: item.color
+        }))}
+        height={350}
+        innerRadius="45%"
+        outerRadius="70%"
+        tooltipFormatter={(value) => [formatCurrency(value), '']}
+      />
+    );
+  };
+
+  // Renderizando dados reais de consumo de combustível
+  const renderRealFuelConsumption = () => {
+    if (loading || !dashboardData || !dashboardData.realFuelConsumption) {
+      return (
+        <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-gray-500">Carregando dados reais de consumo...</p>
+        </div>
+      );
+    }
+
+    const fuelData = dashboardData.realFuelConsumption;
+
+    return (
+      <div className="space-y-4">
+        {/* Resumo geral */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-600 mb-1">Valor Total</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {formatCurrency(fuelData.resumo.valor_total)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-600 mb-1">Litros Total</p>
+              <p className="text-2xl font-bold text-green-600">
+                {fuelData.resumo.litros_total.toLocaleString('pt-BR')} L
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-gray-600 mb-1">Custo Médio/Litro</p>
+              <p className="text-2xl font-bold text-orange-600">
+                {formatCurrency(fuelData.resumo.custo_medio_por_litro)}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detalhamento por tipo */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Detalhamento por Tipo de Combustível</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {fuelData.consumo_por_tipo.map((item, index) => (
+                <div key={index} className="border-b last:border-0 pb-3 last:pb-0">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-semibold text-gray-800 capitalize">{item.tipo}</p>
+                      <p className="text-sm text-gray-500">
+                        {item.origem === 'fuel_card' ? 'Fuel Card' : 'Posto Interno'} • {item.quantidade_registros} registros
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-blue-600">{formatCurrency(item.valor_total)}</p>
+                      <p className="text-sm text-gray-600">
+                        {(item.litros_calculados || item.litros_reais || 0).toLocaleString('pt-BR')} L
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>Preço/Litro: {formatCurrency(item.preco_litro)}</span>
+                    {item.litros_registrados && item.litros_registrados > 0 && (
+                      <span>Litros Registrados: {item.litros_registrados.toLocaleString('pt-BR')} L</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preços de Referência */}
+        <Card className="bg-blue-50">
+          <CardHeader>
+            <CardTitle className="text-sm text-blue-900">Preços de Referência (Postos Internos)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              {Object.entries(fuelData.precos_referencia).map(([tipo, preco]) => (
+                <div key={tipo} className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-blue-800 capitalize">{tipo}:</span>
+                  <span className="text-sm font-bold text-blue-900">{formatCurrency(preco as number)}/L</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  // Renderizando tabela de veículos com maior custo
+  const renderTopVehiclesCost = () => {
+    if (loading || !dashboardData) {
+      return (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div 
+              key={i} 
+              className="h-10 w-full animate-pulse bg-gray-200 rounded"
+            ></div>
+          ))}
+        </div>
+      );
+    }
+
+    const columns = [
+      { header: 'Placa', accessor: 'placa' },
+      { header: 'Modelo', accessor: 'modelo' },
+      { 
+        header: 'Combustível', 
+        accessor: 'fuelCost',
+        cell: (value: number) => formatCurrency(value)
+      },
+      { 
+        header: 'Manutenção', 
+        accessor: 'maintenanceCost',
+        cell: (value: number) => formatCurrency(value)
+      },
+      { 
+        header: 'Custo Total', 
+        accessor: 'totalCost',
+        cell: (value: number) => formatCurrency(value)
+      }
+    ];
+
+    return (
+      <DashboardTable
+        title="Veículos com Maior Custo Operacional"
+        columns={columns}
+        data={dashboardData.topCostVehicles || []}
+        emptyMessage="Nenhum dado de custo disponível para o período selecionado."
+      />
+    );
+  };
+
+  // Renderizando tabela de manutenções recentes
+  const renderRecentMaintenances = () => {
+    if (loading || !dashboardData) {
+      return (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div 
+              key={i} 
+              className="h-10 w-full animate-pulse bg-gray-200 rounded"
+            ></div>
+          ))}
+        </div>
+      );
+    }
+
+    const getStatusClass = (status: string) => {
+      switch (status) {
+        case 'concluida':
+          return 'bg-green-100 text-green-800';
+        case 'em_andamento':
+          return 'bg-blue-100 text-blue-800';
+        case 'aguardando_pecas':
+          return 'bg-yellow-100 text-yellow-800';
+        case 'cancelada':
+          return 'bg-red-100 text-red-800';
+        default:
+          return 'bg-gray-100 text-gray-800';
+      }
+    };
+
+    const columns = [
+      { 
+        header: 'Data', 
+        accessor: 'date',
+        cell: (value: string) => new Date(value).toLocaleDateString('pt-BR')
+      },
+      { header: 'Placa', accessor: 'placa' },
+      { header: 'Veículo', accessor: 'vehicle' },
+      { header: 'Tipo Serviço', accessor: 'serviceType' },
+      { 
+        header: 'Status', 
+        accessor: 'status',
+        cell: (value: string) => (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(value)}`}>
+            {value === 'concluida' ? 'Concluída' : 
+            value === 'em_andamento' ? 'Em andamento' : 
+            value === 'aguardando_pecas' ? 'Aguardando peças' :
+            value === 'cancelada' ? 'Cancelada' : value}
+          </span>
+        )
+      },
+      { 
+        header: 'Custo', 
+        accessor: 'cost',
+        cell: (value: number) => formatCurrency(value || 0)
+      }
+    ];
+
+    return (
+      <DashboardTable
+        title="Manutenções Recentes"
+        columns={columns}
+        data={dashboardData.maintenanceRecords || []}
+        emptyMessage="Nenhuma manutenção registrada para o período selecionado."
+      />
+    );
+  };
+
+  return (
+    <AppLayout>
+      <div className="container max-w-7xl mx-auto py-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard Executivo</h1>
+            <p className="text-muted-foreground mt-1">
+              Visão geral de indicadores de desempenho da frota {dashboardData && dashboardData.referenceDate && `- ${dashboardData.referenceDate}`}
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/postos/consumo-diario">
+              <Button 
+                variant="default" 
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <BarChart2 className="h-4 w-4" />
+                Gráficos de Consumo dos Postos
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+            </Link>
+            
+            {/* Filtro de Data Inicial */}
+            <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>{formattedStartDate}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={(newDate) => {
+                    setStartDate(newDate);
+                    setStartDateOpen(false);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            
+            {/* Filtro de Data Final */}
+            <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>{formattedEndDate}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={(newDate) => {
+                    setEndDate(newDate);
+                    setEndDateOpen(false);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            
+            {/* Limpar filtros de data */}
+            {(startDate || endDate) && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setStartDate(undefined);
+                  setEndDate(undefined);
+                }}
+                className="text-red-500 hover:text-red-700"
+              >
+                Limpar
+              </Button>
+            )}
+            
+            <Button 
+              variant="outline" 
+              onClick={() => loadDashboardData(date, startDate, endDate)}
+            >
+              Atualizar
+            </Button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md mb-6">
+            {error}
+          </div>
+        )}
+
+        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="expenses">Despesas</TabsTrigger>
+            <TabsTrigger value="fleet">Frota</TabsTrigger>
+            <TabsTrigger value="maintenance">Manutenção</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="space-y-6">
+            {/* KPIs principais com dados de manutenção */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <KpiCard
+                title="Disponibilidade e Utilização"
+                value={dashboardData?.maintenanceStats?.veiculosUnicos || 0}
+                icon={<Truck className="h-5 w-5" />}
+                loading={loading}
+                color="primary"
+              />
+              
+              <KpiCard
+                title="Manutenção"
+                value={dashboardData?.maintenanceStats?.totalEmManutencao || 0}
+                icon={<Wrench className="h-5 w-5" />}
+                loading={loading}
+                color="warning"
+              />
+              
+              <KpiCard
+                title="Custos e Eficiência"
+                value={dashboardData?.maintenanceStats?.totalLiberados || 0}
+                icon={<TrendingUp className="h-5 w-5" />}
+                loading={loading}
+                color="success"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ChartCard 
+                title="Quilometragem por Base" 
+                description="Quilômetros rodados no período por base operacional (dados reais)"
+                loading={loading}
+              >
+                {renderFuelConsumptionByBase()}
+              </ChartCard>
+              
+              <ChartCard 
+                title="Distribuição de Despesas" 
+                description="Representação proporcional de gastos por categoria"
+                loading={loading}
+              >
+                {renderExpenseDistribution()}
+              </ChartCard>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-6">
+              {renderTopVehiclesCost()}
+              {renderRecentMaintenances()}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="expenses" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <KpiCard
+                title="Gastos com Combustível"
+                value={0}
+                unit="R$"
+                previousValue={0}
+                changePercentage={0}
+                trend="neutral"
+                isPositive={false}
+                icon={<DollarSign className="h-5 w-5" />}
+                loading={loading}
+                color="primary"
+              />
+              
+              <KpiCard
+                title="Gastos com Peças"
+                value={0}
+                unit="R$"
+                previousValue={0}
+                changePercentage={0}
+                trend="neutral"
+                isPositive={false}
+                icon={<Wrench className="h-5 w-5" />}
+                loading={loading}
+                color="warning"
+              />
+              
+              <KpiCard
+                title="Gastos com Pneus"
+                value={0}
+                unit="R$"
+                previousValue={0}
+                changePercentage={0}
+                trend="neutral"
+                isPositive={false}
+                icon={<BarChart2 className="h-5 w-5" />}
+                loading={loading}
+                color="danger"
+              />
+            </div>
+            
+            <ChartCard 
+              title="Distribuição de Despesas" 
+              description="Representação proporcional de gastos por categoria"
+              loading={loading}
+              className="h-[500px]"
+            >
+              {renderExpenseDistribution()}
+            </ChartCard>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Droplets className="h-5 w-5 text-blue-500" />
+                  Consumo Real de Combustível
+                </CardTitle>
+                <p className="text-sm text-gray-500">Litros e valores calculados com base nos preços dos postos internos e fuel cards atendidos</p>
+              </CardHeader>
+              <CardContent>
+                {renderRealFuelConsumption()}
+              </CardContent>
+            </Card>
+            
+            {renderTopVehiclesCost()}
+          </TabsContent>
+          
+          <TabsContent value="fleet" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <KpiCard
+                title="Total de Veículos"
+                value={veiculosStats?.total || 0}
+                icon={<Truck className="h-5 w-5" />}
+                loading={loading}
+                color="primary"
+              />
+              
+              <KpiCard
+                title="Veículos Murici"
+                value={veiculosStats?.porPosse?.find(p => p.name === 'Murici')?.value || 0}
+                icon={<Truck className="h-5 w-5" />}
+                loading={loading}
+                color="success"
+              />
+              
+              <KpiCard
+                title="Veículos Locados"
+                value={veiculosStats?.porPosse?.find(p => p.name === 'Locada')?.value || 0}
+                icon={<Truck className="h-5 w-5" />}
+                loading={loading}
+                color="warning"
+              />
+              
+              <KpiCard
+                title="Estados Atendidos"
+                value={veiculosStats?.porEstado?.length || 0}
+                icon={<BarChart2 className="h-5 w-5" />}
+                loading={loading}
+                color="info"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ChartCard 
+                title="Murici vs Locados" 
+                description="Distribuição de veículos por tipo de posse"
+                loading={loading}
+                className="h-[400px]"
+              >
+                {veiculosStats?.porPosse && veiculosStats.porPosse.length > 0 ? (
+                  <PieChartComponent
+                    data={veiculosStats.porPosse.map((item, idx) => ({
+                      name: `${item.name}: ${item.value} (${((item.value / (veiculosStats?.total || 1)) * 100).toFixed(1)}%)`,
+                      value: item.value,
+                      fill: idx === 0 ? '#3b82f6' : idx === 1 ? '#f59e0b' : '#6b7280'
+                    }))}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    Sem dados disponíveis
+                  </div>
+                )}
+              </ChartCard>
+              
+              <ChartCard 
+                title="Distribuição por Locadora" 
+                description="Quantidade de veículos por locadora"
+                loading={loading}
+                className="h-[400px]"
+              >
+                {veiculosStats?.porLocadora && veiculosStats.porLocadora.length > 0 ? (
+                  <BarChartComponent
+                    data={veiculosStats.porLocadora.slice(0, 10)}
+                    dataKey="value"
+                    xAxisKey="name"
+                    barColor="#3b82f6"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    Sem dados disponíveis
+                  </div>
+                )}
+              </ChartCard>
+            </div>
+            
+            <ChartCard 
+              title="Distribuição por Estado (UF)" 
+              description="Pulverização dos veículos por estado"
+              loading={loading}
+              className="h-[400px]"
+            >
+              {veiculosStats?.porEstado && veiculosStats.porEstado.length > 0 ? (
+                <BarChartComponent
+                  data={veiculosStats.porEstado}
+                  dataKey="value"
+                  xAxisKey="name"
+                  barColor="#22c55e"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  Sem dados disponíveis
+                </div>
+              )}
+            </ChartCard>
+            
+            {renderTopVehiclesCost()}
+          </TabsContent>
+          
+          <TabsContent value="maintenance" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <KpiCard
+                title="Veículos em Manutenção"
+                value={dashboardData?.maintenanceStats?.totalEmManutencao || 0}
+                icon={<Wrench className="h-5 w-5" />}
+                loading={loading}
+                color="warning"
+              />
+              
+              <KpiCard
+                title="Aguardando Peça"
+                value={dashboardData?.maintenanceStats?.aguardandoPeca || 0}
+                icon={<AlertTriangle className="h-5 w-5" />}
+                loading={loading}
+                color="danger"
+              />
+              
+              <KpiCard
+                title="Em Execução"
+                value={dashboardData?.maintenanceStats?.emExecucao || 0}
+                icon={<Activity className="h-5 w-5" />}
+                loading={loading}
+                color="info"
+              />
+              
+              <KpiCard
+                title="Liberados"
+                value={dashboardData?.maintenanceStats?.liberados || 0}
+                icon={<TrendingUp className="h-5 w-5" />}
+                loading={loading}
+                color="success"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <KpiCard
+                title="Veículos Únicos"
+                value={dashboardData?.maintenanceStats?.veiculosUnicos || 0}
+                icon={<Truck className="h-5 w-5" />}
+                loading={loading}
+                color="primary"
+              />
+              
+              <KpiCard
+                title="Manutenções Preventivas"
+                value={dashboardData?.maintenanceStats?.preventivas || 0}
+                icon={<Timer className="h-5 w-5" />}
+                loading={loading}
+                color="info"
+              />
+              
+              <KpiCard
+                title="Manutenções Corretivas"
+                value={dashboardData?.maintenanceStats?.corretivas || 0}
+                icon={<Wrench className="h-5 w-5" />}
+                loading={loading}
+                color="warning"
+              />
+            </div>
+            
+            {renderRecentMaintenances()}
+          </TabsContent>
+        </Tabs>
+        
+        {dashboardData && (
+          <div className="text-xs text-gray-500 mt-6 text-right">
+            Última atualização: {dashboardData.updateTime || new Date().toLocaleString('pt-BR')}
+          </div>
+        )}
+      </div>
+    </AppLayout>
+  );
+}

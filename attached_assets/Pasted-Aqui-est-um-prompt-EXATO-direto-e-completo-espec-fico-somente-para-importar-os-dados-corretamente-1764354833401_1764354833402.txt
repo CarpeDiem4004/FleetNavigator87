@@ -1,0 +1,197 @@
+Aqui está um prompt EXATO, direto e completo, específico somente para importar os dados corretamente da planilha, garantindo:
+
+✅ leitura correta
+✅ validação das colunas
+✅ conversão de datas
+✅ conversão de números
+✅ upsert no Supabase
+✅ tratamento de erros
+
+É só copiar e colar na IA do Replit.
+
+✅ PROMPT – Importação Correta da Planilha de Indicadores de Manutenção (.xlsx)
+
+Quero que você implemente um importador completo de planilha Excel (.xlsx) no meu backend Express do projeto Murici On Fleet 2.0.
+
+Siga exatamente as instruções abaixo e gere todo o código pronto.
+
+1. OBJETIVO
+
+Criar uma rota:
+
+POST /api/manutencoes/upload
+
+
+Que faz:
+
+Recebe um arquivo Excel (.xlsx) via Multer
+
+Lê a planilha usando xlsx
+
+Valida todas as colunas obrigatórias
+
+Mapeia cada coluna para o formato da tabela no Supabase
+
+Converte datas e valores corretamente
+
+Gera um array JSON limpo
+
+Faz upsert na tabela manutencoes_historico no Supabase
+
+Retorna um relatório com:
+
+total importado
+
+linhas ignoradas
+
+erros encontrados
+
+2. ESTRUTURA DA TABELA NO SUPABASE
+
+A importação precisa preencher estes campos:
+
+placa
+tipo
+descricao
+valor
+status
+km
+oficina
+base
+data_manutencao
+data_entrada
+data_saida
+tempo_total
+
+3. NOMES DE COLUNAS DA PLANILHA (ORIGEM)
+
+A planilha enviada pelo cliente pode ter títulos assim:
+
+PLACA
+
+TIPO
+
+DESCRIÇÃO
+
+VALOR
+
+STATUS
+
+KM
+
+OFICINA
+
+BASE
+
+DATA MANUTENÇÃO
+
+DATA ENTRADA
+
+DATA SAÍDA
+
+TEMPO DE MANUTENÇÃO
+
+Você deve:
+
+✔ aceitar qualquer variação: maiúscula/minúscula
+✔ remover acentos
+✔ trim()
+✔ mapear para os campos do banco
+
+4. REGRAS DE NORMALIZAÇÃO
+Datas
+
+Converter tudo para:
+
+YYYY-MM-DD
+
+
+Aceitar formatos:
+dd/mm/yyyy, mm/dd/yyyy, yyyy-mm-dd, datetime do Excel, número serial Excel.
+
+Valores numéricos
+
+Trocar vírgula por ponto
+
+Converter vazio para null
+
+Placa
+
+remover espaços
+
+deixar maiúscula
+
+5. MAPEAMENTO DE COLUNAS
+
+Peça para a IA gerar este objeto no código:
+
+const columnMap = {
+  'placa': 'placa',
+  'tipo': 'tipo',
+  'descricao': 'descricao',
+  'valor': 'valor',
+  'status': 'status',
+  'km': 'km',
+  'oficina': 'oficina',
+  'base': 'base',
+  'data manutencao': 'data_manutencao',
+  'data entrada': 'data_entrada',
+  'data saida': 'data_saida',
+  'tempo de manutencao': 'tempo_total'
+};
+
+6. O QUE O BACKEND DEVE FAZER
+
+A IA deve gerar um backend com:
+
+✔ Middleware Multer (somente .xlsx)
+✔ Handler usando XLSX para leitura
+✔ Função normalizeRow(row)
+✔ Função convertDate(value)
+✔ Função cleanNumber(value)
+✔ Validação: placa obrigatória
+✔ array final JSON de registros limpos
+✔ Upsert:
+supabase
+  .from('manutencoes_historico')
+  .upsert(dataImportada, { onConflict: 'placa,data_manutencao' })
+
+✔ Resposta final:
+{
+  "importados": 128,
+  "ignorados": 3,
+  "erros": [
+    { "linha": 7, "motivo": "data inválida" }
+  ]
+}
+
+7. O QUE VOCÊ (IA DO REPLIT) DEVE ENTREGAR
+
+Gerar:
+
+A) Código completo da rota
+
+multer
+
+leitura xlsx
+
+tratamento do array
+
+validações
+
+supabase upsert
+
+resposta final
+
+B) Atualizar frontend React
+
+Conectar rota de upload
+
+Mostrar barra de progresso
+
+Mostrar resumo da importação
+
+8. IMPORTANTE
+
+Não modifique o que já existe no sistema.
+Apenas adicione o módulo de importação conforme solicitado.

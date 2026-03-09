@@ -1,0 +1,32 @@
+Para que a IA do Replit consiga corrigir todo o fluxo, você precisa dar a ela uma visão "ponta a ponta" do problema. O erro atual é de **autenticação (401)** e de **formato de resposta (HTML em vez de JSON)**.
+
+Aqui está o roteiro exato do que você deve colar no chat do Replit Agent (ou IA do Replit) para ele resolver isso de uma vez:
+
+---
+
+### 📝 Copie e Cole este Prompt na IA do Replit:
+
+> "Preciso corrigir o fluxo de abertura de Ordens de Serviço (OS) entre a Base e a Gestão de Frotas. Atualmente, a base está recebendo um erro 'Unexpected token < in JSON' ao tentar enviar a OS.
+> **Por favor, analise e corrija os seguintes pontos:**
+> 1. **Autenticação da Base:** O console mostra 'Nenhuma sessão encontrada' e erro 401. Verifique por que o `AuthContext` está perdendo o usuário ou por que o token não está sendo enviado no cabeçalho (Headers) da requisição de abertura de OS.
+> 2. **Rota da API:** Verifique se a URL de destino do formulário de OS está correta e retornando JSON. Atualmente ela parece estar retornando uma página HTML de erro.
+> 3. **Fluxo de Dados:** Garanta que, ao salvar a OS, ela seja registrada em uma tabela (ex: `solicitacoes_manutencao`) para que apareça na aba de 'Indicadores de Manutenção' do time de gestão.
+> 4. **Interface da Base:** Implemente um estado de 'Loading' no botão 'Enviar OS' para evitar múltiplos cliques e trate o erro para que a base receba uma mensagem clara se o envio falhar.
+> 5. **Notificação:** Prepare o gatilho para que, após a gestão definir a oficina e data na aba principal, o sistema possa disparar a resposta via API do WhatsApp."
+> 
+> 
+
+---
+
+### 🔍 O que a IA deve procurar no seu código:
+
+* **No Frontend (Base):** O arquivo onde está o formulário "Abrir Ordem de Serviço". Ela deve garantir que o `fetch` ou `axios` inclua o token:
+`headers: { 'Authorization': 'Bearer ' + token }`.
+* **No Backend (Servidor):** O arquivo de rotas (ex: `api.py`, `server.js` ou as `Edge Functions` do Supabase). Ela precisa verificar se a rota que recebe a OS está protegida corretamente e se os campos (Placa, Tipo, Descrição, KM, Foto) estão sendo validados.
+* **Na Tabela de Indicadores:** Ela deve garantir que a nova OS apareça na lista de "Veículos em Manutenção" com um status inicial como "Pendente de Aprovação".
+
+### Próximo Passo:
+
+Assim que a IA terminar a análise, tente abrir uma OS de teste. Se o erro persistir, **tire um print da aba "Network" (Rede)** do console e me envie, pois ali conseguiremos ver exatamente o que o servidor respondeu.
+
+Gostaria que eu te ajudasse a estruturar como a aba de "Indicadores" deve exibir essas novas solicitações para o gestor?

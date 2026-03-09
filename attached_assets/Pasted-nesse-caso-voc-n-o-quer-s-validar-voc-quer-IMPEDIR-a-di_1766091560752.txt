@@ -1,0 +1,117 @@
+nesse caso você não quer só validar, você quer IMPEDIR a digitação fora do padrão.
+Isso se resolve com controle de entrada (input mask / onChange).
+
+Vou te passar a forma correta e profissional, que funciona no Replit / React / formulário web.
+
+✅ REGRA QUE VAMOS APLICAR
+
+❌ Não deixa digitar números no lugar de letras
+
+❌ Não deixa digitar letras onde é número
+
+❌ Não deixa passar de 7 caracteres
+
+✔ Aceita ABC1234 (antiga)
+
+✔ Aceita ABC1D23 (Mercosul)
+
+✔ Converte automaticamente para MAIÚSCULO
+
+🧠 Lógica simples
+
+O usuário digita
+
+O sistema:
+
+transforma em maiúsculo
+
+remove caracteres inválidos
+
+trava o que não pertence ao padrão
+
+⚛️ SOLUÇÃO RECOMENDADA (React / Replit)
+🔹 Função de controle do input
+const handlePlacaChange = (e) => {
+  let value = e.target.value.toUpperCase();
+
+  // remove tudo que não for letra ou número
+  value = value.replace(/[^A-Z0-9]/g, "");
+
+  // trava tamanho máximo
+  if (value.length > 7) return;
+
+  // regras posição por posição
+  const rules = [
+    /[A-Z]/, // 1ª letra
+    /[A-Z]/, // 2ª letra
+    /[A-Z]/, // 3ª letra
+    /[0-9]/, // 4º número
+    /[A-Z0-9]/, // 5º (número antigo OU letra Mercosul)
+    /[0-9]/, // 6º número
+    /[0-9]/, // 7º número
+  ];
+
+  for (let i = 0; i < value.length; i++) {
+    if (!rules[i].test(value[i])) {
+      return; // BLOQUEIA digitação inválida
+    }
+  }
+
+  setPlaca(value);
+};
+
+🔹 Input
+<input
+  type="text"
+  value={placa}
+  onChange={handlePlacaChange}
+  placeholder="ABC1234 ou ABC1D23"
+  maxLength={7}
+  required
+/>
+
+🟢 RESULTADO PRÁTICO
+Digitação	Resultado
+22222	❌ não digita
+AB12	❌ trava
+abc1d23	✔ vira ABC1D23
+ABC1234	✔ aceita
+ABC1@23	❌ bloqueia
+🧩 Se NÃO for React (HTML + JS puro)
+<input
+  id="placa"
+  maxlength="7"
+  placeholder="ABC1234 ou ABC1D23"
+/>
+
+<script>
+document.getElementById("placa").addEventListener("input", function (e) {
+  let v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+  const rules = [
+    /[A-Z]/,
+    /[A-Z]/,
+    /[A-Z]/,
+    /[0-9]/,
+    /[A-Z0-9]/,
+    /[0-9]/,
+    /[0-9]/,
+  ];
+
+  let final = "";
+  for (let i = 0; i < v.length; i++) {
+    if (rules[i] && rules[i].test(v[i])) {
+      final += v[i];
+    }
+  }
+
+  e.target.value = final;
+});
+</script>
+
+🔐 DICA IMPORTANTE (Murici On Fleet)
+
+Mesmo travando no front:
+✔ Valide novamente no backend
+✔ Use CHECK constraint no Supabase
+✔ Salve sempre em uppercase

@@ -1,0 +1,142 @@
+1. Problema real
+
+Hoje você tem apenas a manutenção ativa → mas não guarda o histórico quando:
+
+veículo é enviado para uma oficina A
+
+orçamento vem caro
+
+você retira e envia para oficina B
+
+às vezes envia até para oficina C
+
+➡️ Sem histórico de orçamento → você perde rastreabilidade e auditoria.
+
+✅ 2. Solução: Criar estrutura de “Manutenção” + “Orçamentos” + “Troca de Oficina”
+📌 Tabelas necessárias no Supabase
+🟦 1. manutenção
+
+Guarda o registro principal.
+
+Campo	Tipo	Descrição
+id	UUID	ID da manutenção
+placa	TEXT	Veículo
+status	TEXT	Em manutenção / Concluído
+problema_relatado	TEXT	Relato do motorista
+data_abertura	TIMESTAMP	Quando começou
+data_fechamento	TIMESTAMP	Quando acabou
+oficina_atual_id	UUID	FK da oficina atual (atualizada sempre)
+🟧 2. manutencao_oficinas (HISTÓRICO DE OFICINAS)
+
+Essa tabela permite registrar quantas oficinas participaram da mesma manutenção.
+
+Campo	Tipo	Descrição
+id	UUID	
+manutencao_id	FK	Referência da manutenção
+oficina_id	FK	Para qual oficina foi enviado
+data_envio	TIMESTAMP	Quando foi enviado
+data_retorno	TIMESTAMP	Quando voltou / cancelado
+motivo_troca	TEXT	Ex.: “orçamento acima do esperado”
+km_envio	NUMERIC	
+🟩 3. manutencao_orcamentos (HISTÓRICO DE ORÇAMENTOS)
+
+Cada oficina pode enviar vários orçamentos.
+
+Campo	Tipo	Descrição
+id	UUID	
+manutencao_oficina_id	FK	Orçamento pertence a uma oficina específica
+valor_estimado	NUMERIC	
+valor_mao_obra	NUMERIC	
+valor_pecas	NUMERIC	
+itens	JSONB	Lista de peças e serviços
+aprovado	BOOLEAN	
+data_orcamento	TIMESTAMP	
+✅ 3. Fluxo funcional no sistema
+🔵 Quando abre uma manutenção
+
+cria registro em manutencao
+
+cria primeira entrada em manutencao_oficinas com oficina escolhida
+
+🟡 Quando oficina envia orçamento
+
+O sistema grava em:
+
+manutencao_orcamentos
+(vinculado à oficina que está atendendo aquela manutenção)
+
+🔴 Se orçamento veio caro e você decide trocar
+
+Acontece assim:
+
+Fecha a entrada da oficina anterior em manutencao_oficinas.data_retorno
+
+Preenche motivo_troca = "orçamento alto"
+
+Cria nova entrada em manutencao_oficinas com a nova oficina
+
+Atualiza manutencao.oficina_atual_id
+
+➡️ Tudo fica registrado.
+➡️ Auditoria completa.
+
+✅ 4. Exibições no Dashboard
+1. Timeline da manutenção
+
+Exemplo exibido no frontend:
+
+Manutenção RNCSH11
+----------------------------------------
+• 25/11 – Enviado para Vegas Truck
+      - Orçamento: R$ 5.870,00 (Reprovado)
+• 26/11 – Enviado para Oficina Mechtronic
+      - Orçamento: R$ 3.250,00 (Aprovado)
+• 28/11 – Serviço concluído
+
+2. Histórico dentro da manutenção
+
+Como na tela:
+
+Histórico de Oficinas
+--------------------------------
+Vegas Truck      25/11 → 26/11   Motivo: Orçamento alto
+Mechtronic       26/11 → atual   Motivo: -
+
+3. Histórico de orçamentos
+
+Lista detalhada:
+
+Orçamentos recebidos:
+- Vegas Truck → R$ 5.870,00 (Reprovado)
+- Mechtronic → R$ 3.250,00 (Aprovado)
+
+✅ 5. Prompt para usar na IA do Replit
+
+Para criar isso automaticamente:
+
+🟦 PROMPT PRONTO PARA COLAR NA IA DO REPLIT
+Quero que você implemente um módulo completo de histórico de manutenção no meu sistema Murici On Fleet 2.0.
+
+Crie no backend Express.js as seguintes tabelas e rotas:
+
+Tabelas Supabase:
+1. manutencao (id, placa, problema_relatado, data_abertura, data_fechamento, status, oficina_atual_id)
+2. manutencao_oficinas (id, manutencao_id, oficina_id, data_envio, data_retorno, km_envio, motivo_troca)
+3. manutencao_orcamentos (id, manutencao_oficina_id, valor_estimado, valor_pecas, valor_mao_obra, itens(json), aprovado, data_orcamento)
+
+Rotas REST:
+- POST /manutencao
+- POST /manutencao/:id/oficina (adicionar nova oficina)
+- POST /manutencao/oficina/:id/orcamento (enviar orçamento)
+- PATCH /manutencao/oficina/:id/trocar (fechar e justificar troca)
+- GET /manutencao/:id/historico (retorna timeline completa)
+
+Criar também no React:
+- Tela da manutenção → botão “Trocar oficina”
+- Timeline com histórico de oficinas e orçamentos
+- Visualização de todos os orçamentos recebidos
+- Identificação de qual orçamento foi aprovado
+
+A aplicação deve sempre manter o histórico completo de cada troca de oficina e todos os orçamentos enviados.
+
+Use Supabase client, autenticação existente e padrão de organização atual do projeto.

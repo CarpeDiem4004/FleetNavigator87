@@ -1,0 +1,145 @@
+O login agora **conseguiu autenticar** (você vê os dados do usuário no log: `id: 62`, `name: 'teste'`, `email: 'teste10@teste10.com'`, `role: 'operador_status_frota'` etc.), mas depois a tela fica **branca** e volta para a tela de login principal. Isso é um comportamento clássico de **redirecionamento falhando** ou **estado de autenticação não sendo mantido corretamente** após o login.
+
+Vamos diagnosticar e corrigir passo a passo.
+
+### O que está acontecendo (análise dos logs)
+
+- Autenticação Supabase **funciona** → retorna dados do usuário.
+- O `id_base` **não aparece** no objeto do usuário logado nos logs (`AuthContext Provider values` mostra `user: null` mesmo após login).
+- Provavelmente o código **não está salvando/atualizando o estado do usuário** no contexto (React Context, Zustand, Redux etc.) após o login.
+- Por causa disso, o componente de rota protegida (ex.: dashboard da frota) vê `user == null` ou `isAuthenticated == false` → redireciona de volta para `/login`.
+
+### Passos para corrigir
+
+#### 1. Confirme que o `id_base` está no banco
+
+No Supabase Dashboard → tabela `usuarios` → procure o registro com `email = 'teste10@teste10.com'` (ou `id = 62`).
+
+- Verifique se a coluna `id_base` tem um valor válido (ex.: 1, 5, 24…).
+- Se estiver **NULL** → edite manualmente e coloque um ID de base que existe na tabela `bases`.
+- Salve e tente logar novamente.
+
+Se não existir a coluna `id_base` → crie ela (tipo integer, foreign key para `bases.id`).
+
+#### 2. Veja o código de login (onde está o problema mais provável)
+
+No arquivo que faz o login (provavelmente `FleetStatusLogin.tsx` ou similar), procure a função `handleLogin` ou equivalente. Deve ter algo assim:
+
+```tsx
+const handleLogin = async (email: string, password: string) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+
+    // Aqui busca o perfil completo
+    const { data: profile, error: profileError } = await supabase
+      .from('usuarios')
+      .select('id, nome, email, role, id_base, ativo')  // ← inclua id_base aqui!
+      .eq('id', data.user?.id)   // ou .eq('email', email) dependendo da sua model
+      .single();
+
+    if (profileError || !profile) {
+      throw new Error('Perfil não encontrado');
+    }
+
+    if (!profile.id_base) {
+      throw new Error('Usuário não vinculado a nenhuma base');
+    }
+
+    // ← AQUI ESTÁ O PROBLEMA MAIS COMUM
+    // Atualize o contexto / store com o perfil completo
+    setUser(profile);               // ou login(profile), setAuth(profile) etc.
+    // ou: authContext.login({ ...data.user, ...profile });
+
+    // Redireciona
+    navigate('/frota');             // ou '/minha-base', '/dashboard' etc.
+
+  } catch (err) {
+    console.error('Erro no login:', err);
+    alert(err.message || 'Erro ao entrar');
+  }
+};
+```
+
+**Pontos críticos para corrigir:**
+
+- Certifique-se de que `setUser(profile)` (ou equivalente) está sendo chamado **depois** de buscar o perfil.
+- Inclua `id_base` no `.select(...)`.
+- Use `.eq('id', data.user?.id)` se sua tabela `usuarios` tem `id` compatível com `auth.users.id` (UUID).  
+  Ou use `.eq('email', email.toLowerCase())` se o vínculo for por email.
+- Após `setUser`, o componente de rota deve reconhecer o usuário logado.
+
+#### 3. Verifique o Protected Route / Auth Wrapper
+
+Em `App.tsx` ou `PrivateRoute.tsx`, deve ter algo assim:
+
+```tsx
+if (!user || isLoading) {
+  return <Navigate to="/login" replace />;
+}
+```
+
+Se `user` continua `null` mesmo após login → o estado não foi atualizado.
+
+Teste adicionando um `console.log` logo após o `setUser`:
+
+```tsx
+setUser(profile);
+console.log('Usuário setado no contexto:', profile);
+```
+
+Depois do login, veja no console se aparece o objeto com `id_base`.
+
+#### 4. Testes rápidos no navegador (Console)
+
+1. Faça login novamente.
+2. Abra DevTools → Console e digite:
+
+   ```js
+   // Veja se o contexto tem usuário
+   window.ReactDevTools ? 'use React DevTools' : supabase.auth.getSession().then(console.log)
+   ```
+
+   Ou, se usa Context:
+
+   ```js
+   // Se você expôs o contexto globalmente (para debug)
+   console.log(useAuth())   // ou useContext(AuthContext)
+   ```
+
+3. Rode isso para confirmar o perfil:
+
+   ```js
+   supabase
+     .from('usuarios')
+     .select('id, nome, email, role, id_base')
+     .eq('email', 'teste10@teste10.com')
+     .single()
+     .then(console.log)
+   ```
+
+   Deve retornar o objeto com `id_base` preenchido.
+
+#### 5. Correção sugerida (resumo rápido)
+
+- Garanta `id_base` preenchido no banco.
+- No `handleLogin`, após buscar o profile:
+  - Atualize o estado global do usuário com `profile` (incluindo `id_base`).
+  - Use `navigate('/frota')` ou a rota correta da base.
+- Adicione `console.log('Redirecionando com user:', profile)` antes do `navigate`.
+- Se usa `useEffect` para verificar auth → certifique-se que ele roda após o login.
+
+#### 6. Próximos passos se ainda não resolver
+
+Compartilhe (se puder):
+- O trecho de código exato do `handleLogin` ou onde faz `setUser` / `login`.
+- O componente que envolve as rotas (ex.: `AuthProvider` ou `PrivateRoute`).
+- O que aparece no console logo após o login (procure por "Usuário setado" ou erros de navegação).
+
+Com isso, geralmente resolve 90% dos casos de "logou mas tela branca + volta pro login".
+
+Tente essas verificações e me diga o que encontrou!

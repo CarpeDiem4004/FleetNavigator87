@@ -1,0 +1,80 @@
+Causa mais provável: deslocamento de fuso horário (timezone) ao converter Date para ISO.
+Explicação curta — o que normalmente acontece:
+
+No frontend o usuário escolhe 14/10 (cria-se um Date no horário local, ex.: new Date(2025, 9, 14) → meia-noite local).
+
+Se esse Date é serializado com toISOString() (ou JS converte implicitamente), vira algo como 2025-10-13T21:00:00.000Z (UTC), e quando você extrai os primeiros 10 caracteres (.slice(0,10)) obtém 2025-10-13 — ou seja, o dia anterior.
+
+O banco (ou backend) recebe 2025-10-13 e grava isso na coluna DATE → aparece 13 no sistema, embora o usuário tenha escolhido 14 no card.
+
+Solução(s) recomendadas — escolha uma e aplique onde você está convertendo datas:
+
+1) Melhor prática: enviar date-only string construída a partir dos componentes (sem criar Date que será convertido para UTC)
+
+No frontend, em vez de someDate.toISOString().slice(0,10) ou new Date(...).toISOString().slice(0,10), construa a string:
+
+function pad(n: number) { return n < 10 ? `0${n}` : `${n}`; }
+
+function localDateToDateOnlyString(d: Date): string {
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${y}-${pad(m)}-${pad(day)}`; // "YYYY-MM-DD"
+}
+
+// Exemplo de uso quando enviar ao backend:
+const selectedDate = new Date(2025, 9, 14); // 14/out/2025 local
+const dateOnly = localDateToDateOnlyString(selectedDate); // "2025-10-14"
+// enviar dateOnly no body da requisição
+
+
+Com isso você envia explicitamente 2025-10-14 e evita todo o problema de conversão UTC.
+
+2) Alternativa simples: quando só tiver uma string ISO recebida, parse pelos componentes, não use new Date('YYYY-MM-DD')
+
+Para exibir sem erro (parseLocalDate):
+
+function parseLocalDate(dateStr: string) {
+  // espera "YYYY-MM-DD"
+  const [y, m, d] = dateStr.split('-').map(Number);
+  // cria Date em midnight local
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+3) Backend: nunca dependa de Date.toISOString() do cliente para extrair dia — se o cliente enviar um timestamp, normalize no backend:
+
+Se receber 2025-10-14T00:00:00.000Z e você extrair .slice(0,10) isso pode devolver 2025-10-13. Em vez disso, parse e reconstruir a parte date em UTC ou preferir sempre receber YYYY-MM-DD.
+
+Exemplo Node/TS (server):
+
+// recebido: payload.date (pode ser "YYYY-MM-DD" ou ISO)
+function extractDateOnlyFromPayload(payloadDate: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(payloadDate)) return payloadDate;
+  // se veio ISO ou timestamp
+  const d = new Date(payloadDate);
+  // compoe a data *no fuso local do servidor* a partir dos componentes
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
+
+
+Mas a recomendação principal é: padronizar para o frontend enviar YYYY-MM-DD construído a partir dos componentes locais (opção #1) e o backend só gravar essa string na coluna DATE sem reconversões.
+
+4) Verificações rápidas / debug que você pode fazer agora
+
+Abra o DevTools → aba Network → veja o corpo (payload) da requisição feita ao salvar a solicitação. Qual string date está sendo enviada? (se for 2025-10-13T... ou 2025-10-13 aí está o problema).
+
+No backend, logue o valor recebido antes de salvar (console.log('incoming date:', req.body.date)).
+
+Verifique o valor gravado diretamente no banco e o valor retornado pela API (para checar se a transformação ocorre depois do insert).
+
+Resumo prático (o que aplicar agora)
+
+No frontend ao enviar, monte YYYY-MM-DD manualmente (não use toISOString()), e envie esse dateOnly.
+
+No frontend ao exibir, use parseLocalDate() que eu te passei.
+
+No backend, aceite e grave YYYY-MM-DD diretamente (ou normalize explicitamente a partir de components em vez de confiar em toISOString()).

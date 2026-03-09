@@ -1,0 +1,190 @@
+Perfeito. Abaixo está um **PROMPT PROFISSIONAL, DETALHADO E PRONTO PARA USO NO REPLIT AI**, focado em **link externo integrado ao Line Haul**, checklist no pátio, **fotos, observações e histórico por placa**, exatamente no padrão que você precisa.
+
+---
+
+## 🔧 PROMPT PARA REPLIT AI – LINK EXTERNO DE CHECKLIST DE FROTA (LINE HAUL)
+
+Crie um **link externo público (com controle de acesso)** integrado ao **Painel Line Haul**, destinado aos **operadores de pátio**, para realização de **checklist da frota** com registro de **observações, fotos e histórico por placa**.
+
+O link deve funcionar em **celular, tablet e desktop**, com foco em uso rápido no pátio.
+
+---
+
+### 🎯 Objetivo do Link Externo
+
+Permitir que o operador realize o checklist da frota no pátio de forma simples, registrando condições do veículo antes da operação, criando um **histórico confiável por placa**, com evidências (fotos).
+
+---
+
+### 🌐 Acesso ao Link Externo
+
+* URL externa independente do login principal
+* Autenticação simples:
+
+  * Código da base **OU**
+  * Usuário operador (login leve)
+* Registro automático de:
+
+  * Quem realizou o checklist
+  * Data e hora
+  * Base
+
+---
+
+### 🧩 Funcionalidades do Checklist
+
+#### 1️⃣ Identificação do Veículo
+
+Formulário inicial com:
+
+* Placa do cavalo
+* Placa da carreta 1
+* Placa da carreta 2 (opcional)
+* Tipo de operação (Line Haul)
+
+---
+
+#### 2️⃣ Checklist Padrão de Pátio
+
+Criar checklist com opções **Sim / Não / Não se aplica**, incluindo:
+
+* Pneus
+* Lanternas
+* Faróis
+* Setas
+* Freios
+* Retrovisores
+* Vazamentos
+* Lacres
+* Documentação
+* Condições gerais do veículo
+
+> Permitir que o checklist seja configurável futuramente.
+
+---
+
+#### 3️⃣ Observações e Evidências
+
+* Campo obrigatório de **observação** quando houver resposta negativa
+* Upload de **múltiplas fotos** por item ou checklist geral
+* Fotos devem ser armazenadas com:
+
+  * Placa
+  * Data
+  * Operador
+  * Base
+
+---
+
+#### 4️⃣ Finalização do Checklist
+
+* Botão **“Finalizar Checklist”**
+* Gerar status automático:
+
+  * **Aprovado**
+  * **Aprovado com Observações**
+  * **Reprovado**
+* Não permitir edição após finalização
+
+---
+
+### 🗄️ Armazenamento e Histórico
+
+#### Tabelas Backend
+
+Criar estrutura:
+
+##### `checklist_patio`
+
+* id
+* placa_cavalo
+* placa_carreta_1
+* placa_carreta_2
+* base_id
+* operador_id
+* status_checklist
+* observacao_geral
+* created_at
+
+##### `checklist_itens`
+
+* checklist_id
+* item
+* status
+* observacao
+
+##### `checklist_fotos`
+
+* checklist_id
+* item
+* url_foto
+* created_at
+
+---
+
+### 📊 Integração com Painel Line Haul
+
+No painel principal:
+
+* Criar **aba “Checklist de Pátio”**
+* Buscar histórico por:
+
+  * Placa
+  * Base
+  * Data
+  * Status
+* Exibir:
+
+  * Quantidade de checklists realizados por placa
+  * Último checklist
+  * Histórico completo com fotos e observações
+
+---
+
+### 📈 Indicadores no Painel
+
+* Total de checklists realizados
+* Checklists reprovados
+* Veículos recorrentes com reprovação
+* Ranking de placas com mais apontamentos
+
+---
+
+### 🎨 UX/UI
+
+* Layout mobile-first
+* Botões grandes para uso em pátio
+* Upload de fotos direto da câmera
+* Feedback visual claro (cores por status)
+
+---
+
+### 🔐 Segurança e Governança
+
+* Checklist vinculado ao operador
+* Logs de criação
+* Dados imutáveis após finalização
+* Controle por base
+
+---
+
+### 📌 Resultado Esperado
+
+Um **link externo de checklist de pátio totalmente integrado ao Line Haul**, com:
+
+* Evidências fotográficas
+* Observações estruturadas
+* Histórico por placa
+* Indicadores operacionais
+* Base sólida para manutenção preventiva e auditoria
+
+---
+
+Se quiser, no próximo passo eu posso:
+
+* Ajustar o prompt **100% para Supabase + React ou Flutter**
+* Criar o **fluxo visual (wireframe)** do link externo
+* Integrar automaticamente checklist → **manutenção / bloqueio do veículo**
+* Criar **alertas automáticos** quando checklist for reprovado
+
+Só me diga qual o próximo passo 🚀

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de Exclusão de OS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        input { padding: 5px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Exclusão de OS - Sistema Fleet Management</h1>
+    
+    <div>
+        <h2>1. Testar Login</h2>
+        <button onclick="testLogin()">Fazer Login</button>
+        <div id="loginResult"></div>
+    </div>
+    
+    <div>
+        <h2>2. Listar Ordens de Serviço</h2>
+        <button onclick="listMaintenanceOrders()">Listar OS</button>
+        <div id="listResult"></div>
+    </div>
+    
+    <div>
+        <h2>3. Testar Exclusão</h2>
+        <input type="number" id="osId" placeholder="ID da OS para excluir">
+        <button onclick="testDelete()">Excluir OS</button>
+        <div id="deleteResult"></div>
+    </div>
+
+    <script>
+        let sessionCookie = '';
+        
+        async function testLogin() {
+            const loginResult = document.getElementById('loginResult');
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: 'admin@muricionfleet.com',
+                        password: 'admin'
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    loginResult.innerHTML = `<div class="result success">Login realizado com sucesso: ${data.message}</div>`;
+                } else {
+                    loginResult.innerHTML = `<div class="result error">Erro no login: ${data.message}</div>`;
+                }
+            } catch (error) {
+                loginResult.innerHTML = `<div class="result error">Erro de conexão: ${error.message}</div>`;
+            }
+        }
+
+        async function listMaintenanceOrders() {
+            const listResult = document.getElementById('listResult');
+            try {
+                const response = await fetch('/api/maintenance/orders', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    let html = '<div class="result success">Ordens de Serviço encontradas:</div>';
+                    if (data.orders && data.orders.length > 0) {
+                        html += '<ul>';
+                        data.orders.slice(0, 5).forEach(order => {
+                            html += `<li>OS #${order.id} - Veículo: ${order.vehiclePlate} - Status: ${order.status}</li>`;
+                        });
+                        html += '</ul>';
+                    } else {
+                        html += '<p>Nenhuma ordem de serviço encontrada.</p>';
+                    }
+                    listResult.innerHTML = html;
+                } else {
+                    listResult.innerHTML = `<div class="result error">Erro ao listar OS: ${data.message}</div>`;
+                }
+            } catch (error) {
+                listResult.innerHTML = `<div class="result error">Erro de conexão: ${error.message}</div>`;
+            }
+        }
+
+        async function testDelete() {
+            const deleteResult = document.getElementById('deleteResult');
+            const osId = document.getElementById('osId').value;
+            
+            if (!osId) {
+                deleteResult.innerHTML = `<div class="result error">Por favor, digite um ID de OS válido.</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/maintenance/${osId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    deleteResult.innerHTML = `<div class="result success">OS #${osId} excluída com sucesso!</div>`;
+                } else {
+                    deleteResult.innerHTML = `<div class="result error">Erro ao excluir OS: ${data.message}</div>`;
+                }
+            } catch (error) {
+                deleteResult.innerHTML = `<div class="result error">Erro de conexão: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

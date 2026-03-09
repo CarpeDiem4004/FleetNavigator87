@@ -1,0 +1,36 @@
+No link da base Coca-Cola (como o que você mostrou para Embu das Artes, SP, em gestaoonfleet.com ou similar no Murici On Fleet), o sistema é projetado exatamente para que os **status dos veículos** sejam atualizados diariamente ou em tempo real, refletindo a operação da frota na base específica.
+
+### Como os status são atualizados e controlados
+- **Atualização diária obrigatória**: Como operador da base (Olá, Operador Embu), você (ou a equipe) deve atualizar o status dos veículos **todo dia** (ou sempre que houver mudança), clicando em **Atualizar** ao lado de cada veículo na lista "Veículos da Base". Isso mantém os cards do topo precisos:
+  - Total (19 veículos na sua tela)
+  - Em Rota (3)
+  - Disponíveis (10)
+  - Manutenção (1 – exemplo: EPP1E71)
+  - Parados (5)
+  - OS Pendentes (0)
+
+- **Status "Em Manutenção"**: 
+  - Veículos como **EPP1E71** (mostrando "Em Manutenção", com prazo 28/01 e oficina MURICI) ficam travados nesse status até a finalização explícita da manutenção.
+  - Eles **não voltam automaticamente** para "Disponível" só pelo passar do tempo ou data de prazo. O sistema impede uso em rota enquanto estiver em manutenção para evitar riscos operacionais.
+
+### Como fazer o veículo voltar a "Disponível" após manutenção
+A equipe de **manutenção** (da oficina Murici ou parceira) precisa **finalizar a OS** no sistema para liberar o status. O fluxo típico (baseado em sistemas semelhantes de gestão de frota como esse):
+1. Acesse a OS do veículo:
+   - Clique em **Abrir OS** no card do veículo (botão laranja ao lado de cada placa).
+   - Ou vá para a aba/seção **Manutenção** / **Indicadores de Manutenção** (como na tela anterior que você mostrou, com cards Em Manutenção, Liberado, etc.).
+2. Na tela da OS aberta:
+   - Veja detalhes: problema relatado, oficina direcionada (ex: Murici), data agendada, status atual.
+   - A equipe de manutenção atualiza o progresso (ex: peças trocadas, testes feitos).
+3. **Finalizar a manutenção**:
+   - Procure botão ou ação como **Finalizar OS**, **Concluir Manutenção**, **Liberar Veículo**, **Encerrar OS** ou **Status: Liberado/Concluído**.
+   - Confirme a finalização (pode pedir confirmação, quilometragem final, observações ou anexos como fotos/notas fiscais).
+   - Ao salvar, o sistema atualiza automaticamente o status do veículo para **Disponível** (ou "Liberado") na base.
+4. Atualize a página da base (botão **Atualizar** no topo) para ver a mudança refletida imediatamente nos cards (ex: Manutenção cai de 1 para 0, Disponíveis sobe).
+
+### Dicas para garantir atualizações corretas na base Coca-Cola
+- **Diariamente**: Ao iniciar o turno, clique em **Atualizar** na tela da base para puxar as últimas mudanças (incluindo finalizações de OS da oficina).
+- Se o status não mudar após finalização: Verifique se a OS foi realmente concluída pela oficina (pode ser necessário login da equipe de manutenção em outro perfil). Se for Murici interna, eles acessam via painel de oficinas.
+- Para veículos com **prazo vencido** (ex: 28/01 no EPP1E71): Isso gera alerta (ícone de exclamação ou no card Parados), mas não altera status sozinho – só finalização da OS resolve.
+- Se você for só operador da base e não tiver permissão para finalizar OS: Avise a manutenção (via sistema, chat ou e-mail) para eles concluírem. O sistema provavelmente notifica automaticamente quando OS está pendente ou em atraso.
+
+Se depois de finalizar a OS o veículo ainda aparecer "Em Manutenção" na base, tire print da tela da OS concluída e descreva o erro que eu ajudo a diagnosticar melhor. Ou teste em um veículo de teste se possível. Assim a frota da Coca-Cola fica sempre com disponibilidade real e atualizada!

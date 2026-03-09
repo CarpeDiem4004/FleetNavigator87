@@ -1,0 +1,167 @@
+Perfeito — agora ficou bem claro o que você quer 👍
+Vou **evoluir o prompt** para um nível **profissional / corporativo**, focando exatamente nisso:
+
+👉 **separar mensagens INDIVIDUAIS x GRUPOS**
+👉 melhorar leitura, filtros e histórico
+👉 sem mexer em Z-API
+👉 apenas **painel visual e lógica de exibição**
+
+Você pode **copiar e colar direto no Replit AI**.
+
+---
+
+# ✅ PROMPT MELHORADO — PAINEL DE ATENDIMENTO DE SALDO
+
+### (Mensagens Individuais x Mensagens de Grupos)
+
+```
+Melhorar o Painel de Atendimento de Saldo existente, focando na organização,
+visualização e separação clara entre mensagens INDIVIDUAIS e mensagens de GRUPOS.
+A integração com Z-API já está pronta e NÃO deve ser alterada.
+
+OBJETIVO:
+Permitir que operadores visualizem, filtrem e gerenciem mensagens de atendimento
+de saldo (Ticket / Veloe / Line Haul), separando claramente conversas individuais
+de mensagens vindas de grupos de WhatsApp, mantendo histórico completo e auditável.
+
+------------------------------------------------
+1. ORGANIZAÇÃO PRINCIPAL DO PAINEL
+------------------------------------------------
+
+Criar duas abas principais no topo do painel:
+
+[ 📱 Mensagens Individuais ]   [ 👥 Mensagens de Grupos ]
+
+- Cada aba deve funcionar de forma independente
+- O contador de mensagens deve ser separado por tipo
+- O operador consegue alternar rapidamente entre os contextos
+
+------------------------------------------------
+2. ABA: MENSAGENS INDIVIDUAIS
+------------------------------------------------
+
+Nesta aba exibir somente mensagens 1-para-1 (motorista ↔ sistema).
+
+LISTA DE CONVERSAS (coluna esquerda):
+- Placa do veículo
+- Nome do motorista
+- Telefone
+- Tipo de saldo (Ticket / Veloe / Line Haul)
+- Status da solicitação (Aprovado, Negado, Alerta, Pendente)
+- Última mensagem
+- Data e hora da última interação
+- Indicador de mensagem não lida
+- Identificação de quem respondeu (ex: “Por: Admin”)
+
+Filtros rápidos:
+- Todas
+- Pendentes de resposta
+- Aprovadas
+- Negadas
+- Alertas
+
+------------------------------------------------
+3. ABA: MENSAGENS DE GRUPOS
+------------------------------------------------
+
+Nesta aba exibir somente mensagens recebidas de GRUPOS de WhatsApp.
+
+LISTA DE GRUPOS (coluna esquerda):
+- Nome do grupo
+- Projeto / Base associada
+- Quantidade de mensagens novas
+- Última mensagem enviada no grupo
+- Data e hora da última atividade
+
+DETALHE DO GRUPO (coluna direita):
+- Timeline de mensagens do grupo
+- Cada mensagem deve exibir:
+  - Nome de quem enviou
+  - Número ou identificação
+  - Conteúdo da mensagem
+  - Data e hora
+- Mensagens do sistema devem ter visual diferenciado
+- Mensagens do operador devem mostrar claramente:
+  “Respondido por: Nome do Operador”
+
+OBSERVAÇÃO:
+- Grupos são somente leitura (visualização)
+- Não permitir resposta direta pelo painel (apenas monitoramento)
+
+------------------------------------------------
+4. HISTÓRICO E AUDITORIA
+------------------------------------------------
+
+Criar um painel de histórico unificado (por conversa ou grupo):
+
+Cada registro deve conter:
+- Tipo: Individual ou Grupo
+- Data e hora
+- Evento:
+  - Mensagem recebida
+  - Mensagem enviada
+  - Aprovação
+  - Negação
+- Quem enviou
+- Quem respondeu
+- Tipo de saldo relacionado
+
+O histórico deve ser:
+- Automático
+- Não editável
+- Ordenado por data
+
+------------------------------------------------
+5. MELHORIAS VISUAIS
+------------------------------------------------
+
+- Identificar mensagens individuais com ícone 📱
+- Identificar grupos com ícone 👥
+- Badges de status com cores:
+  - Verde: Aprovado
+  - Vermelho: Negado
+  - Amarelo: Alerta
+  - Azul: Pendente
+- Layout clean, moderno e corporativo
+- Manter padrão visual do sistema atual
+- Interface responsiva
+
+------------------------------------------------
+6. REGRAS IMPORTANTES
+------------------------------------------------
+
+- NÃO alterar integração com Z-API
+- NÃO criar backend novo
+- NÃO enviar mensagens automaticamente
+- Foco apenas na organização visual e experiência do operador
+```
+
+---
+
+## 🧠 O QUE ESSE PROMPT RESOLVE
+
+✔ Separação clara entre **mensagens privadas e grupos**
+✔ Evita erro operacional
+✔ Facilita auditoria
+✔ Ajuda o operador a focar no que exige ação
+✔ Deixa o painel muito mais profissional
+
+---
+
+## 🚀 Próximas evoluções (opcional)
+
+Se quiser ir além, dá para adicionar:
+
+* SLA de resposta por tipo de saldo
+* Alertas de mensagens sem resposta
+* Classificação automática de mensagens de grupo
+* Marcação de mensagens relevantes no grupo
+* Relatório de atendimento por operador
+
+Se quiser, no próximo passo eu posso:
+
+* Te devolver o **layout em React + Tailwind**
+* Criar o **modelo de dados no Supabase**
+* Criar **regras de permissão (admin / operador)**
+
+É só dizer 👊

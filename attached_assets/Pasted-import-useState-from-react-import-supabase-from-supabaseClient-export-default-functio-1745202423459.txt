@@ -1,0 +1,65 @@
+import { useState } from 'react'
+import { supabase } from './supabaseClient'
+
+export default function CadastroFrota() {
+  const [form, setForm] = useState({
+    placa: '',
+    marca: '',
+    modelo: '',
+    base_alocada: '',
+    tipo_posse: '',
+    empresa_locadora: '',
+  })
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (form.tipo_posse === 'Locado' && !form.empresa_locadora) {
+      alert('Preencha a empresa locadora.')
+      return
+    }
+
+    const { error } = await supabase.from('cadastro_frota').insert([form])
+    if (error) {
+      alert('Erro ao salvar: ' + error.message)
+    } else {
+      alert('Veículo cadastrado com sucesso!')
+      setForm({
+        placa: '',
+        marca: '',
+        modelo: '',
+        base_alocada: '',
+        tipo_posse: '',
+        empresa_locadora: '',
+      })
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 p-6">
+      <h2 className="text-xl font-bold">Cadastro de Frota</h2>
+
+      <input name="placa" placeholder="Placa" value={form.placa} onChange={handleChange} required className="input" />
+      <input name="marca" placeholder="Marca" value={form.marca} onChange={handleChange} required className="input" />
+      <input name="modelo" placeholder="Modelo (Fiorino, Van, etc)" value={form.modelo} onChange={handleChange} required className="input" />
+      <input name="base_alocada" placeholder="Base Alocada" value={form.base_alocada} onChange={handleChange} required className="input" />
+
+      <select name="tipo_posse" value={form.tipo_posse} onChange={handleChange} required className="input">
+        <option value="">Tipo de Posse</option>
+        <option value="Murici">Murici</option>
+        <option value="Locado">Locado</option>
+      </select>
+
+      {form.tipo_posse === 'Locado' && (
+        <input name="empresa_locadora" placeholder="Empresa Locadora" value={form.empresa_locadora} onChange={handleChange} required className="input" />
+      )}
+
+      <button type="submit" className="btn btn-primary">Salvar</button>
+    </form>
+  )
+}

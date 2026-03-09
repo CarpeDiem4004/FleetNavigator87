@@ -1,0 +1,74 @@
+Aqui está o **prompt completo e pronto para usar no Replit AI**, totalmente estruturado para gerar o dashboard executivo no seu sistema (React + Supabase):
+
+---
+
+## **PROMPT PRONTO PARA O REPLIT AI — DASHBOARD EXECUTIVO**
+
+Quero que você **modernize o painel** abaixo dos cards principais e crie um **DASHBOARD EXECUTIVO COMPLETO**, seguindo os requisitos abaixo, sem alterar o funcionamento atual do sistema e sem quebrar nenhuma rota do Supabase.
+
+### **📊 1. Estrutura do Dashboard Executivo**
+
+Criar uma seção logo abaixo dos cards principais contendo:
+
+* Gráfico de checklists realizados por período
+* Gráfico de manutenções (abertas, concluídas, atrasadas)
+* Gráfico de veículos (ativos, parados, em manutenção)
+* Gráfico de viagens (concluídas, canceladas, no show)
+* Tabela resumo com métricas gerais
+
+### **📅 2. Filtros por data**
+
+Adicionar no topo do dashboard:
+
+* Campo **Data inicial**
+* Campo **Data final**
+* Botão **Aplicar filtros**
+
+Ao aplicar os filtros, todos os gráficos e métricas devem ser atualizados dinamicamente.
+
+### **📈 3. Gráficos modernos**
+
+Usar Recharts ou Chart.js (o que já está no projeto).
+Criar gráficos com visual moderno:
+
+* Gráfico de barras para checklists
+* Gráfico de pizza/donut para status de viagens
+* Gráfico de linha para evolução de manutenções
+* Gráfico de barras horizontais para status dos veículos
+
+### **🗄️ 4. Integração com Supabase**
+
+Buscar os dados das seguintes tabelas (já existentes no projeto):
+
+* `checklists_viagem`
+* `manutencao`
+* `veiculos`
+* `line_hall_shopee` (viagens)
+
+Respeitar o filtro:
+
+```
+WHERE data BETWEEN data_inicial AND data_final
+```
+
+### **🎨 5. Design**
+
+* Layout limpo e moderno
+* Cores sutis em degrade
+* Cards com bordas arredondadas
+* Área ampla entre os gráficos
+* Responsivo para desktop e tablet
+* Seguir padrão visual atual, apenas modernizando
+
+### **⚙️ 6. Não alterar:**
+
+* Autenticação
+* Rotas existentes
+* CRUDs atuais
+* Componentes já funcionando
+
+Apenas adicionar o **dashboard executivo novo**.
+
+---
+
+Se quiser, posso gerar também o **código base completo do dashboard**, já com os gráficos prontos, filtros e chamadas Supabase.

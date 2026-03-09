@@ -1,0 +1,116 @@
+import { useState } from 'react'
+import { supabase } from './supabaseClient'
+
+export default function CadastroOficina() {
+  const [form, setForm] = useState({
+    nome_oficina: '',
+    cnpj: '',
+    telefone: '',
+    email: '',
+    endereco: '',
+    ramo_atuacao: '',
+    banco: '',
+    agencia: '',
+    conta: '',
+    tipo_conta: '',
+    veiculo_id: '',
+    orcamento_url: '',
+    data_entrada: '',
+    previsao_entrega: '',
+    data_retirada: '',
+    servico_realizado: false,
+    observacoes: '',
+    forma_pagamento: '',
+    unificar_servicos: false,
+    valor_total: '',
+  })
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const { error } = await supabase.from('fornecedor_oficina').insert([form])
+    if (error) {
+      alert('Erro ao enviar: ' + error.message)
+    } else {
+      alert('Orçamento enviado com sucesso!')
+      setForm({
+        nome_oficina: '',
+        cnpj: '',
+        telefone: '',
+        email: '',
+        endereco: '',
+        ramo_atuacao: '',
+        banco: '',
+        agencia: '',
+        conta: '',
+        tipo_conta: '',
+        veiculo_id: '',
+        orcamento_url: '',
+        data_entrada: '',
+        previsao_entrega: '',
+        data_retirada: '',
+        servico_realizado: false,
+        observacoes: '',
+        forma_pagamento: '',
+        unificar_servicos: false,
+        valor_total: '',
+      })
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="p-6 space-y-4">
+      <h2 className="text-xl font-bold">Cadastro da Oficina e Orçamento</h2>
+
+      <input name="nome_oficina" placeholder="Nome da Oficina" required value={form.nome_oficina} onChange={handleChange} className="input" />
+      <input name="cnpj" placeholder="CNPJ" value={form.cnpj} onChange={handleChange} className="input" />
+      <input name="telefone" placeholder="Telefone" value={form.telefone} onChange={handleChange} className="input" />
+      <input name="email" placeholder="E-mail" value={form.email} onChange={handleChange} className="input" />
+      <input name="endereco" placeholder="Endereço" value={form.endereco} onChange={handleChange} className="input" />
+      <input name="ramo_atuacao" placeholder="Ramo de Atuação" value={form.ramo_atuacao} onChange={handleChange} className="input" />
+      <hr className="my-2" />
+      <input name="banco" placeholder="Banco" value={form.banco} onChange={handleChange} className="input" />
+      <input name="agencia" placeholder="Agência" value={form.agencia} onChange={handleChange} className="input" />
+      <input name="conta" placeholder="Conta" value={form.conta} onChange={handleChange} className="input" />
+      <select name="tipo_conta" value={form.tipo_conta} onChange={handleChange} className="input">
+        <option value="">Tipo de Conta</option>
+        <option value="Corrente">Corrente</option>
+        <option value="Poupança">Poupança</option>
+        <option value="PJ">PJ</option>
+        <option value="PIX">PIX</option>
+      </select>
+      <hr className="my-2" />
+      <input name="veiculo_id" placeholder="ID do Veículo (UUID)" value={form.veiculo_id} onChange={handleChange} className="input" />
+      <input name="orcamento_url" placeholder="Link do Orçamento (PDF ou Google Drive)" value={form.orcamento_url} onChange={handleChange} className="input" />
+      <input type="date" name="data_entrada" value={form.data_entrada} onChange={handleChange} className="input" />
+      <input type="date" name="previsao_entrega" value={form.previsao_entrega} onChange={handleChange} className="input" />
+      <input type="date" name="data_retirada" value={form.data_retirada} onChange={handleChange} className="input" />
+      <label>
+        <input type="checkbox" name="servico_realizado" checked={form.servico_realizado} onChange={handleChange} />
+        Serviço Realizado
+      </label>
+      <textarea name="observacoes" placeholder="Observações" value={form.observacoes} onChange={handleChange} className="input" />
+      <select name="forma_pagamento" value={form.forma_pagamento} onChange={handleChange} className="input">
+        <option value="">Forma de Pagamento</option>
+        <option value="Boleto">Boleto</option>
+        <option value="Pix">Pix</option>
+        <option value="Transferência">Transferência</option>
+        <option value="Cartão">Cartão</option>
+      </select>
+      <label>
+        <input type="checkbox" name="unificar_servicos" checked={form.unificar_servicos} onChange={handleChange} />
+        Unificar Serviços
+      </label>
+      <input name="valor_total" placeholder="Valor Total" value={form.valor_total} onChange={handleChange} className="input" />
+
+      <button type="submit" className="btn btn-primary">Enviar Orçamento</button>
+    </form>
+  )
+}

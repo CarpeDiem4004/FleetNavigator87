@@ -1,0 +1,104 @@
+Esse erro —
+
+SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+
+
+— significa que seu frontend (LineHaulPage.tsx) está tentando interpretar uma resposta HTML como JSON.
+O <DOCTYPE html> indica que o backend (ou endpoint Supabase/API) retornou uma página HTML (erro, redirecionamento, ou página padrão) em vez de JSON.
+
+🔍 Causas mais comuns
+
+O endpoint está errado ou inacessível.
+
+Exemplo: você chama fetch('/api/atualizar-status'), mas o servidor real está em https://meuservidor.railway.app/api/atualizar-status.
+
+Então o navegador recebe o HTML do frontend (index.html) em vez da API.
+
+A requisição falhou e o servidor retornou uma página de erro (401, 403, 404, 500, etc.)
+
+Geralmente isso acontece por:
+
+Token de autenticação ausente ou inválido.
+
+Rota protegida sem cabeçalho Authorization.
+
+URL errada ou método incorreto (POST vs GET).
+
+Supabase / backend não está configurado para responder com JSON
+
+Por exemplo, return res.send("ok") em vez de res.json({ message: "ok" }).
+
+🧭 Como resolver passo a passo
+1️⃣ Veja o que está sendo chamado
+
+No trecho onde dá erro (por volta da linha 654 do LineHaulPage.tsx), procure algo como:
+
+const response = await fetch('/api/atualizar-status', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ id, novoStatus }),
+});
+const data = await response.json();
+
+
+➡️ Adicione logs para depurar:
+
+const response = await fetch('/api/atualizar-status', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ id, novoStatus }),
+});
+
+console.log('Status da resposta:', response.status);
+console.log('Tipo de conteúdo:', response.headers.get('content-type'));
+const text = await response.text();
+console.log('Corpo recebido:', text);
+
+let data;
+try {
+  data = JSON.parse(text);
+} catch {
+  console.error('Erro ao converter resposta em JSON');
+}
+
+
+Se aparecer <html>, o backend está mandando HTML em vez de JSON.
+
+2️⃣ Corrija o endpoint
+
+Certifique-se de que a URL da requisição é a certa:
+
+Se estiver usando Railway, use o domínio completo, por exemplo:
+
+const API_URL = 'https://murici-api.up.railway.app';
+await fetch(`${API_URL}/api/atualizar-status`, ...)
+
+
+Se estiver usando Supabase Functions, use:
+
+const { data, error } = await supabase.functions.invoke('atualizar-status', {
+  body: { id, novoStatus }
+});
+
+3️⃣ Confirme que o backend retorna JSON
+
+No seu backend (Express, Supabase function, etc.), retorne sempre JSON:
+
+res.status(200).json({ success: true, message: 'Status atualizado com sucesso' });
+
+
+e não:
+
+res.send('Status atualizado');
+
+4️⃣ Cheque autenticação
+
+Se for uma rota protegida, adicione o header de autorização:
+
+headers: {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${session?.access_token}`,
+},
+
+
+Caso contrário, a API pode redirecionar (401) para uma página HTML de login, o que causa exatamente esse erro.

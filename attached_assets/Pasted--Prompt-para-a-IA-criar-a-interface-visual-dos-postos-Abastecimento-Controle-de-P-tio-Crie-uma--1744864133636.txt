@@ -1,0 +1,90 @@
+✅ Prompt para a IA criar a interface visual dos postos (Abastecimento + Controle de Pátio)
+Crie uma aplicação web utilizando React + TailwindCSS, voltada para postos de abastecimento da gestão de frotas. Essa aplicação não exige login e deve gerar um link único para cada posto, sendo eles:
+
+Osasco
+
+ABC
+
+Campinas
+
+Sorocaba
+
+Socorro
+
+Cada posto terá seu próprio link com um formulário exclusivo, que deverá permitir registrar:
+
+🛢️ Formulário de Abastecimento
+Campos:
+
+Placa do Veículo (input texto)
+
+KM Atual (número)
+
+Tipo de Combustível (dropdown: Diesel ou ARLA)
+
+Quantidade Abastecida (Litros) (número)
+
+Nome do Motorista (input texto)
+
+Nome do Operador (input texto)
+
+Data/Hora automática (preenchida automaticamente)
+
+Botão: “Registrar Abastecimento”
+
+🛢️ Formulário de Recebimento de Combustível no Tanque
+Campos:
+
+Tipo de Produto Recebido (dropdown: Diesel ou ARLA)
+
+Quantidade Recebida (Litros) (número)
+
+Nome do Operador (input texto)
+
+Data/Hora automática (preenchida automaticamente)
+
+Botão: “Registrar Recebimento no Tanque”
+
+🚚 Formulário de Controle de Pátio (Entrada/Saída de Veículos)
+Campos:
+
+Placa do Veículo (input texto)
+
+Tipo de Movimento (dropdown: Entrada para pernoite / Saída para rota / Saída para manutenção)
+
+Nome do Motorista (input texto)
+
+Nome do Operador (input texto)
+
+Data/Hora automática (preenchida automaticamente)
+
+Botão: “Registrar Movimento de Veículo”
+
+⚙️ Requisitos Técnicos
+Usar TailwindCSS para estilização com design responsivo.
+
+O layout deve ser limpo, com bordas arredondadas, espaçamento adequado e boa legibilidade.
+
+Utilizar React Router ou lógica de rotas para criar uma rota específica para cada posto, por exemplo:
+
+/postos/osasco
+
+/postos/abc
+
+/postos/campinas
+
+/postos/sorocaba
+
+/postos/socorro
+
+Cada rota deve carregar apenas os dados daquele posto.
+
+📤 Integração com Supabase
+As submissões dos formulários devem ser enviadas para tabelas específicas no Supabase via API REST:
+
+Tabela abastecimentos_postos
+
+Tabela recebimentos_tanques
+
+Tabela movimentacoes_patio
+

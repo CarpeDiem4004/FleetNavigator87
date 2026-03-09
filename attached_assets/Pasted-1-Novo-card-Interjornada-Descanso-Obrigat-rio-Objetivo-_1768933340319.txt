@@ -1,0 +1,154 @@
+1️⃣ Novo card: Interjornada (Descanso Obrigatório)
+📌 Objetivo do card
+
+Mostrar motoristas que encerraram a jornada, mas ainda não completaram as 11h mínimas de descanso.
+
+📊 Card no painel (visão executiva)
+
+Título do card
+
+⏱️ Interjornada (11h)
+
+Indicador principal
+
+Número de motoristas em descanso
+
+Número de motoristas liberados para nova jornada
+
+Exemplo:
+
+Interjornada (11h)
+3 Em descanso
+5 Liberados
+
+
+Cor do card
+
+🔴 Vermelho → descanso não concluído
+
+🟡 Amarelo → falta menos de 2h
+
+🟢 Verde → descanso concluído
+
+2️⃣ Regra de negócio (muito importante)
+📘 Conceito
+
+A interjornada começa quando:
+
+O operador encerra a jornada do motorista
+
+E termina quando:
+
+Se passam 11 horas completas desde o horário de encerramento
+
+🧮 Cálculo base
+hora_fim_jornada + 11 horas = hora_liberacao
+
+
+Se agora < hora_liberacao
+➡️ motorista em descanso obrigatório
+
+Se agora >= hora_liberacao
+➡️ motorista apto a iniciar nova jornada
+
+3️⃣ Estrutura mínima no Supabase
+📄 Tabela: controle_jornada_motorista
+
+Campos essenciais:
+
+id
+motorista_id
+placa
+hora_inicio_jornada
+hora_fim_jornada
+interjornada_fim -- hora_fim_jornada + 11h
+status_jornada -- ativa | encerrada
+created_at
+
+
+👉 O campo interjornada_fim pode ser:
+
+calculado no backend
+
+ou calculado no frontend (menos recomendado)
+
+4️⃣ O que aparece AO CLICAR no card
+
+Quando clicar em Interjornada (11h), abrir um modal ou página com tabela:
+
+📋 Lista de motoristas em interjornada
+
+Colunas:
+
+Motorista
+
+Placa
+
+Fim da jornada
+
+Tempo já descansado
+
+Tempo restante para liberação
+
+Status
+
+Exemplo de status:
+
+🔴 Faltam 4h 20min
+
+🟡 Faltam 45min
+
+🟢 Liberado
+
+5️⃣ Lógica visual (UX simples e clara)
+🔔 Regras visuais
+
+Se faltar mais de 2h → vermelho
+
+Se faltar até 2h → amarelo
+
+Se zerar → verde + texto “Apto para nova jornada”
+
+6️⃣ Regra de bloqueio (recomendado 🚨)
+
+Se motorista não completou 11h:
+
+❌ botão “Iniciar Jornada” desabilitado
+
+Tooltip:
+
+“Motorista em descanso obrigatório (interjornada de 11h)”
+
+Isso reduz risco trabalhista e jurídico.
+
+7️⃣ Prompt pronto para usar no Replit AI 🤖
+
+Você pode colar isso direto:
+
+Criar um novo card no painel "Controle de Jornada de Motoristas" chamado "Interjornada (11h)".
+
+Regras:
+- O card deve contar quantos motoristas estão em descanso obrigatório (interjornada).
+- A interjornada começa quando a jornada do motorista é encerrada.
+- O tempo mínimo de descanso é de 11 horas.
+- Calcular interjornada_fim = hora_fim_jornada + 11h.
+- Se o horário atual for menor que interjornada_fim, o motorista está em descanso.
+- Se for maior ou igual, está liberado.
+
+Ao clicar no card:
+- Abrir um modal ou página listando:
+  motorista, placa, hora_fim_jornada, tempo já descansado, tempo restante e status.
+- Aplicar cores:
+  vermelho (mais de 2h restantes),
+  amarelo (até 2h),
+  verde (liberado).
+
+Bloquear o botão "Iniciar Jornada" para motoristas que não completaram a interjornada.
+
+8️⃣ Benefício direto para você (gestão)
+
+✅ Evita infração trabalhista
+✅ Reduz risco de fadiga
+✅ Gera evidência em auditoria
+✅ Dá visão clara para operação
+✅ Fica bem executivo, do jeito que você pediu

@@ -1,0 +1,111 @@
+Perfeito. Abaixo está um **prompt bem estruturado e direto**, no padrão ideal para você colar no **Replit AI** (ou outra IA de desenvolvimento) e implementar essa função dentro do **módulo de Segurança do Trabalho** do *Murici On Fleet 2.0*.
+
+---
+
+## 🎯 Prompt – Módulo de Registro de Desvios | Segurança do Trabalho
+
+**Objetivo**
+Criar uma funcionalidade no módulo de **Segurança do Trabalho** para registrar e acompanhar **desvios operacionais e comportamentais cometidos por motoristas**, permitindo identificar reincidência e atuar de forma preventiva.
+
+### 📌 Funcionalidade Principal
+
+Implementar um **Registro de Desvios de Motoristas**, com armazenamento histórico por **placa e driver**.
+
+---
+
+### 📝 Campos Obrigatórios do Registro
+
+* **Placa do veículo** (selecionável a partir da tabela de veículos)
+* **Nome do motorista** (vinculado à tabela de motoristas)
+* **Data do desvio** (data do registro ou data do ocorrido)
+* **Tipo de desvio cometido** (campo de seleção)
+
+---
+
+### 📂 Tipos de Desvio (valores sugeridos)
+
+* Excesso de velocidade
+* Jornada acima do permitido
+* Falha no checklist
+* Não uso de EPI
+* Uso indevido do veículo
+* Avaria por condução inadequada
+* Descumprimento de procedimento operacional
+* Outro (com campo de observação obrigatório)
+
+---
+
+### 🧾 Campos Adicionais (opcional, mas recomendado)
+
+* **Observações detalhadas**
+* **Anexo de evidências** (foto, PDF, vídeo)
+* **Responsável pelo registro** (usuário logado)
+* **Base / Operação**
+* **Status do desvio**
+
+  * Registrado
+  * Em acompanhamento
+  * Tratado
+  * Recorrente
+
+---
+
+### 📊 Regras e Lógicas do Sistema
+
+* Cada registro deve ficar **vinculado ao histórico do motorista e da placa**
+* O sistema deve:
+
+  * Contabilizar automaticamente **quantidade de desvios por motorista**
+  * Identificar **reincidência** (ex: mesmo tipo de desvio em um período configurável)
+* Destacar visualmente motoristas reincidentes no painel
+
+---
+
+### 📈 Dashboard – Segurança do Trabalho
+
+Criar um painel com:
+
+* Total de desvios no período
+* Ranking de motoristas com mais desvios
+* Tipos de desvios mais recorrentes
+* Alertas visuais para motoristas reincidentes
+* Filtro por:
+
+  * Base
+  * Motorista
+  * Placa
+  * Tipo de desvio
+  * Período
+
+---
+
+### 🔐 Permissões
+
+* Apenas usuários autorizados (Segurança do Trabalho / Gestão de Frota) podem:
+
+  * Criar
+  * Editar
+  * Encerrar registros
+* Bases visualizam apenas seus próprios dados
+
+---
+
+### 🔗 Integrações Futuras (preparar estrutura)
+
+* Cruzamento com:
+
+  * Controle de jornada
+  * Checklists de frota
+  * Registros de incidentes e acidentes
+* Geração de relatórios para auditoria e compliance
+
+---
+
+Se quiser, no próximo passo eu posso:
+
+* 📐 Desenhar o **modelo da tabela no Supabase**
+* 🧠 Definir a **regra exata de reincidência**
+* 🖥️ Criar o **layout do painel (UI/UX)** no padrão executivo
+* 🔄 Integrar com checklist, jornada ou line haul
+
+É só me dizer 👍

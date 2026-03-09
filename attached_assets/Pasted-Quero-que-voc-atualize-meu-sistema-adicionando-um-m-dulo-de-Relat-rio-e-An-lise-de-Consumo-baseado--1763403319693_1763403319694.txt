@@ -1,0 +1,67 @@
+Quero que você atualize meu sistema adicionando um módulo de Relatório e Análise de Consumo baseado no arquivo importado de rotas e nas solicitações de saldo feitas no sistema. Siga exatamente as regras abaixo:
+
+📌 DADOS DISPONÍVEIS
+- Arquivo importado (CSV/Excel) contendo: data, base, placa.
+- Tabela de solicitações contendo: placa, base, valor_solicitado, operadora, data.
+- Não existe km, litros, posto ou valor por litro.
+
+📌 OBJETIVOS DO MÓDULO
+Criar um relatório avançado que gere automaticamente:
+1. Bases que mais solicitaram saldo (ranking).
+2. Carros que mais solicitaram saldo (ranking).
+3. Carros que solicitaram saldo mas não aparecem no arquivo de rotas.
+4. Carros que aparecem no arquivo de rotas mas não solicitaram saldo.
+5. Geração de gráficos modernos (barras, pizza e ranking).
+6. Exportação do relatório em CSV.
+
+📌 REGRAS PARA A INTERFACE
+- Não alterar o layout atual, apenas adicionar a seção de relatório e gráficos.
+- Usar componentes modernos (cards, grids, tabelas e gráficos responsivos).
+- Criar gráficos usando Chart.js ou Recharts (o que já estiver instalado).
+- Mostrar tudo em cards separados:
+  - Card 1: Ranking de Bases
+  - Card 2: Ranking de Veículos
+  - Card 3: Inconsistências (solicitou mas não rodou)
+  - Card 4: Inconsistências (rodou mas não solicitou)
+- Adicionar botão: "Exportar Relatório CSV"
+- Adicionar botão: "Gerar Gráficos"
+
+📌 LÓGICA DE CÁLCULO
+Use estes cruzamentos:
+
+1) Ranking Base:
+Agrupar a tabela de solicitações por base e somar valor_solicitado.
+
+2) Ranking Veículos:
+Agrupar solicitações por placa e somar valor_solicitado.
+
+3) Solicitou mas não rodou:
+solicitacoes.placa que NÃO existe em rotas_importadas.placa
+
+4) Rodou mas não solicitou:
+rotas_importadas.placa que NÃO existe em solicitacoes.placa
+
+📌 BACKEND
+- Criar uma rota GET /relatorio/consumo que recebe data e retorna:
+  - ranking_bases
+  - ranking_veiculos
+  - inconsistencias_solicitou_mas_nao_rodou
+  - inconsistencias_rodou_mas_nao_solicitou
+
+📌 FRONTEND
+- Criar página ou aba “Relatório e Análise”
+- Fazer requisição para /relatorio/consumo?data=YYYY-MM-DD
+- Renderizar tabelas e gráficos conforme os quatro grupos acima.
+
+📌 CSV EXPORT
+Gerar arquivo com todas as informações unificadas:
+- base
+- placa
+- valor total solicitado
+- status (rodou / não rodou / solicitou sem rodar / rodou sem solicitar)
+
+📌 FINALIZAÇÃO
+- Não remover nada do sistema atual.
+- Apenas adicionar o módulo novo.
+- Garantir que tudo fique organizado visualmente.
+- Código limpo, comentado e fácil de atualizar.

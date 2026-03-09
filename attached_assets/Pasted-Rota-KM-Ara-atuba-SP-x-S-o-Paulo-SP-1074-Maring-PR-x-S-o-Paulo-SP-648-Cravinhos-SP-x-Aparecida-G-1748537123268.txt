@@ -1,0 +1,85 @@
+Rota	KM
+Araçatuba SP x São Paulo SP	1074
+Maringá PR x São Paulo SP	648
+Cravinhos SP x Aparecida GO	606
+Hidrolândia GO x Cravinhos SP	603
+Curitiba PR x São João de Meriti RJ	961
+Santana de Parnaíba SP x Curitiba PR	411
+Cravinhos SP x Marília SP 	290
+Maringá PR x Cravinhos SP	576
+Artur Alvim SP x São João de Meriti RJ	537
+Louveira SP x Hidrolândia GO	800
+Guarulhos SP x Cravinhos SP	313
+Aparecida GO x Cravinhos SP	615
+Cravinhos SP x Marília 	290
+Curitiba PR x Guarapuava 	254
+Louveira SP x Maringá PR	641
+Aparecida GO x São José do Rio Preto SP	504
+Aparecida GO x São Paulo SP	895
+Curitiba PR x Toledo 	540
+Cravinhos SP x São José do Rio Preto SP	225
+Artur Alvim SP x Rio de Janeiro RJ	429
+Maringá PR x Santana de Parnaíba SP	614
+Louveira SP x Aparecida de Goiânia 	618
+Campo Grande RJ x Guarulhos SP	380
+São Paulo SP x SC JOINVILLE × SP FRANCO DA ROCHA 	520
+Louveira SP x Cravinhos SP	224
+Guarulhos SP x Louveira SP	120
+Cascavel - PR x Guarulhos SP	980
+Cascavel- PR x Guarulhos SP	963
+São Carlos SP x Louveira SP	406
+Cravinhos SP x Louveira SP	225
+Aparecida GO x São Carlos SP	650
+Hidrolândia GO x Brasília DF	250
+São Carlos SP x Manutenção em Ribeirão 	150
+Cravinhos SP x Dourados Ms 	895
+Cravinhos SP x Hidrolândia GO	650
+São Paulo SP x Rio de Janeiro RJ	446
+Guarulhos SP x Araçatuba SP	532
+Maringá PR x Curitiba PR	426
+Cravinhos SP x São Paulo SP	293
+Duque de Caxias RJ x Curitiba PR	820
+Campo Grande RJ x Curitiba PR	976
+São João de Meriti RJ x São Paulo SP	420
+Curitiba PR x Itapema 	235
+Louveira SP x Aparecida GO	817
+Hidrolândia GO x Louveira SP	799
+Curitiba PR x Rio de Janeiro RJ	853
+São Carlos SP x Rio de Janeiro RJ	641
+Curitiba PR x Itajai	211
+Curitiba PR x Cascavel 	600
+Guarulhos SP x São João de Meriti RJ	539
+Curitiba PR x Louveira SP	480
+Curitiba PR x Blumenau 	243
+Hidrolândia GO x Ribeirão Preto SP	564
+Cascavel  x Guarulhos SP	942
+Louveira SP x Goiânia 	836
+Franco da Rocha sp x Santana de Parnaíba SP	50
+Guarulhos SP x Aparecida GO	898
+Juiz de Fora MG x Guarulhos SP	462
+Louveira SP x Curitiba PR	452
+São Paulo SP x Juiz de Fora MG	489
+Santana de Parnaíba SP x Hidrolândia GO	851
+Maringá PR x Guarulhos SP	661
+Hidrolândia GO x São Paulo SP	868
+Santana de Parnaíba SP x Juiz de Fora MG	541
+Louveira SP x Goiania 	836
+Rio de Janeiro RJ x Artur Alvim SP	429
+Louveira SP x Goiânia GO	848
+Santana de Parnaíba SP x Campo Grande RJ	440
+Goiânia  x Louveira SP	835
+São Carlos SP x Guarulhos SP	294
+Campo Grande RJ x São Paulo SP	407
+Curitiba PR x Criciúma sc	485
+Rio de Janeiro RJ x São Paulo SP	429
+Curitiba PR x Duque de Caxias RJ	850
+Cravinhos SP x Goiânia GO	658
+Tatui x Santana de Parnaíba SP	200
+São Paulo SP x São João de Meriti RJ	400
+Hidrolândia GO x Goiânia GO	200
+Curitiba PR x Itajaí 	211
+Curitiba PR x Lages sc	365
+Cravinhos x Presidente Prudente	465
+Aparecida GO x Louveira SP	816
+Duque de Caxias RJ x São Paulo SP	423
+Duque de Caxias RJ x Guarulhos SP	408

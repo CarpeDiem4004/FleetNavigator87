@@ -1,0 +1,87 @@
+// 📁 src/pages/UploadDocumento.jsx
+import { useState } from 'react';
+import { supabase } from '../supabaseClient';
+
+export default function UploadDocumento() {
+  const [file, setFile] = useState(null);
+  const [descricao, setDescricao] = useState('');
+  const [tipoDocumento, setTipoDocumento] = useState('NF');
+  const [status, setStatus] = useState('');
+
+  const baseId = 'SEU_BASE_ID_AQUI'; // Substitua dinamicamente pelo contexto da base
+  const userId = 'SEU_USER_ID_AQUI'; // Substitua dinamicamente com o usuário logado
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setStatus('Enviando...');
+
+    const filePath = `${baseId}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from('documentos-bases')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      setStatus('Erro ao enviar: ' + uploadError.message);
+      return;
+    }
+
+    const urlPublica = supabase.storage
+      .from('documentos-bases')
+      .getPublicUrl(filePath).data.publicUrl;
+
+    const { error: dbError } = await supabase.from('documentos_base').insert({
+      base_id: baseId,
+      tipo_documento: tipoDocumento,
+      descricao,
+      url_arquivo: urlPublica,
+      nome_arquivo: file.name,
+      tipo_mime: file.type,
+      criado_por: userId,
+    });
+
+    if (dbError) {
+      setStatus('Erro ao salvar no banco: ' + dbError.message);
+    } else {
+      setStatus('Documento enviado com sucesso!');
+      setFile(null);
+      setDescricao('');
+    }
+  };
+
+  return (
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-2">Upload de Documentos</h2>
+      <select
+        className="border p-2 mb-2"
+        value={tipoDocumento}
+        onChange={(e) => setTipoDocumento(e.target.value)}>
+        <option value="NF">NF</option>
+        <option value="Orçamento">Orçamento</option>
+        <option value="Boleto">Boleto</option>
+        <option value="Outros">Outros</option>
+      </select>
+
+      <input
+        type="text"
+        placeholder="Descrição"
+        className="border p-2 mb-2 w-full"
+        value={descricao}
+        onChange={(e) => setDescricao(e.target.value)}
+      />
+
+      <input
+        type="file"
+        className="mb-2"
+        onChange={(e) => setFile(e.target.files[0])}
+      />
+
+      <button
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+        onClick={handleUpload}>
+        Enviar Documento
+      </button>
+
+      {status && <p className="mt-4 text-sm text-gray-600">{status}</p>}
+    </div>
+  );
+}

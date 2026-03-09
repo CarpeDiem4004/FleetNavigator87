@@ -1,0 +1,55 @@
+Quero que você crie um **Painel Executivo (Dashboard Central)** moderno e responsivo para o sistema *Murici On Fleet 2.0*.
+
+O painel deve ser construído com **React + TailwindCSS**, com uso de **componentes visuais como cards, gráficos de barras, circulares e tabelas** para exibir os dados. Utilize também **Recharts** para gráficos. Estruture o código limpo e pronto para uso com Supabase como backend.
+
+---
+
+### 📊 Indicadores (KPIs) a exibir no topo em cards:
+
+1. **Gasto Total com Combustível no mês**
+2. **Gasto Total com Peças no mês**
+3. **Gasto com Pneus no mês**
+4. **Dias com Frota Parada**
+5. **Utilização de Pneus (%)**: Baseado na quilometragem média rodada vs tempo de uso estimado
+6. **Taxa de Disponibilidade da Frota**: (% veículos disponíveis)
+7. **SLAs de Oficinas**: Tempo médio para conclusão de manutenção (em dias)
+8. **Solicitações Abertas vs Concluídas** (barra)
+9. **Consumo médio de combustível (km/L)**
+
+---
+
+### 📈 Gráficos adicionais:
+
+- **Gráfico de barras**: Consumo de combustível por base ou projeto (eixo x: base, eixo y: litros consumidos).
+- **Gráfico circular (pizza)**: Distribuição dos gastos (Combustível, Peças, Pneus, Multas).
+- **Tabela**: 10 veículos com maior custo operacional.
+- **Tabela**: Últimas 10 manutenções realizadas com data, status, custo e base.
+
+---
+
+### 📱 Responsividade:
+- Visual amigável em desktop e mobile
+- Interface com cantos arredondados, sombra suave e ícones
+- Destaque em verde para indicadores positivos, vermelho para negativos
+
+---
+
+### 🛠️ Dados:
+- Assuma que os dados são retornados de um banco Supabase nas tabelas:
+  - `veiculos`
+  - `abastecimentos`
+  - `pecas_utilizadas`
+  - `pneus_movimentacoes`
+  - `manutencoes`
+  - `solicitacoes_motorista`
+
+---
+
+### ⚙️ Comportamento:
+- Dados devem ser buscados ao carregar a página
+- Componentes reutilizáveis para cards e gráficos
+- Dashboard deve ser modular, com seções distintas para cada grupo de indicadores
+
+---
+
+Crie um único componente React com todas essas funcionalidades. Use boas práticas de organização de código.

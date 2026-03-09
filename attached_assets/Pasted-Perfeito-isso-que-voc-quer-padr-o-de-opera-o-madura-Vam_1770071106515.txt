@@ -1,0 +1,226 @@
+Perfeito, isso que você quer é **padrão de operação madura** 👌
+Vamos estruturar do jeito **certo, auditável e escalável**, sem gambiarra.
+
+Vou dividir em **VISÃO → MODELO DE DADOS → FUNÇÃO DE ZERAGEM → CALENDÁRIO/HISTÓRICO → FLUXO NO SISTEMA**.
+
+---
+
+## 🎯 OBJETIVO DA FUNÇÃO
+
+* **Todo dia** os veículos começam com status “não informado”
+* O time **atualiza o status diário** (Em rota, Manutenção, Parado, etc.)
+* O sistema **guarda o histórico por dia**
+* Um **calendário** permite voltar no tempo e ver como estava a frota em qualquer data
+
+⚠️ Importante:
+👉 **Nunca sobrescrever status antigo**
+👉 Sempre **registrar por data**
+
+---
+
+## 🧠 CONCEITO CERTO (muda o jeito de pensar)
+
+❌ Errado:
+
+* Campo `status_atual` direto no veículo
+
+✅ Correto:
+
+* **Status diário por veículo**
+* O “status atual” é **sempre o status do dia de hoje**
+
+---
+
+## 🗄️ MODELO DE DADOS (Supabase)
+
+### 🔹 1. Tabela de status diário (ESSENCIAL)
+
+```sql
+vehicle_daily_status
+```
+
+**Campos:**
+
+```sql
+id (uuid, pk)
+vehicle_id (uuid, fk veículos)
+base_id (uuid)
+data (date)
+status (text) -- em_rota | manutencao | parado | emprestado | baixa_venda | nao_informado
+observacao (text)
+updated_by (uuid - usuário)
+updated_at (timestamp)
+```
+
+🔐 **Regra única**
+
+```sql
+UNIQUE(vehicle_id, data)
+```
+
+➡️ Garante **1 status por veículo por dia**
+
+---
+
+## 🔁 FUNÇÃO DE “ZERAR STATUS” (AUTOMÁTICA)
+
+Aqui vem o pulo do gato 🧠
+Você **não apaga nada**.
+Você **cria os registros do dia como “não informado”**.
+
+---
+
+### 🔹 2. Função SQL no Supabase
+
+```sql
+create or replace function gerar_status_diario()
+returns void as $$
+insert into vehicle_daily_status (vehicle_id, base_id, data, status)
+select
+  v.id,
+  v.base_id,
+  current_date,
+  'nao_informado'
+from vehicles v
+where not exists (
+  select 1
+  from vehicle_daily_status s
+  where s.vehicle_id = v.id
+    and s.data = current_date
+);
+$$ language sql;
+```
+
+📌 O que isso faz:
+
+* Para **cada veículo**
+* Se **ainda não existir status hoje**
+* Cria automaticamente como `nao_informado`
+
+---
+
+## ⏰ EXECUÇÃO AUTOMÁTICA (TODO DIA)
+
+### Opção 1 — Supabase (Recomendado)
+
+Usar **cron job**:
+
+```sql
+select cron.schedule(
+  'status-diario',
+  '0 3 * * *', -- todo dia às 03:00
+  'select gerar_status_diario();'
+);
+```
+
+✔️ Todo dia o sistema “reseta”
+✔️ Sem perder histórico
+✔️ Sem depender de ninguém
+
+---
+
+### Opção 2 — Backend (Node / Replit)
+
+Rodar essa função:
+
+* No primeiro acesso do dia
+* Ou via job no servidor
+
+---
+
+## 🖥️ COMO MOSTRAR NO PAINEL (BASE)
+
+### 🔹 Status exibido na lista de veículos
+
+Sempre buscar:
+
+```sql
+status onde data = hoje
+```
+
+Exemplo:
+
+```sql
+select *
+from vehicle_daily_status
+where base_id = :base
+and data = current_date;
+```
+
+Se estiver `nao_informado`:
+🔴 Badge: **“Aguardando atualização”**
+
+---
+
+## 🗓️ CALENDÁRIO DE HISTÓRICO
+
+### 🔹 3. UI do calendário
+
+* Date picker 📅
+* Por padrão: **Hoje**
+* Usuário escolhe qualquer data passada
+
+### 🔹 Query por data
+
+```sql
+select
+  v.placa,
+  s.status,
+  s.observacao
+from vehicles v
+left join vehicle_daily_status s
+  on s.vehicle_id = v.id
+  and s.data = :data_selecionada
+where v.base_id = :base;
+```
+
+📌 Resultado:
+
+* Frota inteira daquele dia
+* Mesmo se algum não foi preenchido
+
+---
+
+## 🧭 FLUXO OPERACIONAL (NA PRÁTICA)
+
+### 🌅 Todo dia
+
+1. Sistema cria status = `nao_informado`
+2. Dashboard mostra alertas
+3. Time atualiza veículo por veículo
+
+### 🕒 Durante o dia
+
+* Atualizações ficam salvas **só naquele dia**
+
+### 📆 Auditoria
+
+* Gestor escolhe uma data
+* Vê **exatamente como estava a frota**
+
+---
+
+## 🔐 BENEFÍCIOS DESSE MODELO
+
+✔️ Histórico confiável
+✔️ Auditoria e compliance
+✔️ Base para KPIs reais
+✔️ Futuro controle de jornada
+✔️ Dá para gerar:
+
+* % de atualização diária
+* Veículos esquecidos
+* SLA operacional por base
+
+---
+
+## 🚀 Próximo passo (se você quiser)
+
+Posso:
+
+* 📐 Desenhar o **diagrama completo**
+* 🧩 Montar o **componente React do calendário**
+* 🔔 Criar alerta: *“X veículos sem status hoje”*
+* 📊 Criar KPI de disciplina operacional
+
+👉 Me diz qual você quer puxar primeiro que eu já te entrego pronto.

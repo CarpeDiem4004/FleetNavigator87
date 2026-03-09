@@ -1,0 +1,118 @@
+🔧 1. Estrutura Geral
+
+Adicionar filtros no topo:
+
+Filtro por base (ex: São Paulo, Recife, Manaus…)
+
+Filtro por período (data inicial e final)
+
+Filtro por tipo de combustível (Diesel, Gasolina, Etanol, ARLA)
+
+Esses filtros devem atualizar automaticamente todos os gráficos e cards abaixo.
+
+📊 2. Indicadores (Cards Superiores)
+
+Atualmente você mostra:
+
+Total Registros
+
+Valor Total
+
+Litros Total
+
+Pendentes
+
+Melhorias:
+
+Adicionar cards por tipo de combustível, com ícones diferentes:
+
+Diesel: ⛽
+
+Gasolina: 🛵
+
+Etanol: 🌿
+
+ARLA: 💧
+
+Mostrar média de consumo por veículo e R$/litro médio:
+
+Exemplo:
+
+🚛 Consumo médio: 5,2 km/L
+
+💰 Custo médio por litro: R$ 6,45
+
+📉 3. Gráficos Dinâmicos
+
+Adicionar uma seção de análises visuais usando Recharts (ou Chart.js, ECharts, etc.):
+
+Gráfico de Barras: Consumo por Base
+
+Eixo X: Bases (São Paulo, Recife, Curitiba, etc.)
+
+Eixo Y: Litros abastecidos
+
+Cores por tipo de combustível
+
+Gráfico de Pizza: Distribuição por Tipo de Combustível
+
+Mostra o percentual de Diesel, Gasolina, Etanol, ARLA no total abastecido.
+
+Gráfico de Linha: Evolução Mensal do Consumo
+
+Mostra o consumo (litros) e o valor total por mês, filtrável por base.
+
+Gráfico de Barras Empilhadas: Status dos Pagamentos
+
+Pendentes x Faturados x Pagos
+
+Filtrável por período e base.
+
+🗂️ 4. Tabelas Analíticas
+
+Adicionar uma tabela interativa com:
+
+Data do abastecimento
+
+Base
+
+Tipo de combustível
+
+Litros
+
+Valor total
+
+Status do pagamento
+
+➡️ Com filtros e ordenação por qualquer coluna
+➡️ E botão “🔍 Detalhar” que abre um modal com informações do veículo e motorista
+
+💬 5. Insights Automáticos (IA ou lógica simples)
+
+Um card lateral com análises automáticas, por exemplo:
+
+“A base de São Paulo teve o maior consumo de Diesel este mês (+12%)”
+
+“O custo médio do ARLA aumentou 4,3% em relação ao mês anterior”
+
+“Há 3 abastecimentos pendentes há mais de 7 dias”
+
+Esses insights podem ser gerados com pequenas funções JavaScript baseadas nos dados retornados do Supabase.
+
+🎨 6. Design e UX
+
+Usar cores suaves (verde → pagos, laranja → pendentes, azul → total, vermelho → alertas).
+
+Agrupar informações em cards de largura uniforme com ícones grandes.
+
+Adicionar um modo escuro (dark mode).
+
+Tornar o layout responsivo para tablets e dashboards fixos em TV (modo fullscreen).
+
+🚀 7. Exportação
+
+Melhorar o botão “Exportar Relatório”:
+
+Exportar em CSV, PDF e Excel
+
+Permitir exportar por base, tipo de combustível ou período selecionado

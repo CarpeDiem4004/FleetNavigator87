@@ -1,0 +1,127 @@
+Perfeito 👍 — analisando o log que você enviou, dá pra dividir os erros em **quatro grupos principais**: autenticação, sessão, API, e contexto do React Query.
+Vamos linha a linha entender o que está acontecendo 👇
+
+---
+
+### 🧩 **1. Erro 401 (Unauthorized) – Falha de autenticação da API**
+
+```
+Failed to load resource: the server responded with a status of 401 (Unauthorized)
+```
+
+➡️ Esse erro significa que o **token de autenticação não está sendo aceito pelo backend** (ou expirou).
+O app tenta acessar a rota `/api/maintenance` e `/vehicles`, mas o servidor responde 401.
+
+**Causas prováveis:**
+
+* Token JWT expirado ou inválido.
+* Falta de envio do header `Authorization: Bearer <token>` na requisição.
+* Endpoint protegido no backend não reconhece a sessão atual.
+* Cookie de sessão do Supabase expirou.
+
+**Soluções possíveis:**
+
+1. Verifique no backend (Express) se a rota `/api/maintenance` realmente valida o token corretamente.
+2. No frontend, veja se a função que faz o fetch está pegando o token atualizado do Supabase:
+
+   ```ts
+   const { data: { session } } = await supabase.auth.getSession();
+   const token = session?.access_token;
+   fetch('/api/maintenance', { headers: { Authorization: `Bearer ${token}` } });
+   ```
+3. Forçar refresh do token (Supabase faz isso automaticamente, mas pode ser manual se necessário).
+
+---
+
+### 🔁 **2. Tentativas de resincronização de sessão**
+
+```
+[QueryClient] Tentando ressincronizar a sessão após erro 401...
+Sincronização de emergência bem-sucedida!
+```
+
+➡️ Isso mostra que o frontend está tentando recuperar a sessão após o erro 401 — e **consegue**, mas o erro volta em seguida.
+👉 Isso indica que o token é renovado, porém **o backend ainda não reconhece o novo token**.
+
+**Solução:**
+Certifique-se de que o backend valida tokens emitidos pelo projeto Supabase correto.
+Veja o valor de `SUPABASE_JWT_SECRET` e `SUPABASE_URL` no servidor; devem corresponder exatamente ao projeto ativo.
+
+---
+
+### 🌐 **3. Erro no pushState e Timezone URL inválida**
+
+```
+[TimezoneURL] URL inválida ignorada: /
+Erro no pushState: [object DOMException]
+```
+
+➡️ Esses são **erros secundários de navegação** (não críticos).
+Acontecem quando o React Router tenta navegar para uma URL inválida (ex: `/`) enquanto há erro de autenticação.
+
+**Solução:**
+Ignorar por enquanto — eles são reflexos do erro 401, não a causa.
+
+---
+
+### 🚗 **4. TypeError: Failed to fetch**
+
+```
+Erro ao buscar veículos: TypeError: Failed to fetch
+```
+
+➡️ Isso ocorre porque a requisição `/vehicles` **nem chega ao backend**, ou porque o backend respondeu 401 e o fetch falhou antes do `.json()`.
+
+**Solução:**
+Resolver o erro 401 primeiro. Assim esse erro some automaticamente.
+
+---
+
+### ⚙️ **5. Warning: Multiple GoTrueClient instances**
+
+```
+Multiple GoTrueClient instances detected in the same browser context.
+```
+
+➡️ Isso significa que você está **criando mais de uma instância do Supabase client** no frontend.
+Isso pode causar problemas de sessão e tokens diferentes sendo usados simultaneamente.
+
+**Solução:**
+Verifique se o arquivo onde cria o Supabase client está sendo importado corretamente e usado como **singleton**:
+
+```ts
+// lib/supabaseClient.ts
+import { createClient } from '@supabase/supabase-js';
+
+export const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+);
+```
+
+E em todo o app, **importar só essa instância**, sem recriar com `createClient()` em cada componente.
+
+---
+
+### ✅ **Resumo**
+
+| Problema               | Causa                                | Solução                                                   |
+| ---------------------- | ------------------------------------ | --------------------------------------------------------- |
+| 401 Unauthorized       | Token inválido ou expirado           | Revalidar token do Supabase, confirmar segredo no backend |
+| Sessão reiniciando     | Supabase token não aceito no backend | Verificar JWT_SECRET no backend                           |
+| Failed to fetch        | Requisição bloqueada pelo 401        | Resolver autenticação primeiro                            |
+| GoTrueClient duplicado | Múltiplas instâncias Supabase client | Manter apenas um `createClient()` global                  |
+
+---
+
+Se quiser, posso te ajudar a revisar o trecho do backend (`Express.js`) que valida o token — provavelmente algo como:
+
+```js
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+```
+
+Assim garantimos que a autenticação do lado do servidor reconhece o token que o frontend envia.
+
+Você quer que eu te mostre **como corrigir passo a passo a autenticação entre o frontend e backend (Supabase + Express)** para resolver esse 401?

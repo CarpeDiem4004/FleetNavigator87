@@ -1,0 +1,106 @@
+Perfeito 👍
+Aqui está **um PROMPT pronto, direto e bem amarrado**, no nível certo para você colar **direto no Replit AI** e ele **entender o contexto + implementar sem inventar coisa errada**.
+
+---
+
+## 🎯 PROMPT PARA USAR NO REPLIT AI
+
+```
+Contexto:
+Tenho um sistema web (Node.js + Supabase) que possui um painel BIP
+(Histórico de BIP por Veículo). As informações de BIP são alimentadas
+por uma planilha do Google Sheets.
+
+Planilha:
+- Link: https://docs.google.com/spreadsheets/d/1k5C937ewZBgv_TzNuXyBLlCioA8v_3Bhy7L1ZoU8_2I
+- Aba: "BIP's Murici"
+- Colunas principais:
+  - SHP_LG_VEHICLE_PLATE_ID (placa)
+  - Cadastro_veic
+  - SHP_COMPANY_NAME
+  - Facility
+  - DATA_ULTIMO_BIP
+
+Objetivo:
+Criar um serviço automático no backend que:
+1) Acesse a planilha usando Google Sheets API (Service Account)
+2) Leia todos os registros da aba "BIP's Murici"
+3) Atualize ou insira os dados em uma tabela do Supabase chamada `bip_veiculos`
+4) Use UPSERT baseado na placa
+5) Execute essa sincronização automaticamente a cada 30 minutos
+6) Não depender do frontend para buscar dados do Google
+
+Requisitos técnicos:
+- Node.js
+- google-spreadsheet
+- node-cron
+- Supabase JS Client
+- Usar variáveis de ambiente para credenciais
+- Criar função `syncBIP()` isolada
+- Criar job cron: */30 * * * *
+
+Estrutura esperada da tabela `bip_veiculos`:
+- placa (unique)
+- cadastro_veic
+- empresa
+- facility
+- data_ultimo_bip
+- atualizado_em
+
+Resultado esperado:
+- Código organizado
+- Comentado
+- Seguro
+- Pronto para produção
+- Logs claros de execução
+- Tratamento básico de erro
+
+Antes de codar:
+Analise o projeto atual, verifique onde encaixar o job (ex: server.js,
+index.js ou pasta services/jobs) e implemente da forma mais limpa possível.
+```
+
+---
+
+## 💡 DICAS IMPORTANTES (experiência real com Replit AI)
+
+Depois de colar o prompt:
+
+1️⃣ **Deixe ele responder tudo**
+2️⃣ Se gerar código incompleto, diga:
+
+```
+Continue a implementação e revise erros de integração
+```
+
+3️⃣ Se ele tentar buscar Google Sheets no frontend, corrija com:
+
+```
+Isso deve rodar apenas no backend, nunca no frontend
+```
+
+4️⃣ Se quiser melhorar qualidade:
+
+```
+Refatore para padrão enterprise e melhor organização de pastas
+```
+
+---
+
+## 🚀 Próximo nível (opcional)
+
+Depois que isso estiver rodando, você pode pedir:
+
+* Histórico diário de BIP
+* Alertas automáticos
+* SLA por base
+* Comparação BIP x dias parados
+* Cache e fallback se Google cair
+
+Se quiser, no próximo passo eu:
+
+* **ajusto o prompt exatamente ao seu backend atual**
+* **crio o SQL de métricas do painel**
+* **padronizo o card BIP do dashboard Murici**
+
+Só manda 👍

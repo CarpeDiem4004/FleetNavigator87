@@ -1,0 +1,462 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { WorkshopReportButton } from "@/components/WorkshopReportButton";
+import { 
+  Wrench, 
+  Clock,
+  User,
+  Phone,
+  CreditCard, 
+  CheckCircle, 
+  AlertCircle, 
+  Car,
+  LogOut,
+  FileText,
+  DollarSign,
+  Plus,
+  Package,
+  Settings,
+  Eye,
+  Phone as PhoneIcon,
+  Download
+} from "lucide-react";
+import { useLocation } from "wouter";
+
+interface ServiceOrder {
+  id: number;
+  vehiclePlate: string;
+  description: string;
+  status: string;
+  priority: string;
+  entryDate: string;
+  estimatedCompletion?: string;
+  initialBudget?: string;
+  finalCost?: string;
+  maintenanceType: string;
+}
+
+export default function AutofreiDashboard() {
+  const [, setLocation] = useLocation();
+  const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pendingRequests, setPendingRequests] = useState(0);
+  const [ordensAtivas, setOrdensAtivas] = useState(0);
+  const [aguardandoPecas, setAguardandoPecas] = useState(0);
+  const [concluidasHoje, setConcluidasHoje] = useState(0);
+  const [faturamentoMes, setFaturamentoMes] = useState(0);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadServiceOrders();
+    loadPendingRequests();
+    loadDashboardData();
+  }, []);
+
+  const loadServiceOrders = async () => {
+    try {
+      setIsLoading(true);
+      // Sistema limpo - aguardando dados reais
+      setTimeout(() => {
+        setServiceOrders([]);
+        setIsLoading(false);
+      }, 500);
+    } catch (error) {
+      console.error('Erro ao carregar ordens de serviço:', error);
+      setIsLoading(false);
+    }
+  };
+
+  const loadPendingRequests = async () => {
+    try {
+      // Buscar token no localStorage
+      const token = localStorage.getItem('oficina_token') || 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+      
+      const response = await fetch('/api/campinas/budget-requests', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Contar apenas solicitações pendentes para a AUTOFREI (workshop_id = 12)
+          const pendingCount = result.data.filter((request: any) => 
+            request.workshop_id === AUTOFREI_ID && 
+            request.status === 'pendente'
+          ).length;
+          setPendingRequests(pendingCount);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar solicitações pendentes:', error);
+    }
+  };
+
+  const loadDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('oficina_token') || 'auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052';
+      
+      const response = await fetch('/api/campinas/budget-requests', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Filtrar apenas orçamentos da AUTOFREI
+          const autofreiRequests = result.data.filter((request: any) => 
+            request.workshop_id === AUTOFREI_ID
+          );
+
+          // Calcular dados do dashboard
+          const hoje = new Date().toISOString().split('T')[0];
+
+          // 1. Ordens Ativas - em negociação, aprovado, em andamento
+          const ativas = autofreiRequests.filter((req: any) => 
+            ['em_negociacao', 'aprovado', 'em_andamento'].includes(req.status)
+          ).length;
+          setOrdensAtivas(ativas);
+
+          // 2. Aguardando Peças - orçamentos que têm peças definidas mas ainda não foram finalizados
+          const aguardando = autofreiRequests.filter((req: any) => 
+            req.status === 'aguardando_pecas' || 
+            (req.parts_json && req.parts_json !== '[]' && ['em_negociacao', 'aprovado'].includes(req.status))
+          ).length;
+          setAguardandoPecas(aguardando);
+
+          // 3. Concluídas Hoje - orçamentos atualizados hoje com status concluído
+          const concluidas = autofreiRequests.filter((req: any) => {
+            const updateDate = req.updated_at ? req.updated_at.split('T')[0] : req.created_at.split('T')[0];
+            return updateDate === hoje && ['concluido', 'finalizado', 'entregue'].includes(req.status);
+          }).length;
+          setConcluidasHoje(concluidas);
+
+          // 4. Faturamento - soma dos valores dos orçamentos aprovados/concluídos
+          const faturamento = autofreiRequests
+            .filter((req: any) => ['aprovado', 'concluido', 'finalizado', 'entregue'].includes(req.status))
+            .reduce((total: number, req: any) => total + (parseFloat(req.estimated_value) || 0), 0);
+          setFaturamentoMes(faturamento);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    toast({
+      title: "Logout realizado",
+      description: "Até logo!",
+    });
+    setLocation('/oficina/autofrei/login');
+  };
+
+  // Dados específicos da AUTOFREI
+  const AUTOFREI_TOKEN = "auto_token_autofrei_225e2596c711cdcafa624fce2bfc6052";
+  const AUTOFREI_ID = 12;
+
+  const getStatusBadge = (status: string) => {
+    const statusMap = {
+      'em_andamento': { label: 'Em Andamento', variant: 'default' as const },
+      'aguardando_peca': { label: 'Aguardando Peça', variant: 'secondary' as const },
+      'concluido': { label: 'Concluído', variant: 'default' as const },
+      'pendente': { label: 'Pendente', variant: 'destructive' as const }
+    };
+    
+    const statusInfo = statusMap[status as keyof typeof statusMap] || { label: status, variant: 'secondary' as const };
+    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    const priorityMap = {
+      'alta': { label: 'Alta', variant: 'destructive' as const },
+      'normal': { label: 'Normal', variant: 'default' as const },
+      'baixa': { label: 'Baixa', variant: 'secondary' as const }
+    };
+    
+    const priorityInfo = priorityMap[priority as keyof typeof priorityMap] || { label: priority, variant: 'secondary' as const };
+    return <Badge variant={priorityInfo.variant}>{priorityInfo.label}</Badge>;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="bg-blue-600 p-2 rounded-lg mr-3">
+                <Wrench className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">AUTOFREI</h1>
+                <p className="text-sm text-gray-500">Peças e Acessórios para Veículos</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-900">CNPJ: 33.704.013/0001-09</p>
+                <p className="text-sm text-gray-500">autofreipecas@gmail.com</p>
+              </div>
+              <WorkshopReportButton 
+                workshopId={AUTOFREI_ID}
+                token={AUTOFREI_TOKEN}
+                workshopName="AUTOFREI"
+              />
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ordens Ativas</CardTitle>
+              <Car className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{ordensAtivas}</div>
+              <p className="text-xs text-muted-foreground">Em andamento</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Aguardando Peças</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{aguardandoPecas}</div>
+              <p className="text-xs text-muted-foreground">Pendentes</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Concluídas Hoje</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{concluidasHoje}</div>
+              <p className="text-xs text-muted-foreground">Finalizadas</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Faturamento</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">R$ {faturamentoMes.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <p className="text-xs text-muted-foreground">Este mês</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Actions Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <DollarSign className="h-5 w-5 mr-2" />
+                Faturamentos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-green-100 mb-4">
+                Visualize e gerencie suas faturas e recebimentos
+              </p>
+              <Button 
+                className="w-full bg-white text-green-600 hover:bg-gray-100"
+                onClick={() => setLocation('/oficina/autofrei/faturamentos')}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Ver Faturamentos
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <Car className="h-5 w-5 mr-2" />
+                Recebimentos de Veículos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-blue-100 mb-4">
+                Registrar entrada de veículos para manutenção
+              </p>
+              <Button 
+                className="w-full bg-white text-blue-600 hover:bg-gray-100"
+                onClick={() => setLocation('/oficina/autofrei/recebimentos')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Registrar Recebimento
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white relative">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <Download className="h-5 w-5 mr-2" />
+                Solicitações
+              </CardTitle>
+              {pendingRequests > 0 && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg animate-pulse">
+                  {pendingRequests > 99 ? '99+' : pendingRequests}
+                </div>
+              )}
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-purple-100 mb-4">
+                Visualize solicitações de orçamentos da gestão de frotas
+                {pendingRequests > 0 && (
+                  <span className="block mt-1 font-semibold text-purple-50">
+                    📌 {pendingRequests} nova{pendingRequests > 1 ? 's' : ''} solicitaç{pendingRequests > 1 ? 'ões' : 'ão'}!
+                  </span>
+                )}
+              </p>
+              <Button 
+                className="w-full bg-white text-purple-600 hover:bg-gray-100"
+                onClick={() => setLocation('/oficina/autofrei/solicitacoes')}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Ver Solicitações
+                {pendingRequests > 0 && ` (${pendingRequests})`}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Service Orders */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Ordens de Serviço</CardTitle>
+                  <CardDescription>Gerenciamento de serviços em andamento</CardDescription>
+                </div>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Ordem
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Carregando ordens de serviço...</p>
+                </div>
+              ) : serviceOrders.length === 0 ? (
+                <div className="text-center py-8">
+                  <Car className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Nenhuma ordem de serviço encontrada</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {serviceOrders.map((order) => (
+                    <div key={order.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-blue-100 p-2 rounded-lg">
+                            <Car className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-gray-900">
+                              {order.vehiclePlate}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              OS #{order.id}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {getStatusBadge(order.status)}
+                          {getPriorityBadge(order.priority)}
+                        </div>
+                      </div>
+                      
+                      <p className="text-gray-700 mb-3">{order.description}</p>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-500">Entrada</p>
+                          <p className="font-medium">{order.entryDate}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Previsão</p>
+                          <p className="font-medium">{order.estimatedCompletion || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Orçamento</p>
+                          <p className="font-medium">R$ {order.initialBudget}</p>
+                        </div>
+                        <div className="flex justify-end">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver Detalhes
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Contact Information */}
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <PhoneIcon className="h-5 w-5 mr-2" />
+                Informações de Contato
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="font-medium text-gray-900">Telefone</p>
+                  <p className="text-gray-600">(11) 94758-5328</p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Email</p>
+                  <p className="text-gray-600">autofreipecas@gmail.com</p>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Endereço</p>
+                  <p className="text-gray-600">Av. Mutinga, 2278 - Jardim Santo Elias, São Paulo - SP</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+}

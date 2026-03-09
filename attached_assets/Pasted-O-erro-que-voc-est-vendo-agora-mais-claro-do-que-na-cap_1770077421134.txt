@@ -1,0 +1,157 @@
+O erro que você está vendo agora é **mais claro** do que na captura anterior. O problema principal está na linha destacada em vermelho no console:
+
+```
+Failed to load resource: the server responded with a status of 401 /api/user (Unauthorized)
+```
+
+Isso indica que o frontend está tentando acessar uma rota protegida (`/api/user`) **sem estar autenticado** (ou com uma sessão inválida/expirada), e o servidor rejeitou a requisição com **401 Unauthorized**.
+
+Combinado com a mensagem na tela:
+
+> **Base não encontrada**  
+> A base solicitada não existe ou não está disponível para acesso público.
+
+Isso nos dá um quadro bem definido do que está acontecendo.
+
+### Diagnóstico Principal (o que está errado)
+1. A página `/bases/120/public` é uma **visualização pública** (ou deveria ser).
+2. O código do frontend **tenta obter informações do usuário atual** (provavelmente via `supabase.auth.getUser()` ou uma chamada para `/api/user`).
+3. Como essa chamada retorna **401**, o sistema entende que **não há sessão ativa**.
+4. Sem sessão → o app considera que o acesso é anônimo → como a base 120 **não tem permissão pública** (ou não existe para anon), ele mostra "Base não encontrada" + cadeado.
+
+Ou seja:  
+O problema **não é necessariamente** que a base 120 não exista no banco.  
+O problema é que **o acesso público não está funcionando como esperado** porque o frontend está exigindo autenticação para algo que deveria ser público.
+
+### Passos para investigar e resolver (sem quebrar nada)
+
+#### 1. Confirme se a base realmente existe (visualização segura)
+No **Supabase Dashboard** → **Table Editor** ou **SQL Editor**:
+
+```sql
+-- Verifique se a base existe
+SELECT id, nome, codigo, empresa_id, publico 
+FROM bases 
+WHERE id = 120;
+
+-- Ou mais genérico
+SELECT * FROM bases WHERE id = 120;
+```
+
+- Se retornar vazio → a base **não existe** mesmo (provável causa raiz).
+- Se retornar algo → veja a coluna que indica se é pública (ex: `publico = true`, `is_public = true`, `visibilidade = 'public'` etc.).
+
+#### 2. Verifique as políticas de acesso (RLS) da tabela `bases`
+Ainda no Supabase → **Authentication** → **Policies** (ou no Table Editor clique na tabela `bases` → Policies):
+
+Procure políticas **SELECT** que permitam acesso anônimo/public:
+
+Exemplos comuns que você **precisa ter** para acesso público funcionar:
+
+| Tipo     | Role       | USING expression                          | Permite o quê?                     |
+|----------|------------|--------------------------------------------|-------------------------------------|
+| SELECT   | anon       | `true`                                     | Qualquer um vê todas as bases       |
+| SELECT   | anon       | `publico = true`                           | Só bases marcadas como públicas     |
+| SELECT   | authenticated | `true`                                  | Usuários logados veem tudo          |
+| SELECT   | authenticated | `empresa_id = auth.jwt() -> 'empresa_id'` | Só da mesma empresa do usuário logado |
+
+**Situação mais comum que causa seu erro atual:**
+- Existe política `SELECT` só para `authenticated`
+- **Não existe** política `SELECT` para `anon`
+- Resultado: acesso público → 401 ou "não encontrado"
+
+**Solução recomendada (se quiser manter público de verdade):**
+Crie esta política (muito restritiva, mas funcional):
+
+```sql
+-- Permite que qualquer pessoa (anon) veja bases marcadas como públicas
+CREATE POLICY "Bases públicas visíveis para todos"
+ON public.bases
+FOR SELECT
+TO anon
+USING (publico = true);   -- ou a coluna que você usa
+```
+
+Depois teste novamente a URL `/bases/120/public` em uma aba anônima (sem login).
+
+#### 3. Corrija o comportamento do frontend (o 401 em `/api/user`)
+O código está fazendo algo assim:
+
+```ts
+// Provavelmente em AuthContext.tsx ou similar
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) {
+  // mostra "Base não encontrada" ou redireciona
+}
+```
+
+Ou uma chamada direta para uma API interna `/api/user` que exige autenticação.
+
+**Soluções possíveis (escolha de acordo com a intenção):**
+
+**Opção A – Essa página deve ser 100% pública**
+- No componente da página `/bases/[id]/public`:
+  - **Não chame** `getUser()` ou `/api/user` no carregamento inicial
+  - Só use `supabase.from('bases').select('*').eq('id', id).maybeSingle()`
+  - Deixe o RLS decidir se retorna dados ou vazio
+  - Se vazio → mostre "Base não encontrada ou não disponível publicamente"
+
+**Opção B – Página pública só se base for pública, senão exige login**
+- Mantenha a chamada ao `getUser()`
+- Mas trate o caso 401 de forma diferente:
+
+```tsx
+try {
+  const { data: { user } } = await supabase.auth.getUser();
+  // usuário logado → pode ver bases privadas também
+} catch (err) {
+  if (err.status === 401 || err.message.includes('Unauthorized')) {
+    // É anônimo → tentar carregar como público
+    const { data, error } = await supabase
+      .from('bases')
+      .select('*')
+      .eq('id', baseId)
+      .eq('publico', true)   // ou sua coluna
+      .maybeSingle();
+
+    if (error || !data) {
+      setError("Base não encontrada ou não disponível publicamente");
+    }
+  }
+}
+```
+
+#### 4. Testes rápidos e seguros para fazer agora
+
+- Abra aba anônima → acesse direto:  
+  `https://gestaoonfleet.com.br/bases/120/public`  
+  (sem estar logado em lugar nenhum)
+
+- Se continuar mostrando cadeado + "não encontrada" → confirme se existe política SELECT para `anon`
+
+- Tente uma base que você sabe que é pública (se existir):  
+  ex: `/bases/1/public` ou outro ID conhecido
+
+- Veja no **Network** tab (DevTools) qual requisição para Supabase retorna erro (provavelmente POST ou GET para `rest/v1/bases` com status 401 ou 404)
+
+### Resumo – Plano de Ação Recomendado
+
+1. **Verifique no banco** → `SELECT * FROM bases WHERE id = 120;`  
+   → Se não existe → crie ou corrija o ID
+
+2. **Crie política SELECT para anon** (se a intenção é acesso público)  
+   → `USING (publico = true)` ou `USING (true)` (se quiser tudo público)
+
+3. **Ajuste o código da página pública**  
+   → Evite depender de `getUser()` no fluxo inicial  
+   → Trate 401 como "tentar modo anônimo"
+
+4. Teste em aba anônima após cada mudança
+
+Se depois desses passos ainda não funcionar, compartilhe:
+- O resultado da query SELECT na tabela bases
+- As políticas SELECT atuais da tabela `bases`
+- O trecho de código que carrega a página `/bases/[id]/public`
+
+A gente resolve em seguida com precisão.  
+Você está bem perto — é questão de alinhar RLS + comportamento do frontend. Força aí! 💪

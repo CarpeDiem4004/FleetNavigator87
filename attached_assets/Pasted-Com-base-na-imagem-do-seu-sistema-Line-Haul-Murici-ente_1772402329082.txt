@@ -1,0 +1,43 @@
+Com base na imagem do seu sistema **Line Haul Murici**, entendi que você tem um dashboard com métricas de manutenção (Críticos, Pendentes, Em Andamento, Concluídas) e quer que a IA (provavelmente um assistente ou ferramenta no Replit) revise todo o fluxo para encontrar erros.
+
+Como você está no **Replit**, imagino que tenha um código (provavelmente Python, JavaScript, etc.) que alimenta esse sistema. Para pedir para a IA revisar, você precisa dar contexto sobre **como o sistema funciona** e o que ele deveria estar fazendo.
+
+Aqui está um prompt estruturado que você pode usar no Replit (se estiver usando o assistente do Replit ou um chat integrado) para pedir essa revisão:
+
+---
+
+### 📌 Prompt para Revisão do Fluxo (para usar no Replit)
+
+> **"Por favor, revise todo o fluxo de manutenção do meu sistema Line Haul Murici para identificar possíveis erros de lógica, falhas no lançamento de manutenções ou inconsistências nos dados exibidos no dashboard."**
+>
+> **Contexto do sistema:**
+> - O sistema possui um dashboard que exibe manutenções categorizadas como: **Críticos (+3 dias)**, **Pendentes**, **Em Andamento** e **Concluídas**.
+> - Atualmente, todos os contadores estão zerados (0), conforme print anexado.
+> - Os dados de manutenção vêm de [descreva aqui de onde vêm: banco de dados SQL, API, lista em memória, planilha, etc.].
+> - O fluxo esperado é:
+>   1. Manutenções programadas entram como **Pendentes**.
+>   2. Quando iniciadas, vão para **Em Andamento**.
+>   3. Se passarem do prazo (+3 dias), vão para **Críticos**.
+>   4. Quando finalizadas, vão para **Concluídas**.
+>
+> **O que quero que você verifique:**
+> 1. Se a lógica de contagem de cada categoria está correta.
+> 2. Se pode haver erro na forma como os dados estão sendo carregados ou filtrados.
+> 3. Se as queries (consultas) ao banco de dados estão certas.
+> 4. Se existem manutenções no banco que deveriam aparecer mas não aparecem.
+> 5. Possíveis erros de código que estejam impedindo a exibição correta.
+>
+> **Anexe ou cole o código relevante abaixo para análise:**
+
+---
+
+### 💡 Dica importante:
+
+Antes de enviar o prompt, **cole também o trecho do código responsável** por:
+- Buscar os dados do banco
+- Contar os registros por status
+- Exibir os números no dashboard
+
+Assim a IA poderá analisar linha a linha e apontar exatamente onde pode estar o erro.
+
+Se precisar de ajuda para estruturar melhor ou entender o que a IA respondeu, é só falar!

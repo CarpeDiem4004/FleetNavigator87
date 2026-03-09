@@ -1,0 +1,142 @@
+### Arquitetura Geral do Sistema
+
+Para implantar esse sistema de status de frotas no seu sistema de gestão de frota existente, vou propor uma abordagem modular, integrada ao banco de dados atual. Assumindo que você já tem tabelas para veículos (ex.: `veiculos`) e bases (ex.: `bases`), vamos estender o schema do BD para armazenar históricos diários de status, evoluções e métricas. O sistema será baseado em:
+
+- **Autenticação e Acesso**: Cada base terá um login específico (usuário vinculado à base), com visão restrita à sua frota.
+- **Atualizações Diárias**: Interface simples para atualização de status por veículo, com campos obrigatórios e opcionais (motivos, prazos, etc.).
+- **Dashboard Principal**: Visão global para administradores, com histórico, porcentagens de utilização e alertas para bases inadimplentes.
+- **Banco de Dados**: Usaremos um BD relacional (ex.: MySQL, PostgreSQL) para salvar todo o histórico, garantindo rastreabilidade e auditoria.
+- **Tecnologias Sugeridas**: Backend em Python (com Flask/Django) ou Node.js para API; Frontend em React/Vue para interfaces; BD existente estendido.
+
+O foco é na escalabilidade, segurança (logs de atualizações) e automação de alertas (ex.: via cron jobs ou triggers no BD).
+
+### 1. Design do Banco de Dados
+
+Vamos estender o schema existente. Supondo tabelas básicas:
+
+- `veiculos`: Colunas como `id_veiculo`, `placa`, `modelo`, `id_base_atual` (vinculando à base).
+- `bases`: Colunas como `id_base`, `nome`, `localizacao`.
+
+Novas tabelas para gerenciar status e histórico:
+
+| Tabela | Descrição | Colunas Principais |
+|--------|-----------|--------------------|
+| `usuarios_bases` | Usuários para login por base (autenticação). | `id_usuario` (PK), `username`, `password_hash`, `id_base` (FK para `bases`), `role` (ex.: 'base' ou 'admin'). |
+| `status_diario` | Registro diário de status por veículo. Cada atualização cria um novo registro para histórico. | `id_status` (PK), `id_veiculo` (FK), `id_base` (FK), `data_atualizacao` (DATE, default CURRENT_DATE), `status` (ENUM: 'em_rota', 'sem_equipe', 'manutencao', 'emprestado', 'devolvido'), `motivo` (TEXT, opcional), `local_manutencao` (VARCHAR, para manutenção), `prazo_manutencao` (DATE, para manutenção), `id_base_emprestada` (FK, para emprestado), `data_devolucao` (DATE, para devolvido), `id_usuario_atualizacao` (FK para `usuarios_bases`). |
+| `historico_frota` | Visão agregada para evoluções (gerada via views ou triggers). | `id_historico` (PK), `id_veiculo` (FK), `id_base` (FK), `data` (DATE), `status_anterior`, `status_novo`, `alteracoes` (JSON para diffs). |
+| `alertas_atualizacoes` | Registro de bases que não atualizaram no dia. | `id_alerta` (PK), `id_base` (FK), `data` (DATE), `status` (ENUM: 'pendente', 'atualizado'), `notificado` (BOOLEAN). |
+
+- **Relacionamentos**:
+  - Um veículo pertence a uma base (`veiculos.id_base_atual` → `bases.id_base`).
+  - Status diários são vinculados ao veículo e base, com timestamp para histórico.
+  - Triggers no BD: Ao inserir em `status_diario`, atualize `historico_frota` automaticamente e verifique se a base atualizou todos os veículos (para alertas).
+
+- **Exemplo de Script SQL para Criação (em PostgreSQL)**:
+```sql
+CREATE TABLE usuarios_bases (
+    id_usuario SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    id_base INTEGER REFERENCES bases(id_base),
+    role ENUM('base', 'admin') DEFAULT 'base'
+);
+
+CREATE TYPE status_enum AS ENUM ('em_rota', 'sem_equipe', 'manutencao', 'emprestado', 'devolvido');
+
+CREATE TABLE status_diario (
+    id_status SERIAL PRIMARY KEY,
+    id_veiculo INTEGER REFERENCES veiculos(id_veiculo),
+    id_base INTEGER REFERENCES bases(id_base),
+    data_atualizacao DATE DEFAULT CURRENT_DATE,
+    status status_enum NOT NULL,
+    motivo TEXT,
+    local_manutencao VARCHAR(100),
+    prazo_manutencao DATE,
+    id_base_emprestada INTEGER REFERENCES bases(id_base),
+    data_devolucao DATE,
+    id_usuario_atualizacao INTEGER REFERENCES usuarios_bases(id_usuario)
+);
+
+-- Trigger para histórico
+CREATE TABLE historico_frota (
+    id_historico SERIAL PRIMARY KEY,
+    id_veiculo INTEGER,
+    id_base INTEGER,
+    data DATE,
+    status_anterior status_enum,
+    status_novo status_enum,
+    alteracoes JSONB
+);
+
+CREATE OR REPLACE FUNCTION log_status_change()
+RETURNS TRIGGER AS $$
+DECLARE
+    prev_status status_enum;
+BEGIN
+    SELECT status INTO prev_status FROM status_diario
+    WHERE id_veiculo = NEW.id_veiculo AND data_atualizacao = CURRENT_DATE - INTERVAL '1 day';
+    
+    INSERT INTO historico_frota (id_veiculo, id_base, data, status_anterior, status_novo, alteracoes)
+    VALUES (NEW.id_veiculo, NEW.id_base, NEW.data_atualizacao, prev_status, NEW.status,
+            jsonb_build_object('motivo', NEW.motivo, 'prazo', NEW.prazo_manutencao));
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_status_change
+AFTER INSERT ON status_diario
+FOR EACH ROW EXECUTE FUNCTION log_status_change();
+
+-- Para alertas: Um job diário (via cron) verifica se há entradas para todos os veículos por base no dia.
+```
+
+Isso salva todo histórico, permitindo queries para evoluções (ex.: SELECT * FROM historico_frota WHERE id_veiculo = X ORDER BY data).
+
+### 2. Fluxo de Autenticação e Interface para Bases
+
+- **Login**: Use JWT ou sessions para autenticação. Ao logar, o usuário da base vê apenas veículos com `id_base_atual = sua_base`.
+- **Interface de Atualização**:
+  - Página web/mobile: Lista de veículos da base (tabela com colunas: Placa, Modelo, Status Atual).
+  - Para cada veículo: Formulário dropdown para status, com campos condicionais (ex.: se 'manutencao', mostre inputs para local e prazo).
+  - Validação: Atualização obrigatória diária por veículo. Botão "Atualizar Todos" para bulk, mas com confirmação.
+  - Após submit: Insere em `status_diario`, trigger atualiza histórico.
+
+- **Exemplo de Fluxo**:
+  1. Login: Verifica `usuarios_bases`.
+  2. Fetch frota: SELECT * FROM veiculos WHERE id_base_atual = logged_base.
+  3. Atualizar: POST para API /atualizar_status, insere no BD.
+
+### 3. Dashboard Principal (Sistema Central)
+
+- **Visão Global**: Para admins (role='admin').
+- **Componentes**:
+  - **Histórico**: Tabela ou gráfico com evoluções (query: SELECT * FROM historico_frota GROUP BY id_base, data).
+  - **Porcentagem de Utilização**: Calcule via query SQL, ex.:
+    ```sql
+    SELECT id_base, 
+           (COUNT(CASE WHEN status IN ('em_rota', 'emprestado') THEN 1 END) / COUNT(*) * 100) AS utilizacao_percent
+    FROM status_diario
+    WHERE data_atualizacao = CURRENT_DATE
+    GROUP BY id_base;
+    ```
+    Mostre em gráficos (use Chart.js no frontend).
+  - **Alertas para Bases Inadimplentes**: Job diário (cron no backend) verifica:
+    - Para cada base, conte veículos vs. atualizações no dia.
+    - Se faltar, insira em `alertas_atualizacoes` e envie email/notificação.
+    - No dashboard: Lista vermelha de bases pendentes.
+
+- **Relatórios**: Exporte CSV/PDF com histórico e métricas.
+
+### 4. Implantação e Considerações
+
+- **Integração ao Sistema Existente**: Adicione as novas tabelas ao BD atual. Use migrations (ex.: Alembic para Python).
+- **Segurança**: 
+  - Hash senhas (bcrypt).
+  - Logs de todas atualizações.
+  - Acesso: Bases só editam sua frota; admins veem tudo.
+- **Automação**: Use cron jobs para alertas diários (ex.: às 23h verificar atualizações).
+- **Escalabilidade**: Índices em colunas como `data_atualizacao`, `id_veiculo` para queries rápidas.
+- **Testes**: Comece com um protótipo para uma base, teste atualizações e dashboard.
+- **Custo/Tempo**: Se o sistema for web-based, implantação em 2-4 semanas com uma equipe pequena.
+
+Essa estrutura garante que todo histórico seja salvo, evoluções sejam rastreáveis e atualizações sejam enforceadas. Se precisar de códigos específicos (ex.: API endpoints), diagramas ER ou ajustes, forneça mais detalhes sobre a stack atual!

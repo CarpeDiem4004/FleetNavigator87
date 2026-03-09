@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Solicitação SC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Teste - Solicitação Cartão Combustível SC</h1>
+        
+        <div class="info">
+            <strong>Instruções:</strong><br>
+            1. Preencha o formulário abaixo<br>
+            2. Clique em "Enviar Solicitação"<br>
+            3. Após o envio, vá para o painel administrativo<br>
+            4. No painel, filtre por projeto <strong>"MERCADO LIVRE"</strong> (não "GRUPO PEREIRA")<br>
+            5. Você verá sua solicitação na lista
+        </div>
+
+        <form id="fuelCardForm">
+            <div class="form-group">
+                <label for="placa">Placa do Veículo:</label>
+                <input type="text" id="placa" name="placa" value="DEF5678" required>
+            </div>
+
+            <div class="form-group">
+                <label for="quilometragem">Quilometragem:</label>
+                <input type="number" id="quilometragem" name="quilometragem" value="45000" required>
+            </div>
+
+            <div class="form-group">
+                <label for="valor">Valor Solicitado (R$):</label>
+                <input type="number" id="valor" name="valor" step="0.01" value="300.00" required>
+            </div>
+
+            <div class="form-group">
+                <label for="motorista">Nome do Motorista:</label>
+                <input type="text" id="motorista" name="motorista" value="Carlos Silva" required>
+            </div>
+
+            <div class="form-group">
+                <label for="telefone">Telefone:</label>
+                <input type="text" id="telefone" name="telefone" value="(11) 98765-4321" required>
+            </div>
+
+            <div class="form-group">
+                <label for="provedor">Provedor do Cartão:</label>
+                <select id="provedor" name="provedor" required>
+                    <option value="Ticket">Ticket</option>
+                    <option value="Alelo">Alelo</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="combustivel">Tipo de Combustível:</label>
+                <select id="combustivel" name="combustivel" required>
+                    <option value="Diesel">Diesel</option>
+                    <option value="Gasolina">Gasolina</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="horario">Horário de Abastecimento:</label>
+                <select id="horario" name="horario" required>
+                    <option value="Manhã">Manhã</option>
+                    <option value="Tarde">Tarde</option>
+                    <option value="Noite">Noite</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="justificativa">Justificativa:</label>
+                <textarea id="justificativa" name="justificativa" rows="3" required>Teste de solicitação através da interface SC - demonstração funcional</textarea>
+            </div>
+
+            <button type="submit">Enviar Solicitação</button>
+        </form>
+
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.getElementById('fuelCardForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                plate: formData.get('placa'),
+                odometer: parseInt(formData.get('quilometragem')),
+                amount: parseFloat(formData.get('valor')),
+                driver_name: formData.get('motorista'),
+                driver_phone: formData.get('telefone'),
+                provider: formData.get('provedor'),
+                fuel_type: formData.get('combustivel'),
+                fuel_time: formData.get('horario'),
+                reason: formData.get('justificativa'),
+                card_type: 'vinculado',
+                project_id: 3, // MERCADO LIVRE
+                base_id: 122, // SC (RIBEIRÃO PRETO) SSP4
+                status: 'pendente'
+            };
+            
+            try {
+                const response = await fetch('/api/fuel-card-requests', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('result');
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ Solicitação enviada com sucesso!</strong><br>
+                            ID: ${result.data.id}<br>
+                            Placa: ${result.data.plate}<br>
+                            Valor: R$ ${result.data.amount}<br>
+                            Status: ${result.data.status}<br>
+                            Base: ${result.data.base_name}<br><br>
+                            <strong>Próximos passos:</strong><br>
+                            1. Acesse o painel administrativo<br>
+                            2. Vá para "Solicitações de Combustível"<br>
+                            3. Filtre por projeto "MERCADO LIVRE"<br>
+                            4. Sua solicitação aparecerá na lista
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ Erro ao enviar solicitação</strong><br>
+                            ${result.message}
+                        </div>
+                    `;
+                }
+                
+                resultDiv.style.display = 'block';
+                
+            } catch (error) {
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ Erro de conexão</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+                resultDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

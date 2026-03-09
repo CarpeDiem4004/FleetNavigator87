@@ -1,0 +1,771 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  Car, 
+  Wrench, 
+  Fuel, 
+  Calendar as CalendarIcon,
+  BarChart3,
+  PieChart,
+  TrendingUp,
+  Clock,
+  AlertTriangle,
+  DollarSign,
+  CheckCircle,
+  X,
+  RefreshCw
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from 'recharts';
+import { formatCurrency } from '@/lib/currency';
+
+interface MaintenanceData {
+  vehiclesInMaintenance: number;
+  completedMaintenance: number;
+  averageMaintenanceDays: number;
+  vehiclesOver3Days: Array<{
+    id: number;
+    plate: string;
+    daysInMaintenance: number;
+    workshop: string;
+    entryDate: string;
+  }>;
+  totalMaintenanceCost: number;
+  averageCostPerVehicle: number;
+}
+
+interface WorkshopData {
+  oficina: string;
+  em_andamento: number;
+  finalizadas: number;
+  valor_total: number;
+  tempo_medio_dias: number;
+  veiculos_atrasados: number;
+}
+
+interface VehicleInMaintenance {
+  id: number;
+  placa: string;
+  modelo: string;
+  marca: string;
+  dias_parado: number;
+  data_entrada: string;
+  status: string;
+  descricao: string;
+  valor_total: number;
+}
+
+interface FuelData {
+  totalRefuels: number;
+  totalLiters: {
+    diesel: number;
+    gasoline: number;
+    alcohol: number;
+  };
+  averageConsumption: number;
+  monthlyData: Array<{
+    month: string;
+    refuels: number;
+    liters: number;
+    cost: number;
+  }>;
+  fuelCard?: {
+    totalRequests: number;
+    totalValue: number;
+    approvedRequests: number;
+  };
+}
+
+interface FilterState {
+  baseId: string;
+  projectId: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  period: 'week' | 'month';
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+export default function PainelOperacional() {
+  const [maintenanceData, setMaintenanceData] = useState<MaintenanceData | null>(null);
+  const [fuelData, setFuelData] = useState<FuelData | null>(null);
+  const [workshopData, setWorkshopData] = useState<WorkshopData[]>([]);
+  const [bases, setBases] = useState<Array<{ id: string; name: string }>>([]);
+  const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
+  const [filters, setFilters] = useState<FilterState>({
+    baseId: '',
+    projectId: '',
+    startDate: null,
+    endDate: null,
+    period: 'month'
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedWorkshop, setSelectedWorkshop] = useState<string | null>(null);
+  const [workshopVehicles, setWorkshopVehicles] = useState<VehicleInMaintenance[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+
+  // Carregar bases e projetos
+  useEffect(() => {
+    const loadFilters = async () => {
+      try {
+        const [basesResponse, projectsResponse] = await Promise.all([
+          fetch('/api/bases'),
+          fetch('/api/projects')
+        ]);
+        
+        if (basesResponse.ok) {
+          const basesData = await basesResponse.json();
+          setBases(Array.isArray(basesData) ? basesData : []);
+        }
+        
+        if (projectsResponse.ok) {
+          const projectsData = await projectsResponse.json();
+          setProjects(Array.isArray(projectsData) ? projectsData : []);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar filtros:', error);
+        setBases([]);
+        setProjects([]);
+      }
+    };
+    
+    loadFilters();
+  }, []);
+
+  // Carregar dados do painel
+  const loadDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (filters.baseId) queryParams.append('baseId', filters.baseId);
+      if (filters.projectId) queryParams.append('projectId', filters.projectId);
+      if (filters.startDate) queryParams.append('startDate', filters.startDate.toISOString());
+      if (filters.endDate) queryParams.append('endDate', filters.endDate.toISOString());
+      queryParams.append('period', filters.period);
+
+      const [maintenanceResponse, fuelResponse, workshopResponse] = await Promise.all([
+        fetch(`/api/operational-dashboard/maintenance?${queryParams.toString()}`),
+        fetch(`/api/operational-dashboard/fuel?${queryParams.toString()}`),
+        fetch('/api/operational-dashboard/maintenance-by-workshop')
+      ]);
+
+      if (maintenanceResponse.ok) {
+        const maintenanceResult = await maintenanceResponse.json();
+
+        
+        // Validar estrutura dos dados de manutenção
+        if (maintenanceResult && typeof maintenanceResult === 'object') {
+          const processedData = {
+            vehiclesInMaintenance: maintenanceResult.vehiclesInMaintenance || 0,
+            completedMaintenance: maintenanceResult.completedMaintenance || 0,
+            averageMaintenanceDays: maintenanceResult.averageMaintenanceDays || 0,
+            vehiclesOver3Days: Array.isArray(maintenanceResult.vehiclesOver3Days) ? maintenanceResult.vehiclesOver3Days : [],
+            totalMaintenanceCost: maintenanceResult.totalMaintenanceCost || 0,
+            averageCostPerVehicle: maintenanceResult.averageCostPerVehicle || 0
+          };
+          
+          setMaintenanceData(processedData);
+        }
+      } else {
+        console.error('[DEBUG-DETAILED] Maintenance API response failed:', maintenanceResponse.status, maintenanceResponse.statusText);
+      }
+
+      if (fuelResponse.ok) {
+        const fuelResult = await fuelResponse.json();
+        // Validar estrutura dos dados de combustível
+        if (fuelResult && typeof fuelResult === 'object') {
+          setFuelData({
+            totalRefuels: fuelResult.totalRefuels || 0,
+            totalLiters: fuelResult.totalLiters || { diesel: 0, gasoline: 0, alcohol: 0 },
+            averageConsumption: fuelResult.averageConsumption || 0,
+            monthlyData: Array.isArray(fuelResult.monthlyData) ? fuelResult.monthlyData : []
+          });
+        }
+      }
+      
+      if (workshopResponse.ok) {
+        const workshopResult = await workshopResponse.json();
+        if (workshopResult && workshopResult.workshops) {
+          setWorkshopData(workshopResult.workshops);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do painel:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  // Carregar veículos de uma oficina específica
+  const loadWorkshopVehicles = async (workshop: string) => {
+    setIsLoadingVehicles(true);
+    try {
+      const response = await fetch(`/api/operational-dashboard/vehicles-by-workshop?workshop=${encodeURIComponent(workshop)}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setWorkshopVehicles(data.vehicles || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar veículos da oficina:', error);
+      setWorkshopVehicles([]);
+    } finally {
+      setIsLoadingVehicles(false);
+    }
+  };
+  
+  // Handler para clique no card da oficina
+  const handleWorkshopClick = (workshop: string) => {
+    setSelectedWorkshop(workshop);
+    loadWorkshopVehicles(workshop);
+  };
+
+  // Gráfico de combustível por tipo
+  const fuelTypeData = fuelData ? [
+    { name: 'Diesel', value: fuelData.totalLiters.diesel, color: '#0088FE' },
+    { name: 'Gasolina', value: fuelData.totalLiters.gasoline, color: '#00C49F' },
+    { name: 'Álcool', value: fuelData.totalLiters.alcohol, color: '#FFBB28' }
+  ].filter(item => item.value > 0) : [];
+
+  return (
+    <div className="space-y-6">
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Painel Operacional da Frota</h1>
+          <p className="text-muted-foreground">Indicadores em tempo real de manutenção e abastecimento</p>
+        </div>
+        <Button onClick={loadDashboardData} disabled={isLoading}>
+          {isLoading ? 'Carregando...' : 'Atualizar Dados'}
+        </Button>
+      </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Filtros
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="base-select">Base</Label>
+              <Select value={filters.baseId} onValueChange={(value) => setFilters({...filters, baseId: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as bases" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas as bases</SelectItem>
+                  {bases.map((base) => (
+                    <SelectItem key={base.id} value={base.id}>
+                      {base.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="project-select">Projeto</Label>
+              <Select value={filters.projectId} onValueChange={(value) => setFilters({...filters, projectId: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os projetos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os projetos</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Data Inicial</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.startDate ? format(filters.startDate, 'dd/MM/yyyy') : 'Selecionar'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={filters.startDate}
+                    onSelect={(date) => setFilters({...filters, startDate: date})}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div>
+              <Label>Data Final</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.endDate ? format(filters.endDate, 'dd/MM/yyyy') : 'Selecionar'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={filters.endDate}
+                    onSelect={(date) => setFilters({...filters, endDate: date})}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4 mt-4">
+            <div className="flex items-center space-x-2">
+              <Label>Período:</Label>
+              <Select value={filters.period} onValueChange={(value: 'week' | 'month') => setFilters({...filters, period: value})}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">Semana</SelectItem>
+                  <SelectItem value="month">Mês</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button onClick={loadDashboardData} disabled={isLoading}>
+              Aplicar Filtros
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Indicadores de Manutenção */}
+      <Tabs defaultValue="maintenance" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="maintenance">
+            <Wrench className="mr-2 h-4 w-4" />
+            Manutenção
+          </TabsTrigger>
+          <TabsTrigger value="fuel">
+            <Fuel className="mr-2 h-4 w-4" />
+            Abastecimento
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="maintenance" className="space-y-6">
+          {/* Cards de Indicadores de Manutenção */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center space-x-2">
+                  <Car className="h-8 w-8 text-blue-500" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Veículos em Manutenção</p>
+                    <p className="text-2xl font-bold">{maintenanceData?.vehiclesInMaintenance || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Manutenções Concluídas</p>
+                    <p className="text-2xl font-bold">{maintenanceData?.completedMaintenance || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-8 w-8 text-orange-500" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Tempo Médio</p>
+                    <p className="text-2xl font-bold">{maintenanceData?.averageMaintenanceDays || 0} dias</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="h-8 w-8 text-red-500" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Mais de 3 dias</p>
+                    <p className="text-2xl font-bold">{maintenanceData?.vehiclesOver3Days?.length || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-8 w-8 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Custo Total</p>
+                    <p className="text-lg font-bold">{formatCurrency(maintenanceData?.totalMaintenanceCost || 0)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Dados por Oficina */}
+          {workshopData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Manutenções por Oficina</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {workshopData.map((workshop) => (
+                    <Card 
+                      key={workshop.oficina} 
+                      className="p-4 cursor-pointer transition-shadow hover:shadow-lg"
+                      onClick={() => handleWorkshopClick(workshop.oficina)}
+                    >
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-lg">{workshop.oficina}</h3>
+                          <Badge variant="outline" className="font-semibold">
+                            Total: {formatCurrency(workshop.valor_total || 0)}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Em andamento</p>
+                            <p className="text-2xl font-bold text-orange-600">{workshop.em_andamento}</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Finalizadas</p>
+                            <p className="text-2xl font-bold text-green-600">{workshop.finalizadas}</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Tempo médio</p>
+                            <p className="text-xl font-semibold">{workshop.tempo_medio_dias} dias</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">Atrasados (+5 dias)</p>
+                            <p className="text-xl font-semibold text-red-600">{workshop.veiculos_atrasados}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="pt-2 border-t">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Total de ordens:</span>
+                            <span className="font-semibold">{workshop.em_andamento + workshop.finalizadas}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Veículos com mais de 3 dias */}
+          {maintenanceData?.vehiclesOver3Days && maintenanceData.vehiclesOver3Days.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Veículos com mais de 3 dias parados</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {maintenanceData.vehiclesOver3Days.map((vehicle) => (
+                    <div key={vehicle.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <Badge variant="destructive">{vehicle.plate}</Badge>
+                        <div>
+                          <p className="font-medium">{vehicle.workshop}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Entrada: {format(new Date(vehicle.entryDate), 'dd/MM/yyyy', { locale: ptBR })}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="outline">
+                        {vehicle.daysInMaintenance} dias
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="fuel" className="space-y-6">
+          {/* Cards de Indicadores de Combustível */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center space-x-2">
+                  <Fuel className="h-8 w-8 text-blue-500" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total de Abastecimentos</p>
+                    <p className="text-2xl font-bold">{fuelData?.totalRefuels || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="h-8 w-8 text-green-500" />
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Consumo Médio</p>
+                    <p className="text-2xl font-bold">{fuelData?.averageConsumption?.toFixed(2) || 0} L/km</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center space-x-2">
+                  <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">D</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Diesel</p>
+                    <p className="text-2xl font-bold">{fuelData?.totalLiters?.diesel?.toFixed(0) || 0}L</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="flex items-center p-6">
+                <div className="flex items-center space-x-2">
+                  <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">G</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Gasolina</p>
+                    <p className="text-2xl font-bold">{fuelData?.totalLiters?.gasoline?.toFixed(0) || 0}L</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Cards de Cartão de Combustível */}
+          {fuelData?.fuelCard && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Cartão Combustível - Solicitações</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center p-6 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">S</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total de Solicitações</p>
+                      <p className="text-2xl font-bold">{fuelData.fuelCard.totalRequests}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Cartão Combustível - Aprovadas</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center p-6 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">✓</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Solicitações Aprovadas</p>
+                      <p className="text-2xl font-bold">{fuelData.fuelCard.approvedRequests}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Cartão Combustível - Valor</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center p-6 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <DollarSign className="h-8 w-8 text-green-500" />
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Valor Total Aprovado</p>
+                      <p className="text-lg font-bold">{formatCurrency(fuelData.fuelCard.totalValue || 0)}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Gráficos de Combustível */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Gráfico de Pizza - Tipos de Combustível */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribuição por Tipo de Combustível</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsPieChart>
+                      <Pie
+                        data={fuelTypeData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {fuelTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `${value} L`} />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Gráfico de Barras - Abastecimentos Mensais */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Abastecimentos por Período</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={fuelData?.monthlyData || []}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="refuels" fill="#8884d8" name="Abastecimentos" />
+                      <Bar dataKey="liters" fill="#82ca9d" name="Litros" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialog para mostrar veículos em manutenção */}
+      <Dialog open={selectedWorkshop !== null} onOpenChange={(open) => !open && setSelectedWorkshop(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">
+              Veículos em Manutenção - {selectedWorkshop}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {isLoadingVehicles ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              </div>
+            ) : workshopVehicles.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Nenhum veículo em manutenção nesta oficina
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {workshopVehicles.map((vehicle) => (
+                  <Card key={vehicle.id} className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Car className="h-5 w-5 text-muted-foreground" />
+                          <h4 className="font-semibold text-lg">{vehicle.placa}</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {vehicle.marca} {vehicle.modelo}
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {vehicle.dias_parado} dias parado
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            Entrada: {new Date(vehicle.data_entrada).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <p className="text-sm text-muted-foreground mb-1">Descrição do serviço:</p>
+                      <p className="text-sm">{vehicle.descricao || 'Sem descrição'}</p>
+                    </div>
+                    
+                    <div className="mt-4 flex items-center justify-between">
+                      <Badge 
+                        variant={vehicle.status === 'em_andamento' ? 'default' : 
+                                vehicle.status === 'aguardando_pecas' ? 'secondary' : 'outline'}
+                      >
+                        {vehicle.status}
+                      </Badge>
+                      <span className="font-semibold">
+                        {formatCurrency(vehicle.valor_total || 0)}
+                      </span>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

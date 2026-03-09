@@ -1,0 +1,403 @@
+client:495 [vite] connecting...
+client:618 [vite] connected.
+chunk-276SZO74.js?v=22dc837a:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+supabaseClient.js:34 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+_GoTrueClient @ @supabase_supabase-js.js?v=22dc837a:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:7102
+SupabaseClient @ @supabase_supabase-js.js?v=22dc837a:6975
+createClient @ @supabase_supabase-js.js?v=22dc837a:7142
+getSupabaseAdminClient @ supabaseClient.js:34
+(anonymous) @ supabaseClient.js:41
+supabase-compat.ts:18 [supabase-compat] Verificando variáveis de ambiente do Supabase:
+supabase-compat.ts:19 - VITE_SUPABASE_URL disponível: true
+supabase-compat.ts:20 - VITE_SUPABASE_ANON_KEY disponível: true
+supabase-compat.ts:21 - VITE_SUPABASE_SERVICE_KEY disponível: true
+supabase-compat.ts:60 [supabase-compat] Criando nova instância do cliente Supabase
+supabase-compat.ts:61 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+_GoTrueClient @ @supabase_supabase-js.js?v=22dc837a:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:7102
+SupabaseClient @ @supabase_supabase-js.js?v=22dc837a:6975
+createClient @ @supabase_supabase-js.js?v=22dc837a:7142
+getSupabaseClient @ supabase-compat.ts:61
+(anonymous) @ supabase-compat.ts:101
+supabase-compat.ts:84 [supabase-compat] Criando nova instância do cliente Supabase Admin
+supabase-compat.ts:85 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+_GoTrueClient @ @supabase_supabase-js.js?v=22dc837a:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:7102
+SupabaseClient @ @supabase_supabase-js.js?v=22dc837a:6975
+createClient @ @supabase_supabase-js.js?v=22dc837a:7142
+getSupabaseAdminClient @ supabase-compat.ts:85
+(anonymous) @ supabase-compat.ts:102
+supabase.ts:17 Verificando variáveis de ambiente do Supabase:
+supabase.ts:18 - VITE_SUPABASE_URL disponível: true
+supabase.ts:19 - VITE_SUPABASE_ANON_KEY disponível: true
+supabase.ts:20 - VITE_SUPABASE_SERVICE_KEY disponível: true
+supabase.ts:24 Supabase Service Key (primeiros 10 caracteres): eyJhbGciOi...
+supabase.ts:34 Configuração Supabase Cliente: {url: 'https://hvsmxxqkuyjhpsiojupb.supabase.co', anonKeyAvailable: true, serviceKeyAvailable: true}
+RegisterPostoUser.tsx:23 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+_GoTrueClient @ @supabase_supabase-js.js?v=22dc837a:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=22dc837a:7102
+SupabaseClient @ @supabase_supabase-js.js?v=22dc837a:6975
+createClient @ @supabase_supabase-js.js?v=22dc837a:7142
+(anonymous) @ RegisterPostoUser.tsx:23
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+AuthContext.tsx:71 Verificando estado de autenticação inicial...
+AuthContext.tsx:141 Verificando autenticação tradicional...
+AuthContext.tsx:151 Token JWT encontrado, tentando verificar...
+SupabaseAuthContext.tsx:147 Supabase: Usuário não autenticado, limpando dados
+useFetchWithAuth.ts:19 [FetchWithAuth] Modo de autenticação de emergência ativado
+useFetchWithAuth.ts:126 [FetchWithAuth] Usando token de emergência existente
+useFetchWithAuth.ts:218 [FetchWithAuth] Token JWT inicializado com sucesso
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+useFetchWithAuth.ts:238 [FetchWithAuth] Substituindo fetch global para injetar JWT automaticamente
+AuthContext.tsx:167 Token JWT verificado com sucesso: {success: true, message: 'Token válido', user: {…}, verifiedAt: '2025-05-19T20:26:07.944Z', expiresAt: null}
+AuthContext.tsx:208 Usuário autenticado via token: {id: 1, name: 'Administrador', email: 'admin@muricionfleet.com', password: 'MuricionAdmin2025', role: 'admin', …}
+AuthContext.tsx:218 Verificação de autenticação completa, isLoading=false
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+use-base-permission.tsx:241 Permission granted for admin user to route: /fuel-card/solicitation (admin role: admin, email: admin@muricionfleet.com)
+ProtectedRoute.tsx:373 [ProtectedRoute] Verificação de permissão para /fuel-card/solicitation: PERMITIDO
+ProtectedRoute.tsx:136 [ProtectedRoute] Verificando JWT...
+ProtectedRoute.tsx:167 [ProtectedRoute] Token JWT encontrado, verificando validade...
+chunk-276SZO74.js?v=22dc837a:377 [Violation] 'message' handler took 191ms
+ProtectedRoute.tsx:170 
+            
+            
+           GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+(anonymous) @ @supabase_supabase-js.js?v=22dc837a:4309
+_handleRequest2 @ @supabase_supabase-js.js?v=22dc837a:4558
+_request @ @supabase_supabase-js.js?v=22dc837a:4548
+_getUser @ @supabase_supabase-js.js?v=22dc837a:5801
+getUser @ @supabase_supabase-js.js?v=22dc837a:5790
+verifyJwt @ ProtectedRoute.tsx:170
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=22dc837a:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=22dc837a:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=22dc837a:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=22dc837a:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=22dc837a:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=22dc837a:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=22dc837a:19447
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18868
+flushSyncCallbacks @ chunk-276SZO74.js?v=22dc837a:9119
+commitRootImpl @ chunk-276SZO74.js?v=22dc837a:19432
+commitRoot @ chunk-276SZO74.js?v=22dc837a:19277
+finishConcurrentRender @ chunk-276SZO74.js?v=22dc837a:18805
+performConcurrentWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18718
+workLoop @ chunk-276SZO74.js?v=22dc837a:197
+flushWork @ chunk-276SZO74.js?v=22dc837a:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=22dc837a:384
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+AuthContext.tsx:71 Verificando estado de autenticação inicial...
+AuthContext.tsx:141 Verificando autenticação tradicional...
+AuthContext.tsx:151 Token JWT encontrado, tentando verificar...
+useFetchWithAuth.ts:311 [FetchWithAuth] Requisição para /api/hybrid/auth/verify {hasAuthHeader: true, credentials: 'include'}
+ProtectedRoute.tsx:173 [ProtectedRoute] Token JWT inválido: AuthApiError: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+    at handleError2 (@supabase_supabase-js.js?v=22dc837a:4523:9)
+    at async _handleRequest2 (@supabase_supabase-js.js?v=22dc837a:4564:5)
+    at async _request (@supabase_supabase-js.js?v=22dc837a:4548:16)
+    at async SupabaseAuthClient._getUser (@supabase_supabase-js.js?v=22dc837a:5801:16)
+    at async SupabaseAuthClient.getUser (@supabase_supabase-js.js?v=22dc837a:5790:14)
+    at async verifyJwt (ProtectedRoute.tsx:170:45)
+verifyJwt @ ProtectedRoute.tsx:173
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=22dc837a:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=22dc837a:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=22dc837a:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=22dc837a:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=22dc837a:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=22dc837a:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=22dc837a:19447
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18868
+flushSyncCallbacks @ chunk-276SZO74.js?v=22dc837a:9119
+commitRootImpl @ chunk-276SZO74.js?v=22dc837a:19432
+commitRoot @ chunk-276SZO74.js?v=22dc837a:19277
+finishConcurrentRender @ chunk-276SZO74.js?v=22dc837a:18805
+performConcurrentWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18718
+workLoop @ chunk-276SZO74.js?v=22dc837a:197
+flushWork @ chunk-276SZO74.js?v=22dc837a:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=22dc837a:384
+authManager.ts:168 [AuthManager] Iniciando tentativa de recuperação automática
+authManager.ts:173 [AuthManager] Token encontrado em authToken, verificando validade...
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+authManager.ts:176 
+            
+            
+           GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+(anonymous) @ @supabase_supabase-js.js?v=22dc837a:4309
+_handleRequest2 @ @supabase_supabase-js.js?v=22dc837a:4558
+_request @ @supabase_supabase-js.js?v=22dc837a:4548
+_getUser @ @supabase_supabase-js.js?v=22dc837a:5801
+getUser @ @supabase_supabase-js.js?v=22dc837a:5790
+attemptAutoRecovery @ authManager.ts:176
+verifyJwt @ ProtectedRoute.tsx:176
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=22dc837a:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=22dc837a:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=22dc837a:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=22dc837a:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=22dc837a:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=22dc837a:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=22dc837a:19447
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18868
+flushSyncCallbacks @ chunk-276SZO74.js?v=22dc837a:9119
+commitRootImpl @ chunk-276SZO74.js?v=22dc837a:19432
+commitRoot @ chunk-276SZO74.js?v=22dc837a:19277
+finishConcurrentRender @ chunk-276SZO74.js?v=22dc837a:18805
+performConcurrentWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18718
+workLoop @ chunk-276SZO74.js?v=22dc837a:197
+flushWork @ chunk-276SZO74.js?v=22dc837a:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=22dc837a:384
+authManager.ts:187 [AuthManager] Token em authToken é inválido, removendo...
+attemptAutoRecovery @ authManager.ts:187
+await in attemptAutoRecovery
+verifyJwt @ ProtectedRoute.tsx:176
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=22dc837a:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=22dc837a:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=22dc837a:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=22dc837a:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=22dc837a:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=22dc837a:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=22dc837a:19447
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18868
+flushSyncCallbacks @ chunk-276SZO74.js?v=22dc837a:9119
+commitRootImpl @ chunk-276SZO74.js?v=22dc837a:19432
+commitRoot @ chunk-276SZO74.js?v=22dc837a:19277
+finishConcurrentRender @ chunk-276SZO74.js?v=22dc837a:18805
+performConcurrentWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18718
+workLoop @ chunk-276SZO74.js?v=22dc837a:197
+flushWork @ chunk-276SZO74.js?v=22dc837a:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=22dc837a:384
+authManager.ts:197 [AuthManager] Tentando obter token de emergência...
+useFetchWithAuth.ts:19 [FetchWithAuth] Modo de autenticação de emergência ativado
+useFetchWithAuth.ts:126 [FetchWithAuth] Usando token de emergência existente
+useFetchWithAuth.ts:285 [FetchWithAuth] Token JWT adicionado automaticamente a: /api/get-jwt-token
+useFetchWithAuth.ts:311 [FetchWithAuth] Requisição para /api/get-jwt-token {hasAuthHeader: true, credentials: 'include'}
+AuthContext.tsx:167 Token JWT verificado com sucesso: {success: true, message: 'Token válido', user: {…}, verifiedAt: '2025-05-19T20:26:08.735Z', expiresAt: null}
+AuthContext.tsx:208 Usuário autenticado via token: {id: 1, name: 'Administrador', email: 'admin@muricionfleet.com', password: 'MuricionAdmin2025', role: 'admin', …}
+AuthContext.tsx:218 Verificação de autenticação completa, isLoading=false
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+ProtectedRoute.tsx:136 [ProtectedRoute] Verificando JWT...
+ProtectedRoute.tsx:142 [ProtectedRoute] Nenhum token JWT encontrado, tentando recuperação automática...
+authManager.ts:168 [AuthManager] Iniciando tentativa de recuperação automática
+authManager.ts:197 [AuthManager] Tentando obter token de emergência...
+useFetchWithAuth.ts:19 [FetchWithAuth] Modo de autenticação de emergência ativado
+useFetchWithAuth.ts:126 [FetchWithAuth] Usando token de emergência existente
+useFetchWithAuth.ts:285 [FetchWithAuth] Token JWT adicionado automaticamente a: /api/get-jwt-token
+useFetchWithAuth.ts:311 [FetchWithAuth] Requisição para /api/get-jwt-token {hasAuthHeader: true, credentials: 'include'}
+authManager.ts:214 [AuthManager] Token de emergência obtido com sucesso
+authManager.ts:221 
+            
+            
+           GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+(anonymous) @ @supabase_supabase-js.js?v=22dc837a:4309
+_handleRequest2 @ @supabase_supabase-js.js?v=22dc837a:4558
+_request @ @supabase_supabase-js.js?v=22dc837a:4548
+_getUser @ @supabase_supabase-js.js?v=22dc837a:5801
+getUser @ @supabase_supabase-js.js?v=22dc837a:5790
+attemptAutoRecovery @ authManager.ts:221
+await in attemptAutoRecovery
+verifyJwt @ ProtectedRoute.tsx:176
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=22dc837a:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=22dc837a:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=22dc837a:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=22dc837a:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=22dc837a:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=22dc837a:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=22dc837a:19447
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18868
+flushSyncCallbacks @ chunk-276SZO74.js?v=22dc837a:9119
+commitRootImpl @ chunk-276SZO74.js?v=22dc837a:19432
+commitRoot @ chunk-276SZO74.js?v=22dc837a:19277
+finishConcurrentRender @ chunk-276SZO74.js?v=22dc837a:18805
+performConcurrentWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18718
+workLoop @ chunk-276SZO74.js?v=22dc837a:197
+flushWork @ chunk-276SZO74.js?v=22dc837a:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=22dc837a:384
+authManager.ts:223 [AuthManager] Token de emergência obtido, mas não é válido no Supabase: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+attemptAutoRecovery @ authManager.ts:223
+await in attemptAutoRecovery
+verifyJwt @ ProtectedRoute.tsx:176
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=22dc837a:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=22dc837a:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=22dc837a:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=22dc837a:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=22dc837a:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=22dc837a:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=22dc837a:19447
+performSyncWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18868
+flushSyncCallbacks @ chunk-276SZO74.js?v=22dc837a:9119
+commitRootImpl @ chunk-276SZO74.js?v=22dc837a:19432
+commitRoot @ chunk-276SZO74.js?v=22dc837a:19277
+finishConcurrentRender @ chunk-276SZO74.js?v=22dc837a:18805
+performConcurrentWorkOnRoot @ chunk-276SZO74.js?v=22dc837a:18718
+workLoop @ chunk-276SZO74.js?v=22dc837a:197
+flushWork @ chunk-276SZO74.js?v=22dc837a:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=22dc837a:384
+authManager.ts:224 [AuthManager] Usando token de emergência mesmo assim para fluxo alternativo
+ProtectedRoute.tsx:179 [ProtectedRoute] Recuperação automática bem-sucedida após token inválido
+use-base-permission.tsx:241 Permission granted for admin user to route: /fuel-card/solicitation (admin role: admin, email: admin@muricionfleet.com)
+ProtectedRoute.tsx:373 [ProtectedRoute] Verificação de permissão para /fuel-card/solicitation: PERMITIDO
+authManager.ts:214 [AuthManager] Token de emergência obtido com sucesso
+authManager.ts:221 
+            
+            
+           GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+(anonymous) @ @supabase_supabase-js.js?v=22dc837a:4309
+_handleRequest2 @ @supabase_supabase-js.js?v=22dc837a:4558
+_request @ @supabase_supabase-js.js?v=22dc837a:4548
+_getUser @ @supabase_supabase-js.js?v=22dc837a:5801
+getUser @ @supabase_supabase-js.js?v=22dc837a:5790
+attemptAutoRecovery @ authManager.ts:221
+await in attemptAutoRecovery
+verifyJwt @ ProtectedRoute.tsx:144
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=22dc837a:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=22dc837a:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=22dc837a:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=22dc837a:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=22dc837a:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=22dc837a:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=22dc837a:19447
+(anonymous) @ chunk-276SZO74.js?v=22dc837a:19328
+workLoop @ chunk-276SZO74.js?v=22dc837a:197
+flushWork @ chunk-276SZO74.js?v=22dc837a:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=22dc837a:384
+authManager.ts:223 [AuthManager] Token de emergência obtido, mas não é válido no Supabase: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+attemptAutoRecovery @ authManager.ts:223
+await in attemptAutoRecovery
+verifyJwt @ ProtectedRoute.tsx:144
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=22dc837a:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=22dc837a:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=22dc837a:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=22dc837a:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=22dc837a:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=22dc837a:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=22dc837a:19447
+(anonymous) @ chunk-276SZO74.js?v=22dc837a:19328
+workLoop @ chunk-276SZO74.js?v=22dc837a:197
+flushWork @ chunk-276SZO74.js?v=22dc837a:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=22dc837a:384
+authManager.ts:224 [AuthManager] Usando token de emergência mesmo assim para fluxo alternativo
+ProtectedRoute.tsx:147 [ProtectedRoute] Recuperação automática bem-sucedida
+useFetchWithAuth.ts:19 [FetchWithAuth] Modo de autenticação de emergência ativado
+useFetchWithAuth.ts:126 [FetchWithAuth] Usando token de emergência existente
+useFetchWithAuth.ts:285 [FetchWithAuth] Token JWT adicionado automaticamente a: /api/fuel-card-solicitations
+useFetchWithAuth.ts:311 [FetchWithAuth] Requisição para /api/fuel-card-solicitations {hasAuthHeader: true, credentials: 'include'}
+useFetchWithAuth.ts:319 
+            
+            
+           POST https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/api/fuel-card-solicitations 500 (Internal Server Error)
+window.fetch @ useFetchWithAuth.ts:319
+await in window.fetch
+onSubmit @ solicitation.tsx:77
+(anonymous) @ chunk-BW5TH624.js?v=22dc837a:1675
+await in (anonymous)
+callCallback2 @ chunk-276SZO74.js?v=22dc837a:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=22dc837a:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=22dc837a:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=22dc837a:3736
+executeDispatch @ chunk-276SZO74.js?v=22dc837a:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=22dc837a:7034
+processDispatchQueue @ chunk-276SZO74.js?v=22dc837a:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=22dc837a:7051
+(anonymous) @ chunk-276SZO74.js?v=22dc837a:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=22dc837a:18913
+batchedUpdates @ chunk-276SZO74.js?v=22dc837a:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=22dc837a:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=22dc837a:5478
+dispatchEvent @ chunk-276SZO74.js?v=22dc837a:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=22dc837a:5449
+solicitation.tsx:100 Erro ao enviar solicitação: Error: Erro ao criar solicitação
+    at onSubmit (solicitation.tsx:88:15)
+    at async chunk-BW5TH624.js?v=22dc837a:1675:9
+onSubmit @ solicitation.tsx:100
+await in onSubmit
+(anonymous) @ chunk-BW5TH624.js?v=22dc837a:1675
+await in (anonymous)
+callCallback2 @ chunk-276SZO74.js?v=22dc837a:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=22dc837a:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=22dc837a:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=22dc837a:3736
+executeDispatch @ chunk-276SZO74.js?v=22dc837a:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=22dc837a:7034
+processDispatchQueue @ chunk-276SZO74.js?v=22dc837a:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=22dc837a:7051
+(anonymous) @ chunk-276SZO74.js?v=22dc837a:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=22dc837a:18913
+batchedUpdates @ chunk-276SZO74.js?v=22dc837a:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=22dc837a:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=22dc837a:5478
+dispatchEvent @ chunk-276SZO74.js?v=22dc837a:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=22dc837a:5449
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+use-base-permission.tsx:241 Permission granted for admin user to route: /fuel-card/solicitation (admin role: admin, email: admin@muricionfleet.com)
+ProtectedRoute.tsx:373 [ProtectedRoute] Verificação de permissão para /fuel-card/solicitation: PERMITIDO
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+use-base-permission.tsx:241 Permission granted for admin user to route: /fuel-card/solicitation (admin role: admin, email: admin@muricionfleet.com)
+ProtectedRoute.tsx:373 [ProtectedRoute] Verificação de permissão para /fuel-card/solicitation: PERMITIDO
+useFetchWithAuth.ts:19 [FetchWithAuth] Modo de autenticação de emergência ativado
+useFetchWithAuth.ts:126 [FetchWithAuth] Usando token de emergência existente
+useFetchWithAuth.ts:285 [FetchWithAuth] Token JWT adicionado automaticamente a: /api/fuel-card-solicitations
+useFetchWithAuth.ts:311 [FetchWithAuth] Requisição para /api/fuel-card-solicitations {hasAuthHeader: true, credentials: 'include'}
+useFetchWithAuth.ts:319 
+            
+            
+           POST https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/api/fuel-card-solicitations 500 (Internal Server Error)
+window.fetch @ useFetchWithAuth.ts:319
+await in window.fetch
+onSubmit @ solicitation.tsx:77
+(anonymous) @ chunk-BW5TH624.js?v=22dc837a:1675
+await in (anonymous)
+callCallback2 @ chunk-276SZO74.js?v=22dc837a:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=22dc837a:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=22dc837a:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=22dc837a:3736
+executeDispatch @ chunk-276SZO74.js?v=22dc837a:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=22dc837a:7034
+processDispatchQueue @ chunk-276SZO74.js?v=22dc837a:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=22dc837a:7051
+(anonymous) @ chunk-276SZO74.js?v=22dc837a:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=22dc837a:18913
+batchedUpdates @ chunk-276SZO74.js?v=22dc837a:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=22dc837a:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=22dc837a:5478
+dispatchEvent @ chunk-276SZO74.js?v=22dc837a:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=22dc837a:5449
+solicitation.tsx:100 Erro ao enviar solicitação: Error: Erro ao criar solicitação
+    at onSubmit (solicitation.tsx:88:15)
+    at async chunk-BW5TH624.js?v=22dc837a:1675:9
+onSubmit @ solicitation.tsx:100
+await in onSubmit
+(anonymous) @ chunk-BW5TH624.js?v=22dc837a:1675
+await in (anonymous)
+callCallback2 @ chunk-276SZO74.js?v=22dc837a:3674
+invokeGuardedCallbackDev @ chunk-276SZO74.js?v=22dc837a:3699
+invokeGuardedCallback @ chunk-276SZO74.js?v=22dc837a:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-276SZO74.js?v=22dc837a:3736
+executeDispatch @ chunk-276SZO74.js?v=22dc837a:7014
+processDispatchQueueItemsInOrder @ chunk-276SZO74.js?v=22dc837a:7034
+processDispatchQueue @ chunk-276SZO74.js?v=22dc837a:7043
+dispatchEventsForPlugins @ chunk-276SZO74.js?v=22dc837a:7051
+(anonymous) @ chunk-276SZO74.js?v=22dc837a:7174
+batchedUpdates$1 @ chunk-276SZO74.js?v=22dc837a:18913
+batchedUpdates @ chunk-276SZO74.js?v=22dc837a:3579
+dispatchEventForPluginEventSystem @ chunk-276SZO74.js?v=22dc837a:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-276SZO74.js?v=22dc837a:5478
+dispatchEvent @ chunk-276SZO74.js?v=22dc837a:5472
+dispatchDiscreteEvent @ chunk-276SZO74.js?v=22dc837a:5449
+AuthContext.tsx:539 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+use-base-permission.tsx:241 Permission granted for admin user to route: /fuel-card/solicitation (admin role: admin, email: admin@muricionfleet.com)
+ProtectedRoute.tsx:373 [ProtectedRoute] Verificação de permissão para /fuel-card/solicitation: PERMITIDO

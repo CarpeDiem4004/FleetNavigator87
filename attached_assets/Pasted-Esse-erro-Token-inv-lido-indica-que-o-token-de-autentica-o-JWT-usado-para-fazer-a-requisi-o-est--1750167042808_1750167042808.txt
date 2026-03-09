@@ -1,0 +1,100 @@
+Esse erro "Token inválido" indica que o token de autenticação JWT usado para fazer a requisição está inválido, expirado ou malformado. Isso acontece normalmente quando:
+
+🔍 Possíveis causas:
+Token expirado – tokens têm tempo de validade (geralmente minutos ou horas).
+
+Token não foi incluído corretamente no cabeçalho Authorization.
+
+Token corrompido ou não foi obtido (por exemplo, undefined ou string vazia).
+
+Usuário não autenticado corretamente antes da chamada.
+
+Várias instâncias do SupabaseClient gerando conflito de autenticação.
+
+✅ Como corrigir
+1. Verifique como está enviando o token
+No arquivo workshop-api.ts, localize a função request() e verifique se o token está sendo enviado corretamente no cabeçalho:
+
+ts
+Copiar
+Editar
+const token = await getAccessToken(); // ou supabase.auth.getSession()
+
+const response = await fetch(`${API_URL}${endpoint}`, {
+  method,
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`, // ✅ Importante
+  },
+  body: body ? JSON.stringify(body) : undefined,
+});
+2. Verifique se está pegando corretamente o token do Supabase
+Se você estiver usando Supabase, pegue o token assim:
+
+ts
+Copiar
+Editar
+const {
+  data: { session },
+} = await supabase.auth.getSession();
+
+const token = session?.access_token;
+
+if (!token) {
+  throw new Error("Token não encontrado");
+}
+3. Evite múltiplas instâncias do SupabaseClient
+Se você tiver mais de uma instância do createClient, isso pode causar conflito de sessão. Certifique-se de que o Supabase seja instanciado uma única vez e reutilizado.
+
+4. Atualize o token antes da requisição (se necessário)
+Se o token for antigo, renove antes da chamada:
+
+ts
+Copiar
+Editar
+await supabase.auth.refreshSession();
+🛠 Exemplo de correção prática:
+CarReception.tsx (dentro do onSubmit)
+ts
+Copiar
+Editar
+const {
+  data: { session },
+} = await supabase.auth.getSession();
+
+const token = session?.access_token;
+
+if (!token) {
+  alert("Usuário não autenticado.");
+  return;
+}
+
+try {
+  await WorkshopAPI.request("/car-reception", "POST", formData, token);
+  // ou passe o token diretamente se a função aceitar
+} catch (err) {
+  console.error("Erro ao registrar recebimento:", err);
+  alert("Erro ao registrar recebimento: " + err.message);
+}
+workshop-api.ts
+ts
+Copiar
+Editar
+export const WorkshopAPI = {
+  request: async (endpoint, method = "GET", body = null, token) => {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (!response.ok) {
+      throw new Error("Token inválido");
+    }
+
+    return await response.json();
+  },
+};

@@ -1,0 +1,232 @@
+Perfeito, isso aqui é **bug clássico de sistema de abastecimento** — e dá pra resolver com método, sem chute.
+Vou ser **cirúrgico** e direto ao ponto.
+
+---
+
+# 🚨 PROBLEMA RELATADO (RESUMO)
+
+👉 No **formulário**:
+
+* Usuário preenche:
+
+  * ✅ **Valor do litro**
+  * ✅ **Valor total**
+
+👉 No **sistema**:
+
+* Era para mostrar:
+
+  * 🟢 **Quantidade de litros**
+* ❌ **Não está mostrando**
+
+Ou seja:
+👉 **O cálculo até pode estar sendo feito, mas NÃO está chegando ou NÃO está sendo exibido.**
+
+---
+
+# 🎯 CAUSA MAIS COMUM (90% DOS CASOS)
+
+A **quantidade de litros NÃO está sendo**:
+
+1. Calculada corretamente
+2. Salva no banco
+3. Ou retornada na query
+4. Ou renderizada no frontend
+
+Normalmente é **combinação de 2 erros**.
+
+---
+
+# 🧠 REGRA CORRETA (BASE DO SISTEMA)
+
+A quantidade de litros **NUNCA deve ser digitada**.
+Ela deve ser **sempre calculada assim**:
+
+```text
+quantidade_litros = valor_total / valor_litro
+```
+
+Com **arredondamento controlado**.
+
+---
+
+# 🔍 PASSO 1 — VERIFICAR O FRONTEND (FORMULÁRIO)
+
+### ⚠️ Erro comum
+
+O sistema **calcula**, mas **não salva**.
+
+Exemplo de erro:
+
+```js
+const litros = valorTotal / valorLitro
+// mas NÃO envia litros para o backend
+```
+
+---
+
+### ✅ Forma correta
+
+```js
+const litrosCalculados =
+  valorLitro > 0
+    ? Number((valorTotal / valorLitro).toFixed(3))
+    : 0
+```
+
+Na hora de enviar:
+
+```js
+await supabase.from('abastecimentos').insert({
+  valor_litro: valorLitro,
+  valor_total: valorTotal,
+  quantidade_litros: litrosCalculados
+})
+```
+
+📌 **Se não enviar `quantidade_litros`, ela nunca aparecerá.**
+
+---
+
+# 🔍 PASSO 2 — VERIFICAR O BANCO (SUPABASE)
+
+## 1️⃣ A coluna EXISTE?
+
+Na tabela (`abastecimentos`, `solicitacoes_saldo` ou equivalente):
+
+```sql
+quantidade_litros NUMERIC
+```
+
+Se não existir → ❌ nunca vai mostrar.
+
+---
+
+## 2️⃣ Está chegando valor?
+
+Rode no Supabase:
+
+```sql
+select valor_litro, valor_total, quantidade_litros
+from solicitacoes_saldo
+order by created_at desc
+limit 10;
+```
+
+### Resultado esperado:
+
+| valor_litro | valor_total | quantidade_litros |
+| ----------- | ----------- | ----------------- |
+| 5.89        | 500.00      | 84.89             |
+
+Se `quantidade_litros` vier **NULL** → problema é no INSERT.
+
+---
+
+# 🔍 PASSO 3 — VERIFICAR A QUERY DE LISTAGEM
+
+### ⚠️ Erro MUITO comum
+
+A query **não retorna a coluna**.
+
+```sql
+select placa, valor_total
+from solicitacoes_saldo;
+```
+
+👉 Nunca vai aparecer litro.
+
+---
+
+### ✅ Query correta
+
+```sql
+select
+  placa,
+  valor_litro,
+  valor_total,
+  quantidade_litros
+from solicitacoes_saldo;
+```
+
+---
+
+# 🔍 PASSO 4 — VERIFICAR O FRONTEND (TELA DE LISTAGEM)
+
+### ⚠️ Erro comum
+
+O dado vem, mas **não é renderizado**.
+
+```jsx
+<td>{item.valor_total}</td>
+{/* litros não está aqui */}
+```
+
+---
+
+### ✅ Forma correta
+
+```jsx
+<td>{item.quantidade_litros?.toFixed(2)} L</td>
+```
+
+---
+
+# 🔒 PASSO 5 — REGRA PROFISSIONAL (ANTI-BUG)
+
+👉 **Nunca confiar só no frontend**.
+
+### Melhor prática (RECOMENDADO):
+
+Criar o cálculo **no banco também**, como garantia.
+
+## Opção A — Trigger no Supabase (TOP)
+
+```sql
+create or replace function calcular_litros()
+returns trigger as $$
+begin
+  new.quantidade_litros :=
+    round(new.valor_total / new.valor_litro, 3);
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger trg_calcular_litros
+before insert or update on solicitacoes_saldo
+for each row execute function calcular_litros();
+```
+
+📌 Assim:
+
+* Mesmo que o frontend falhe
+* O banco calcula corretamente
+
+---
+
+# 🧪 CHECKLIST RÁPIDO (MARQUE SIM/NÃO)
+
+* [ ] Campo `quantidade_litros` existe no banco
+* [ ] Valor está sendo calculado
+* [ ] Valor está sendo salvo
+* [ ] Query retorna a coluna
+* [ ] Tela renderiza o campo
+
+Se **qualquer um** for ❌ → o litro não aparece.
+
+---
+
+# ✅ CONCLUSÃO HONESTA
+
+Esse não é erro “bobo”, é **falta de amarração completa do fluxo**.
+Com **1 ajuste no insert + 1 no select**, resolve.
+
+Se você quiser, no próximo passo eu posso:
+
+* 🔧 analisar **seu código real**
+* 🧪 revisar **sua tabela do Supabase**
+* 🧠 decidir se é melhor **calcular no frontend ou no banco**
+* 📊 ajustar **tela de listagem**
+
+👉 Me diga:
+**onde você acha que está falhando hoje? (formulário, banco ou listagem)**

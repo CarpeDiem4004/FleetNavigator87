@@ -1,0 +1,101 @@
+Perfeito, a regra é simples 👍
+vou te passar **bem objetiva**, do jeito certo para **implantar no frontend + backend** (ou pedir pra IA do Replit fazer sem erro).
+
+---
+
+## 🎯 Regra de negócio (definitiva)
+
+**Horário solicitado → Data de consulta do abastecimento**
+
+1. **Se o abastecimento for solicitado ATÉ 16:00**
+
+   * 👉 consultar **na data atual**
+
+2. **Se o abastecimento for solicitado APÓS 18:00**
+
+   * 👉 consultar **na data atual + 1 dia (D+1)**
+
+3. **Entre 16:01 e 17:59**
+
+   * 👉 mantém **data atual** (ou ignora regra, conforme você quiser)
+
+---
+
+## 🧠 Lógica clara (para a IA entender)
+
+* O sistema deve **olhar o horário selecionado no filtro**
+* Comparar com `16:00` e `18:00`
+* Definir automaticamente a **data base de consulta**
+
+---
+
+## 🧩 Exemplo em JavaScript (frontend ou backend)
+
+```js
+function calcularDataConsulta(horarioSelecionado) {
+  const hoje = new Date();
+  const [hora, minuto] = horarioSelecionado.split(':').map(Number);
+
+  // Cria um objeto Date só com hora/minuto
+  const horario = new Date();
+  horario.setHours(hora, minuto, 0, 0);
+
+  const limite16 = new Date();
+  limite16.setHours(16, 0, 0, 0);
+
+  const limite18 = new Date();
+  limite18.setHours(18, 0, 0, 0);
+
+  // Até 16h → data atual
+  if (horario <= limite16) {
+    return hoje;
+  }
+
+  // Após 18h → D+1
+  if (horario >= limite18) {
+    const amanha = new Date(hoje);
+    amanha.setDate(hoje.getDate() + 1);
+    return amanha;
+  }
+
+  // Entre 16:01 e 17:59 → data atual
+  return hoje;
+}
+```
+
+---
+
+## 🧪 Exemplos práticos
+
+| Horário  | Data consultada |
+| -------- | --------------- |
+| 10:00    | Hoje            |
+| 14:00    | Hoje            |
+| 16:00    | Hoje            |
+| 17:00    | Hoje            |
+| 18:00    | Hoje + 1        |
+| Após 18h | Hoje + 1        |
+
+---
+
+## 🧠 Prompt pronto para a IA do Replit (copiar e colar)
+
+```
+Crie uma regra no filtro de abastecimento com base no horário selecionado:
+
+- Se o horário for até 16:00, consultar os dados usando a data atual.
+- Se o horário for após 18:00, consultar os dados usando a data atual + 1 dia (D+1).
+- Entre 16:01 e 17:59 manter a data atual.
+
+Essa regra deve funcionar tanto no frontend quanto no backend para evitar inconsistência.
+```
+
+---
+
+Se quiser, no próximo passo eu:
+
+* ajusto isso **direto no backend (query SQL / Supabase)**
+* ou integro com o **filtro visual do dashboard**
+* ou amarro isso **com Line Haul apenas**
+
+Só me diz 👊

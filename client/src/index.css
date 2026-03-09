@@ -1,0 +1,238 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --murici-pink: #DB0145;
+    --murici-pink-hover: #B80840;
+    
+    --bg-main: #F2F4F7;
+    --surface: #FFFFFF;
+    --surface-alt: #FAFAFB;
+    
+    --text: #101828;
+    --muted: #667085;
+    --border: #E4E7EC;
+    
+    --sidebar-bg: #0F172A;
+    --sidebar-text: #E5E7EB;
+    
+    /* Shadcn Sidebar Variables - Murici Dark Theme */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 220 13% 91%;
+    --sidebar-primary: 343 99% 43%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 343 99% 43%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 343 99% 43%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased;
+    background-color: var(--bg-main);
+    color: var(--text);
+  }
+}
+
+/* Murici Rebranding - Premium Cards (Tom Prateado Corporativo) */
+.murici-card {
+  background: linear-gradient(180deg, rgba(245,247,250,0.90), rgba(232,235,240,0.88));
+  border: 1px solid rgba(200, 205, 215, 0.85);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
+  transition: all 180ms ease;
+}
+
+.murici-card:hover {
+  background: linear-gradient(180deg, rgba(250,251,253,0.96), rgba(238,241,246,0.94));
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+}
+
+/* KPI Cards - Tom Prateado Premium */
+.murici-kpi-card {
+  background: linear-gradient(180deg, rgba(248,249,252,0.94), rgba(236,239,244,0.92));
+  border: 1px solid rgba(200, 205, 215, 0.85);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
+}
+
+.murici-kpi-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.murici-kpi-critical {
+  color: var(--murici-pink);
+  font-weight: 800;
+}
+
+/* Chart Container - Fundo Prateado para Gráficos */
+.murici-chart-container {
+  background: linear-gradient(180deg, rgba(248,249,252,0.96), rgba(240,242,246,0.94));
+  border: 1px solid rgba(200, 205, 215, 0.90);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  padding: 16px;
+}
+
+/* Sidebar Murici Institucional */
+.murici-sidebar {
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+}
+
+.murici-sidebar-item {
+  color: var(--sidebar-text);
+  transition: all 150ms ease;
+}
+
+.murici-sidebar-item:hover {
+  background: rgba(219, 1, 69, 0.08);
+  color: #fff;
+}
+
+.murici-sidebar-item.active {
+  background: rgba(219, 1, 69, 0.12);
+  color: var(--murici-pink);
+  border-left: 3px solid var(--murici-pink);
+}
+
+/* Buttons Murici */
+.murici-btn {
+  background-color: var(--murici-pink);
+  color: #FFFFFF;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 150ms ease;
+}
+
+.murici-btn:hover {
+  background-color: var(--murici-pink-hover);
+}
+
+.murici-btn-secondary {
+  background-color: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+}
+
+.murici-btn-secondary:hover {
+  background-color: var(--surface);
+}
+
+/* Inputs Murici */
+.murici-input {
+  background-color: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.murici-input::placeholder {
+  color: var(--muted);
+}
+
+.murici-input:focus {
+  border-color: var(--murici-pink);
+  box-shadow: 0 0 0 3px rgba(219, 1, 69, 0.15);
+  outline: none;
+}
+
+/* Alert Murici */
+.murici-alert {
+  background-color: rgba(219, 1, 69, 0.08);
+  border-left: 4px solid var(--murici-pink);
+  border-radius: 8px;
+}
+
+/* Fundo institucional Murici - Imagem Viva */
+.bg-murici-frota {
+  position: relative;
+  background-image: url("/assets/murici-frota-bg.png");
+  background-size: cover;
+  background-position: center right;
+  background-repeat: no-repeat;
+  filter: saturate(1.18) contrast(1.12) brightness(0.98);
+}
+
+/* Overlay inteligente (SEM película branca) */
+.bg-murici-frota::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.35) 0%,
+    rgba(255,255,255,0.50) 35%,
+    rgba(255,255,255,0.68) 100%
+  );
+  pointer-events: none;
+}
+
+/* Conteúdo acima do overlay */
+.bg-murici-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Legacy classes - mantidas para compatibilidade */
+.murici-page-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.35) 0%,
+    rgba(255,255,255,0.50) 35%,
+    rgba(255,255,255,0.68) 100%
+  );
+}
+
+.murici-bg-image {
+  filter: saturate(1.18) contrast(1.12) brightness(0.98);
+}
+
+/* Line Haul Abastecimento Background - Overlay Leve para Imagem Viva */
+.linehaul-abastecimento {
+  background-image: 
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.40) 0%,
+      rgba(255,255,255,0.55) 35%,
+      rgba(255,255,255,0.70) 100%
+    ),
+    url('/attached_assets/image_1766424319159.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Card translúcido padrão - Tom Prateado Corporativo */
+.card-translucent {
+  background: linear-gradient(180deg, rgba(245,247,250,0.90), rgba(232,235,240,0.88));
+  border: 1px solid rgba(200, 205, 215, 0.85);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
+  transition: all 180ms ease;
+}
+
+.card-translucent:hover {
+  background: linear-gradient(180deg, rgba(250,251,253,0.96), rgba(238,241,246,0.94));
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+}
+
+/* Títulos dentro de cards - Contraste Aprimorado */
+.murici-card-title {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.murici-card-subtitle {
+  color: var(--muted);
+  font-weight: 500;
+}

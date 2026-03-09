@@ -1,0 +1,105 @@
+Perfeito, regra **claríssima** e faz total sentido operacional 👍
+Vou te entregar **um prompt pronto, bem direto e técnico**, do jeito certo pra você colar no **Replit AI** e ele implementar sem inventar coisa fora do seu sistema.
+
+---
+
+## 🎯 REGRA DE NEGÓCIO (resumo rápido)
+
+* **NÃO pode enviar o bolsão** se existir **placa repetida**
+* **EXCEÇÃO ÚNICA:**
+  👉 é permitido **1 Diesel + 1 ARLA** para a **mesma placa**
+* **Qualquer outro cenário deve bloquear o envio**
+
+Exemplos:
+
+* ❌ Diesel + Diesel → BLOQUEIA
+* ❌ ARLA + ARLA → BLOQUEIA
+* ❌ Diesel + Gasolina → BLOQUEIA
+* ✅ Diesel + ARLA → PERMITE
+
+---
+
+## 🧠 PROMPT PRONTO PARA O REPLIT AI
+
+👉 **Copie e cole exatamente assim no Replit AI**
+
+```
+Implemente uma validação obrigatória antes de enviar o Bolsão de Solicitações.
+
+Contexto:
+Existe um array/lista de solicitações no bolsão, cada item possui:
+- placa
+- tipo_combustivel (diesel, arla, etc)
+
+Regra de negócio:
+1. Não permitir enviar o bolsão se existir placa repetida.
+2. ÚNICA exceção permitida:
+   - A mesma placa pode aparecer duas vezes APENAS se:
+     • uma solicitação for "diesel"
+     • a outra for "arla"
+3. Qualquer outro cenário deve bloquear o envio:
+   - diesel + diesel
+   - arla + arla
+   - diesel + gasolina
+   - diesel + qualquer outro tipo
+4. Caso a regra seja violada:
+   - impedir o envio
+   - exibir mensagem clara para o usuário:
+     "Não é permitido enviar solicitações com placa repetida, exceto 1 Diesel + 1 ARLA."
+
+Implementação técnica:
+- A validação deve ocorrer:
+  • antes do submit final
+  • antes da chamada da API
+- Percorrer o array do bolsão
+- Agrupar por placa
+- Para cada placa:
+  • se existir mais de 1 item
+  • verificar os tipos de combustível
+  • permitir apenas exatamente o conjunto [diesel, arla]
+- Caso contrário, retornar erro e bloquear o envio.
+```
+
+---
+
+## 🧩 LÓGICA QUE ELE VAI CRIAR (pra você validar)
+
+Algo nesse estilo (não precisa escrever, é só pra entender):
+
+```
+Placa ABC1234:
+- diesel
+- arla
+→ OK
+
+Placa XYZ9999:
+- diesel
+- diesel
+→ BLOQUEIA
+```
+
+---
+
+## 🧨 Mensagem de erro recomendada (UX)
+
+Sugiro manter **padrão e objetiva**:
+
+> ❌ Não é permitido enviar solicitações com placa repetida.
+> ✅ Exceção: 1 Diesel + 1 ARLA para a mesma placa.
+
+---
+
+## 💡 DICA EXTRA (opcional mas top)
+
+Se quiser evoluir depois:
+
+* Destacar visualmente a placa duplicada no bolsão
+* Desabilitar o botão **Enviar Todas** enquanto houver erro
+* Mostrar tooltip explicando o motivo
+
+Se quiser, no próximo passo eu:
+
+* adapto isso **exatamente no código que você já usa**
+* ou crio a **função JS isolada** pra colar direto no projeto
+
+Só me diga 👌

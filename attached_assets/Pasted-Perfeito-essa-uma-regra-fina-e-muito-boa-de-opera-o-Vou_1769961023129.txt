@@ -1,0 +1,194 @@
+Perfeito 👌 essa é uma **regra fina e muito boa** de operação.
+Vou te mostrar **como implementar exatamente isso no bolsão**, reaproveitando **a regra e a formatação de placa que você já tem**, sem reinventar campo.
+
+---
+
+# 🎯 REGRA FINAL DO BOLSÃO (CLARA)
+
+👉 **Para cada placa selecionada no bolsão**:
+
+1. O sistema verifica:
+
+   * 🔎 **Existe cartão atrelado a essa placa?**
+2. Se **SIM**:
+
+   * ✔️ Usa automaticamente o cartão
+   * ❌ **NÃO abre campo manual**
+3. Se **NÃO**:
+
+   * ✍️ **Abre campo para digitar a placa do cartão**
+   * 🧠 Usa **a mesma formatação/validação de placa** que já existe
+
+---
+
+# 🧱 1. PRÉ-REQUISITO NO SUPABASE
+
+Na tabela `veiculos`:
+
+```sql
+cartao_abastecimento TEXT NULL
+```
+
+👉 Regra simples:
+
+* `NULL` ou vazio = **não tem cartão**
+* preenchido = **cartão vinculado**
+
+---
+
+# 🔄 2. DADOS QUE O BOLSÃO PRECISA RECEBER
+
+Endpoint já deve retornar isso:
+
+```sql
+SELECT
+  id,
+  placa,
+  status_operacional,
+  cartao_abastecimento
+FROM veiculos
+WHERE base_id = :base_id
+AND status_operacional != 'EM_MANUTENCAO';
+```
+
+---
+
+# 🎛️ 3. FRONTEND – LÓGICA NO BOLSÃO
+
+## 🧩 Estado
+
+```js
+const [veiculoSelecionado, setVeiculoSelecionado] = useState(null)
+const [cartaoManual, setCartaoManual] = useState('')
+```
+
+---
+
+## 🏷️ Select de placas (o bolsão que você já tem)
+
+```jsx
+<select onChange={e => {
+  const v = veiculos.find(v => v.id === e.target.value)
+  setVeiculoSelecionado(v)
+}}>
+  <option value="">Selecione a placa</option>
+
+  {veiculos.map(v => (
+    <option key={v.id} value={v.id}>
+      {v.placa}
+    </option>
+  ))}
+</select>
+```
+
+---
+
+# 🔍 4. REGRA PRINCIPAL (AUTOMÁTICA)
+
+```js
+useEffect(() => {
+  if (!veiculoSelecionado) return
+
+  if (veiculoSelecionado.cartao_abastecimento) {
+    // ✔️ cartão já existe
+    setCartaoManual('')
+  } else {
+    // ❌ não tem cartão
+    setCartaoManual('')
+  }
+}, [veiculoSelecionado])
+```
+
+---
+
+# ✍️ 5. CAMPO DE CARTÃO (CONDICIONAL)
+
+## 🟢 SE TEM CARTÃO ATRELADO
+
+```jsx
+{veiculoSelecionado?.cartao_abastecimento && (
+  <input
+    value={veiculoSelecionado.cartao_abastecimento}
+    disabled
+  />
+)}
+```
+
+---
+
+## 🔴 SE NÃO TEM CARTÃO → ABRE DIGITAÇÃO
+
+```jsx
+{veiculoSelecionado && !veiculoSelecionado.cartao_abastecimento && (
+  <input
+    placeholder="Digite a placa do cartão"
+    value={cartaoManual}
+    onChange={e => setCartaoManual(formatarPlaca(e.target.value))}
+    maxLength={7}
+  />
+)}
+```
+
+---
+
+# 🧠 6. FORMATAÇÃO DA PLACA (REAPROVEITANDO PADRÃO)
+
+👉 **Use exatamente a função que você já tem**
+Mas se precisar de referência:
+
+```js
+function formatarPlaca(valor) {
+  return valor
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+}
+```
+
+📌 Isso mantém:
+
+* ABC1D23
+* AAA1234
+
+---
+
+# 💾 7. NA HORA DE SALVAR
+
+```js
+const cartaoFinal =
+  veiculoSelecionado.cartao_abastecimento || cartaoManual
+```
+
+E grava normalmente na solicitação.
+
+---
+
+# 🔐 8. VALIDAÇÃO OBRIGATÓRIA (ANTI-ERRO)
+
+```js
+if (!cartaoFinal) {
+  alert('Informe a placa do cartão de abastecimento')
+  return
+}
+```
+
+---
+
+# ✅ RESUMO EXECUTIVO
+
+✔ Bolsão continua o mesmo
+✔ Placa selecionada decide tudo
+✔ Cartão automático se existir
+✔ Campo manual só quando precisa
+✔ Mesma validação de placa
+✔ Zero erro operacional
+
+---
+
+## 🔥 Sugestão bônus (opcional)
+
+Mostrar visualmente no bolsão:
+
+* `ABC1D23 🔗` → tem cartão
+* `XYZ9F88 ⚠️` → sem cartão
+
+Se quiser, me manda **o trecho real do código do bolsão atual** que eu **encaixo essa lógica exatamente em cima dele**, linha por linha, sem quebrar nada 💪

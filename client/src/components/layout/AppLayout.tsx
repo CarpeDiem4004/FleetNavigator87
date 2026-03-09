@@ -1,0 +1,370 @@
+import React, { ReactNode } from 'react';
+import { Link, useLocation } from 'wouter';
+import { useAuth } from '@/context/AuthContext';
+import { 
+  Building2, 
+  Car,
+  Wrench,
+  CircleDollarSign,
+  ReceiptText,
+  Truck,
+  Users,
+  Fuel,
+  BarChart4,
+  MenuIcon,
+  X,
+  LogOut,
+  AlertCircle,
+  ShieldCheck,
+  FileText,
+  MessageSquare,
+  Package,
+  Boxes,
+  CreditCard,
+  FolderOpen
+} from 'lucide-react';
+// Background now uses public assets: /assets/murici-frota-bg.png
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { APP_VERSION } from '@shared/version';
+
+interface AppLayoutProps {
+  children: ReactNode;
+}
+
+const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  const [location] = useLocation();
+  const { user, logout } = useAuth();
+  const isMobile = useIsMobile();
+  const { toast } = useToast();
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [postosExpanded, setPostosExpanded] = React.useState(false);
+  const [cartaoExpanded, setCartaoExpanded] = React.useState(false);
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: 'Logout bem-sucedido',
+        description: 'Você foi desconectado do sistema',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao fazer logout',
+        description: 'Houve um problema ao tentar desconectar',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Função para verificar se o usuário tem acesso ao Dashboard Executivo
+  const hasExecutiveDashboardAccess = () => {
+    if (!user) return false;
+    const allowedRoles = ['admin', 'ceo', 'gerente_geral'];
+    return allowedRoles.includes(user.role);
+  };
+
+  // Verifica se é operador de frota (menu restrito)
+  const isOperadorFrota = user?.role === 'operador_frota';
+
+  // Links de navegação
+  const allNavLinks = [
+    ...(hasExecutiveDashboardAccess() ? [{ href: '/executive', label: 'Dashboard Executivo', icon: BarChart4 }] : []),
+    { href: '/fleet-management', label: 'Gestão de Frota', icon: Truck },
+    { href: '/vehicles', label: 'Veículos', icon: Car },
+    // { href: '/maintenance', label: 'Manutenções', icon: Wrench },
+    { href: '/tires', label: 'Pneus', icon: CircleDollarSign },
+    // Cartão de Abastecimento com Posto Remédios como submenu
+    { 
+      href: '#', 
+      label: 'Cartão',
+      icon: CreditCard,
+      hasSubmenu: true,
+      expanded: cartaoExpanded,
+      toggle: () => setCartaoExpanded(!cartaoExpanded),
+      submenu: [
+        { href: '/fuel-card-requests', label: 'Painel de Solicitações' },
+        { href: '/admin/abastecimento-pos-pago', label: 'Sistema Pós-Pago' },
+      ]
+    },
+    { 
+      href: '#', 
+      label: 'Abastecimento',
+      icon: Fuel,
+      hasSubmenu: true,
+      expanded: postosExpanded,
+      toggle: () => setPostosExpanded(!postosExpanded),
+      submenu: [
+        { href: '/posto/osasco_v2', label: 'Posto Osasco V2' },
+        { href: '/posto/alair_v2', label: 'Posto Alair V2' },
+        { href: '/posto/campinas_v2', label: 'Posto Campinas V2' },
+        { href: '/posto/abc_v2', label: 'Posto ABC V2' },
+        { href: '/posto/socorro_v2', label: 'Posto Socorro V2' },
+        { href: '/posto/sorocaba_v2', label: 'Posto Sorocaba V2' },
+        { href: '/postos/historico-geral', label: 'Histórico Geral' },
+        { href: '/postos/historico-patio', label: 'Histórico Pátio' },
+        { href: '/postos/grafico-consumo', label: 'Gráfico de Consumo' },
+        { href: '/postos/visao-geral', label: 'Visão Geral dos Postos' },
+      ]
+    },
+    { href: '/fines', label: 'Multas', icon: ReceiptText },
+    { href: '/line-haul', label: 'Line Haul', icon: Truck },
+    { href: '/drivers', label: 'Motoristas', icon: Users },
+    { href: '/manutencao', label: 'Solicitações de Manutenção', icon: FileText },
+    { href: '/tratativa-manutencao', label: 'Tratativas de Manutenção', icon: Wrench },
+    { href: '/accidents', label: 'Sinistros e Roubos', icon: AlertCircle },
+    { href: '/work-safety', label: 'Segurança do Trabalho', icon: ShieldCheck },
+    { href: '/conferencia-rotas', label: 'Conferência de Rotas', icon: FolderOpen },
+    { href: '/relatorio-consumo', label: 'Relatório de Consumo', icon: BarChart4 },
+    { href: '/users', label: 'Usuários', icon: Users },
+    { href: '/bases', label: 'Bases', icon: Building2 },
+    { href: '/solicitacoes', label: 'Solicitações da Base', icon: MessageSquare },
+    { href: '/equipment', label: 'Equipamentos', icon: Package },
+
+  ];
+
+  // Filtra o menu lateral para operador_frota: apenas Gestão de Frota e Veículos
+  const navLinks = isOperadorFrota
+    ? allNavLinks.filter(link => ['/fleet-management', '/vehicles'].includes(link.href))
+    : allNavLinks;
+
+  // Expandir automaticamente Abastecimento se estivermos em uma página de posto
+  React.useEffect(() => {
+    if ((location.startsWith('/postos') || location.startsWith('/posto/')) && !postosExpanded) {
+      setPostosExpanded(true);
+    }
+  }, [location, postosExpanded]);
+  
+  // Expandir automaticamente Cartão se estivermos em uma página relacionada
+  React.useEffect(() => {
+    if ((location.startsWith('/fuel-card') || location.startsWith('/posto-remedios')) && !cartaoExpanded) {
+      setCartaoExpanded(true);
+    }
+  }, [location, cartaoExpanded]);
+
+  // Verificar se o link está ativo
+  const isActive = (href: string) => {
+    if (href === '/') {
+      return location === '/';
+    }
+    return location.startsWith(href);
+  };
+
+  const Sidebar = () => (
+    <div className={cn("h-full flex flex-col bg-[#000000] text-white overflow-y-auto shadow-xl")}>
+      <div className="flex items-center justify-between p-4 border-b border-[rgba(255,255,255,0.08)]">
+        <div>
+          <a 
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.pushState(null, "", "/");
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            }}
+            className="flex items-center py-2 gap-2"
+          >
+            <Truck className="h-6 w-6 text-[#DB0145]" />
+            <span className="text-lg tracking-tight">
+              <span className="font-bold text-[#DB0145]">Murici</span>
+              <span className="font-light text-blue-300 ml-1">On Fleet</span>
+              <span className="font-light text-blue-400/70 text-sm ml-1">2.0</span>
+            </span>
+          </a>
+        </div>
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(false)}
+            className="text-white hover:bg-primary/20"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
+      
+      <nav className="flex-1 p-2">
+        <ul className="space-y-1">
+          {navLinks.map((link) => (
+            <li key={link.label}>
+              {link.hasSubmenu ? (
+                <div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-2 font-normal text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150"
+                    onClick={link.toggle}
+                  >
+                    <link.icon className="h-4 w-4" />
+                    {link.label}
+                    <svg
+                      className={cn("ml-auto h-4 w-4 transition-transform", link.expanded && "rotate-90")}
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                  </Button>
+                  {link.expanded && (
+                    <ul className="mt-1 ml-4 space-y-1 border-l border-[rgba(255,255,255,0.08)] pl-2">
+                      {link.submenu?.map((subLink) => (
+                        <li key={subLink.label}>
+                          <div>
+                            <a 
+                              href={subLink.href}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                window.history.pushState(null, "", subLink.href);
+                                window.dispatchEvent(new PopStateEvent("popstate"));
+                                if (isMobile) {
+                                  setSidebarOpen(false);
+                                }
+                              }}
+                              className="block py-1.5 px-2 text-sm rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150"
+                            >
+                              {subLink.label}
+                            </a>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <a 
+                    href={link.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.history.pushState(null, "", link.href);
+                      window.dispatchEvent(new PopStateEvent("popstate"));
+                      if (isMobile) {
+                        setSidebarOpen(false);
+                      }
+                    }}
+                    className="flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-[rgba(219,1,69,0.25)] hover:text-white hover:border-l-[3px] hover:border-[#DB0145] transition-all duration-150"
+                  >
+                    <link.icon className="h-4 w-4" />
+                    <span>{link.label}</span>
+                  </a>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </nav>
+      
+      <div className="p-4 border-t border-[rgba(255,255,255,0.08)] mt-auto">
+        {user && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center">
+              <div className="h-9 w-9 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-medium">
+                {user.name?.charAt(0) || user.email?.charAt(0) || 'U'}
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-white">{user.name || user.email || 'Usuário'}</p>
+                <p className="text-xs text-gray-400">{user.email || ''}</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleLogout} className="w-full gap-2 bg-[rgba(255,255,255,0.06)] text-white border-[rgba(255,255,255,0.08)] hover:bg-[rgba(219,1,69,0.14)] hover:text-white mt-2">
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen bg-background">
+      {/* Fundo institucional Murici - Imagem Viva */}
+      <div 
+        className="fixed inset-0 pointer-events-none"
+        style={{ 
+          backgroundImage: `url('/assets/murici-frota-bg.png')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center right',
+          backgroundRepeat: 'no-repeat',
+          filter: 'saturate(1.18) contrast(1.12) brightness(0.98)'
+        }}
+      ></div>
+      {/* Overlay inteligente (SEM película branca) */}
+      <div 
+        className="fixed inset-0 pointer-events-none"
+        style={{ 
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.50) 35%, rgba(255,255,255,0.68) 100%)'
+        }}
+      ></div>
+      
+      {/* Sidebar para desktop */}
+      {!isMobile && (
+        <div className="w-64 hidden md:block z-10">
+          <Sidebar />
+        </div>
+      )}
+      
+      {/* Conteúdo principal */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
+        {/* Header para mobile */}
+        {isMobile && (
+          <header className="border-b bg-gradient-to-r from-gray-900 to-gray-800 p-4 flex items-center justify-between shadow-md shadow-primary/10">
+            <div className="flex items-center gap-2">
+              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-primary/20">
+                    <MenuIcon className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-64">
+                  <Sidebar />
+                </SheetContent>
+              </Sheet>
+              <div>
+                <a 
+                  href="/"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.history.pushState(null, "", "/");
+                    window.dispatchEvent(new PopStateEvent("popstate"));
+                    setSidebarOpen(false);
+                  }}
+                  className="flex items-center py-2 gap-2"
+                >
+                  <Truck className="h-5 w-5 text-blue-400" />
+                  <span className="text-base tracking-tight">
+                    <span className="font-bold text-white">Murici</span>
+                    <span className="font-light text-blue-300 ml-1">On Fleet</span>
+                    <span className="font-light text-blue-400/70 text-xs ml-1">2.0</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+          </header>
+        )}
+        
+        {/* Conteúdo da página */}
+        <main className="flex-1 overflow-auto">
+          <div className="min-h-full">
+            {children}
+          </div>
+          {/* Rodapé discreto */}
+          <footer className="text-center py-2 text-xs text-gray-400 bg-gray-50 border-t">
+            Desenvolvido por Carpe Diem 4004 | suporte 11 970558053 | Sistema {APP_VERSION.full}
+          </footer>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default AppLayout;

@@ -1,0 +1,61 @@
+import { useState, useEffect } from 'react'
+import { supabase } from './supabaseClient'
+
+export default function CadastroManutencao() {
+  const [veiculos, setVeiculos] = useState([])
+  const [bases, setBases] = useState([])
+  const [form, setForm] = useState({
+    veiculo_id: '',
+    base_id: '',
+    descricao: ''
+  })
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: veiculosData } = await supabase.from('veiculos').select('id, placa')
+      const { data: basesData } = await supabase.from('base').select('id, nome')
+      setVeiculos(veiculosData || [])
+      setBases(basesData || [])
+    }
+    fetchData()
+  }, [])
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const { error } = await supabase.from('manutencoes').insert([form])
+    if (error) {
+      alert('Erro ao registrar: ' + error.message)
+    } else {
+      alert('Manutenção registrada com sucesso!')
+      setForm({ veiculo_id: '', base_id: '', descricao: '' })
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="p-4 space-y-3 bg-white rounded shadow max-w-xl mx-auto">
+      <h2 className="text-lg font-bold">Registrar Manutenção</h2>
+
+      <select name="veiculo_id" value={form.veiculo_id} onChange={handleChange} required className="w-full p-2 border rounded">
+        <option value="">Selecione o veículo</option>
+        {veiculos.map(v => (
+          <option key={v.id} value={v.id}>{v.placa}</option>
+        ))}
+      </select>
+
+      <select name="base_id" value={form.base_id} onChange={handleChange} required className="w-full p-2 border rounded">
+        <option value="">Selecione a base</option>
+        {bases.map(b => (
+          <option key={b.id} value={b.id}>{b.nome}</option>
+        ))}
+      </select>
+
+      <textarea name="descricao" value={form.descricao} onChange={handleChange} placeholder="Descreva o problema" required className="w-full p-2 border rounded" />
+
+      <button type="submit" className="w-full bg-red-600 text-white p-2 rounded">Registrar</button>
+    </form>
+  )
+}

@@ -1,0 +1,143 @@
+Boa, agora ficou claro 👌
+O que você quer é **ensinar a IA / dev** que **essa página específica (`/linehaul-abastecimento`) NÃO é geral**, ela é **exclusiva da operação Line Haul**, e **só pode mostrar dados das rotas solicitadas por esse link**.
+
+Vou te entregar **um prompt pronto, bem direto e sem brecha**, do jeito que o Replit AI entende.
+
+---
+
+## 🎯 PROMPT PARA A IA – REGRA DA PÁGINA LINE HAUL ABASTECIMENTO
+
+> **Contexto do sistema:**
+> Existe uma página específica chamada:
+>
+> ```
+> /linehaul-abastecimento
+> ```
+>
+> Essa página **é exclusiva da operação LINE HAUL**.
+>
+> **Problema atual:**
+> O Analytics e os dados dessa página estão misturando informações de outras operações (Shopee, Mercado Livre, etc), quando **não deveriam**.
+
+---
+
+### ✅ **REGRA OBRIGATÓRIA DE NEGÓCIO**
+
+1️⃣ **Essa página deve exibir SOMENTE dados de rotas que foram solicitadas através deste link**
+
+```
+/linehaul-abastecimento
+```
+
+2️⃣ **Ignorar completamente**:
+
+* Shopee
+* Mercado Livre
+* Qualquer outra operação
+
+Mesmo que:
+
+* Estejam no mesmo período
+* Usem o mesmo veículo
+* Tenham a mesma rota
+
+---
+
+### 🔐 **Critério técnico obrigatório para filtragem**
+
+A query **DEVE** filtrar explicitamente por operação:
+
+```sql
+WHERE operacao = 'LINE_HAUL'
+```
+
+OU, se existir um identificador do link:
+
+```sql
+WHERE origem_link = 'linehaul-abastecimento'
+```
+
+OU ainda:
+
+```sql
+WHERE tipo_operacao = 'LINE_HAUL'
+```
+
+👉 **Nunca depender apenas de filtro visual do frontend.**
+👉 O filtro deve ser **forçado no backend**.
+
+---
+
+### 📊 **Impacto esperado nos dados**
+
+Na página `/linehaul-abastecimento`:
+
+* ✅ Custo Total → **apenas Line Haul**
+* ✅ Total de Viagens → **somente viagens Line Haul**
+* ✅ Rotas Distintas → **somente rotas do Line Haul**
+* ✅ Veículo mais caro → **considerando apenas Line Haul**
+* ✅ Gráficos → **100% baseados em Line Haul**
+
+---
+
+### 🚫 **Comportamento proibido**
+
+* ❌ Somar dados de outras operações
+* ❌ Permitir que “Todas as operações” traga dados externos
+* ❌ Reaproveitar a query geral de analytics sem filtro fixo
+
+---
+
+### 🧠 **Boas práticas recomendadas**
+
+Criar uma query dedicada:
+
+* `getLineHaulAnalytics()`
+
+Ou um endpoint exclusivo:
+
+```
+/api/analytics/line-haul
+```
+
+Com o filtro **hardcoded**:
+
+```js
+const OPERACAO_FIXA = 'LINE_HAUL'
+```
+
+---
+
+### 🧪 **Teste obrigatório**
+
+Executar no banco:
+
+```sql
+SELECT COUNT(*)
+FROM abastecimentos
+WHERE operacao = 'LINE_HAUL';
+```
+
+Esse número deve bater **exatamente** com os dados exibidos na página.
+
+---
+
+### ✅ Resultado final esperado
+
+A página `/linehaul-abastecimento` se torna:
+
+* 🔒 Isolada
+* 🎯 Precisa
+* 📊 Confiável
+* 🧠 Sem risco de mistura de operação
+
+---
+
+Se quiser, no próximo passo eu:
+
+* 🔧 **te escrevo a query SQL exata**
+* 🧩 **ajusto o endpoint Express/Next**
+* 🎨 **garanto que o frontend não permita erro humano**
+
+Só me diga:
+👉 **Hoje esse filtro está no frontend, backend ou RPC do Supabase?**

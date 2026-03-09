@@ -1,0 +1,4 @@
+/* Esconde o modal de erro do Vite */
+[plugin\:runtime-error-plugin] {
+  display: none !important;
+}

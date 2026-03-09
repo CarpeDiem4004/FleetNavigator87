@@ -1,0 +1,232 @@
+Abaixo vou te entregar um modelo completo para criar o link externo da operação Line Haul, exatamente como você pediu:
+➡️ Motorista preenche nome, telefone, local de início, destino, horário previsto de abastecimento
+➡️ Motorista tira foto do painel e foto do cartão
+➡️ Tudo pronto para você usar no Replit (frontend) + Supabase (backend).
+
+✅ 1. Campos que o formulário terá
+
+Formulário Line Haul – Abastecimento
+
+Nome do motorista
+
+Telefone
+
+Local de início da viagem
+
+Destino
+
+Horário do abastecimento
+
+Foto do painel
+
+Foto do cartão de combustível
+
+Botão "Enviar Solicitação"
+
+✅ 2. Tabela no Supabase (crie antes)
+
+Crie no Supabase a tabela:
+
+linehaul_abastecimento_solicitacoes
+create table linehaul_abastecimento_solicitacoes (
+  id bigint generated always as identity primary key,
+  nome_motorista text not null,
+  telefone text not null,
+  local_inicio text not null,
+  destino text not null,
+  horario_abastecimento timestamptz not null,
+  foto_painel_url text,
+  foto_cartao_url text,
+  created_at timestamptz default now()
+);
+
+
+Crie também um bucket no Supabase Storage chamado:
+
+linehaul_uploads
+
+✅ 3. Página pronta para você colocar no Replit
+
+Abaixo um formulário funcional em React, já integrado com o Supabase.
+
+Cole no seu projeto /pages/linehaul-abastecimento.jsx
+(ou peça para a IA do Replit criar)
+
+🔵 Código do formulário (React + Supabase Upload + Insert):
+import { useState } from "react";
+import { supabase } from "../supabaseClient";
+
+export default function LineHaulForm() {
+  const [form, setForm] = useState({
+    nome: "",
+    telefone: "",
+    localInicio: "",
+    destino: "",
+    horarioAbastecimento: "",
+  });
+
+  const [fotoPainel, setFotoPainel] = useState(null);
+  const [fotoCartao, setFotoCartao] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  async function uploadImage(file, path) {
+    const { data, error } = await supabase.storage
+      .from("linehaul_uploads")
+      .upload(path, file, { upsert: true });
+
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage
+      .from("linehaul_uploads")
+      .getPublicUrl(path);
+
+    return urlData.publicUrl;
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setMsg("");
+
+    try {
+      let painelUrl = null;
+      let cartaoUrl = null;
+
+      if (fotoPainel)
+        painelUrl = await uploadImage(
+          fotoPainel,
+          `painel_${Date.now()}.jpg`
+        );
+
+      if (fotoCartao)
+        cartaoUrl = await uploadImage(
+          fotoCartao,
+          `cartao_${Date.now()}.jpg`
+        );
+
+      const { error } = await supabase
+        .from("linehaul_abastecimento_solicitacoes")
+        .insert([
+          {
+            nome_motorista: form.nome,
+            telefone: form.telefone,
+            local_inicio: form.localInicio,
+            destino: form.destino,
+            horario_abastecimento: form.horarioAbastecimento,
+            foto_painel_url: painelUrl,
+            foto_cartao_url: cartaoUrl,
+          },
+        ]);
+
+      if (error) throw error;
+
+      setMsg("Solicitação enviada com sucesso!");
+      setForm({
+        nome: "",
+        telefone: "",
+        localInicio: "",
+        destino: "",
+        horarioAbastecimento: "",
+      });
+      setFotoPainel(null);
+      setFotoCartao(null);
+    } catch (err) {
+      setMsg("Erro ao enviar. " + err.message);
+    }
+
+    setLoading(false);
+  }
+
+  return (
+    <div className="max-w-xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-xl">
+      <h2 className="text-2xl font-bold mb-4 text-center">
+        Solicitação de Abastecimento - Line Haul
+      </h2>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+        <input
+          type="text"
+          placeholder="Nome do motorista"
+          className="input input-bordered"
+          value={form.nome}
+          onChange={(e) => setForm({ ...form, nome: e.target.value })}
+          required
+        />
+
+        <input
+          type="text"
+          placeholder="Telefone"
+          className="input input-bordered"
+          value={form.telefone}
+          onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+          required
+        />
+
+        <input
+          type="text"
+          placeholder="Local de início"
+          className="input input-bordered"
+          value={form.localInicio}
+          onChange={(e) => setForm({ ...form, localInicio: e.target.value })}
+          required
+        />
+
+        <input
+          type="text"
+          placeholder="Destino"
+          className="input input-bordered"
+          value={form.destino}
+          onChange={(e) => setForm({ ...form, destino: e.target.value })}
+          required
+        />
+
+        <input
+          type="datetime-local"
+          className="input input-bordered"
+          value={form.horarioAbastecimento}
+          onChange={(e) =>
+            setForm({ ...form, horarioAbastecimento: e.target.value })
+          }
+          required
+        />
+
+        <label className="font-semibold">Foto do painel</label>
+        <input
+          type="file"
+          accept="image/*"
+          capture="camera"
+          onChange={(e) => setFotoPainel(e.target.files[0])}
+          required
+        />
+
+        <label className="font-semibold">Foto do cartão</label>
+        <input
+          type="file"
+          accept="image/*"
+          capture="camera"
+          onChange={(e) => setFotoCartao(e.target.files[0])}
+          required
+        />
+
+        <button
+          type="submit"
+          className="btn btn-primary mt-4"
+          disabled={loading}
+        >
+          {loading ? "Enviando..." : "Enviar Solicitação"}
+        </button>
+
+        {msg && <p className="mt-3 text-center">{msg}</p>}
+      </form>
+    </div>
+  );
+}
+
+✅ 4. Como criar o link para os motoristas
+
+Depois que você colocar essa página no Replit:
+
+Link final para enviar aos motoristas:
+https://SEU-PROJETO.replit.app/linehaul-abastecimento

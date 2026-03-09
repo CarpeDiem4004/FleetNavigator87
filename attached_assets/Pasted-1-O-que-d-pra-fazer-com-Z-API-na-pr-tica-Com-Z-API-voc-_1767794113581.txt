@@ -1,0 +1,139 @@
+1) O que dá pra fazer com Z-API (na prática)
+
+Com Z-API você consegue:
+	•	Receber mensagens via Webhook (grupos e direct, dependendo da conta/instância e permissões)
+	•	Enviar mensagem (responder pelo painel)
+	•	Identificar grupo / participante / número
+	•	Em muitos casos, pegar menções (ou detectar por texto/quote)
+
+📌 Então seu painel pode virar uma Inbox real.
+
+⸻
+
+2) Como eu deixaria a Central “dinâmica e executiva” (UX)
+
+Eu mudaria seu layout para Inbox 3 colunas (padrão de ferramentas profissionais):
+
+Coluna A — Caixas
+	•	🔴 Pendentes
+	•	🟠 SLA em risco
+	•	🟣 Menções
+	•	🔵 Atribuídas a mim
+	•	🟢 Resolvidas
+	•	⚫ Silenciadas
+
+Coluna B — Conversas (cards)
+
+Cada card mostra:
+	•	Nome do grupo/cliente
+	•	Última mensagem (preview)
+	•	Badges: URGENTE, @menção, SLA 12m, Sem resposta 1h
+	•	Avatar/initial do responsável
+	•	Ícone 🔔 se tem alerta ativo
+
+Coluna C — Conversa (chat)
+	•	Timeline estilo WhatsApp Web
+	•	Caixa de resposta (com enviar via Z-API)
+	•	Botões rápidos:
+	•	Atribuir
+	•	Marcar resolvido
+	•	Silenciar 1h
+	•	Criar ocorrência/rota/chamado
+	•	Nota interna
+
+✅ Isso vira operação de verdade: “ver → decidir → agir”.
+
+⸻
+
+3) O principal: histórico e auditoria (quem respondeu / quem mexeu)
+
+Aqui é onde fica profissional.
+
+Tudo vira “evento”
+
+Toda ação do time gera registro:
+	•	“João atribuiu para Amanda”
+	•	“Amanda respondeu no grupo”
+	•	“André marcou resolvido”
+	•	“SLA estourou e notificou”
+
+Tabelas que eu criaria (Supabase)
+
+Você vai conseguir puxar relatórios e ranking sem dor.
+
+wa_conversations
+	•	id, name, type (group/direct), cliente_id, ativo
+
+wa_messages
+	•	id, conversation_id, from_number, from_name, body, ts, direction (in/out)
+
+wa_alerts
+	•	id, conversation_id, message_id, rule_id, status, priority, created_at, due_at
+
+wa_assignments
+	•	alert_id, assigned_to, assigned_by, assigned_at
+
+wa_actions  ✅ (audit log)
+	•	id, alert_id, user_id, action_type, notes, created_at
+(action_type: assign, reply, resolve, reopen, snooze, tag)
+
+Resultado: você consegue mostrar no painel “Respondido por: Amanda às 10:42”.
+
+⸻
+
+4) Como detectar “marcação de número” (menção) com Z-API
+
+WhatsApp nem sempre entrega menção estruturada. Então eu faria 3 camadas:
+	1.	Regex de número no texto:
+	•	“@5511970558053”, “+55 11 97055-8053”, “João”
+	2.	Lista de termos de menção por pessoa (ex: João = [“joao”, “jp”, “joão paulo”, “97055-8053”])
+	3.	Quoted message (quando alguém responde uma mensagem do operador) → isso também vira prioridade
+
+Quando bater, gera alerta automático.
+
+⸻
+
+5) Regras de alerta (do jeito executivo)
+
+No botão “Regras”, eu faria algo tipo:
+	•	Regra: Menção João (Alta)
+	•	gatilho: 97055-8053, “joão paulo”, “jp”
+	•	ação: criar alerta + atribuir ao João + notificar
+	•	Regra: Palavra “URGENTE” (Alta)
+	•	ação: alerta + notificar coordenador
+	•	Regra: Cliente VIP
+	•	qualquer mensagem fora do horário → alerta
+
+⸻
+
+6) KPIs de gestão (o que eu colocaria no topo)
+
+No lugar de só “mensagens hoje” eu colocaria:
+	•	Pendentes agora
+	•	SLA em risco (15min)
+	•	SLA estourado
+	•	Tempo médio 1ª resposta
+	•	Tempo médio resolução
+	•	Top 5 grupos mais críticos (7d)
+
+Isso transforma em painel de gestor.
+
+⸻
+
+7) Implementação: fluxo técnico com Z-API
+
+Webhook
+	1.	Mensagem chega no seu endpoint /webhook/zapi
+	2.	Você salva em wa_messages
+	3.	Verifica regras → cria wa_alerts se necessário
+	4.	Atualiza contadores do dashboard
+	5.	Dispara notificação no sistema
+
+Envio de resposta
+
+Quando o operador responder no chat:
+	•	Você cria wa_messages com direction=out
+	•	chama Z-API para enviar
+	•	registra wa_actions como reply
+
+✅ E aí fica gravado: quem respondeu, o que respondeu, quando respondeu.

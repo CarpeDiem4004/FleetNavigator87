@@ -1,0 +1,76 @@
+LineHallShopeePage.tsx:261 Erro ao buscar estatísticas: 
+AxiosError {message: 'Request failed with status code 500', name: 'AxiosError', code: 'ERR_BAD_RESPONSE', config: {…}, request: XMLHttpRequest, …}
+
+
+O ChatGPT disse:
+Esse erro indica que a requisição feita pelo seu frontend (LineHallShopeePage.tsx, linha 261) resultou em erro 500 — ou seja, erro interno no servidor. Isso geralmente significa que a API ou função chamada encontrou uma exceção não tratada.
+
+🚨 Como interpretar:
+500 = algo quebrou na lógica da API.
+
+AxiosError = a chamada foi feita corretamente, mas a resposta falhou internamente.
+
+ERR_BAD_RESPONSE = a resposta retornada foi inválida ou incompleta.
+
+✅ Passos para depurar
+1. Verifique o backend (função que fornece as estatísticas)
+Abra o endpoint que essa página consome, provavelmente algo como:
+
+ts
+Copiar
+Editar
+const response = await axios.get('/api/linehall-shopee/stats');
+ou similar.
+
+Vá para a função no seu backend que lida com essa rota (/stats) e insira logs para entender o que está falhando.
+
+Exemplo em Express:
+
+ts
+Copiar
+Editar
+app.get('/api/linehall-shopee/stats', async (req, res) => {
+  try {
+    // log inicial
+    console.log("Iniciando consulta de estatísticas LineHall Shopee");
+
+    const result = await supabase
+      .from('line_hall_shopee')
+      .select('...'); // campos usados
+
+    if (result.error) {
+      console.error("Erro no Supabase:", result.error);
+      return res.status(500).json({ success: false, message: 'Erro no Supabase', error: result.error.message });
+    }
+
+    res.status(200).json({ success: true, data: result.data });
+  } catch (error) {
+    console.error("Erro inesperado:", error);
+    res.status(500).json({ success: false, message: 'Erro inesperado', error: error.message });
+  }
+});
+2. Verifique os nomes das colunas no Supabase
+Erros 500 causados por Supabase normalmente vêm de nomes de colunas errados, como:
+
+ts
+Copiar
+Editar
+.select('requested_by_driver') // mas essa coluna não existe
+→ Entre no Supabase, abra a tabela line_hall_shopee e confirme se todas as colunas que estão sendo selecionadas na API realmente existem.
+
+3. Exemplo de erro comum:
+ts
+Copiar
+Editar
+const { data, error } = await supabase
+  .from('line_hall_shopee')
+  .select('placa_cavalo, status_viagem, requested_by_driver');
+Se requested_by_driver não existir, isso causará erro 500.
+
+🛠️ Solução:
+Corrigir os nomes de campos
+
+Adicionar logs no backend
+
+Tratar erros do Supabase com if (error) e retornar res.status(400) ao invés de deixar estourar o erro
+

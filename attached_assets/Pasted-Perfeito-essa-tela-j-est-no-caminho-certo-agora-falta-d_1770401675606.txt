@@ -1,0 +1,211 @@
+Perfeito, essa tela já está **no caminho certo** — agora falta deixar ela **viva, histórica e auditável**, do jeito que uma operação Coca-Cola precisa. Vou te passar **a arquitetura + regras + passos práticos** para implantar isso sem gambiarra.
+
+Vou dividir em **5 blocos claros**, pra você conseguir mandar isso direto pra IA do Replit ou implementar você mesmo 👇
+
+---
+
+## 1️⃣ REGRA PRINCIPAL DO SISTEMA (conceito-chave)
+
+👉 **Status de frota NÃO pode sobrescrever o dia anterior**
+
+Cada atualização diária precisa virar um **registro histórico**, não um update simples.
+
+📌 **Regra de ouro**
+
+* Cada base atualiza **1 vez por dia**
+* Cada dia = **snapshot da frota**
+* O dashboard sempre:
+
+  * Mostra **HOJE**
+  * Ou recalcula **um período (data inicial → data final)**
+
+---
+
+## 2️⃣ MODELAGEM NO SUPABASE (fundamental)
+
+### 🟢 Tabela nova: `status_frota_diario`
+
+```sql
+create table status_frota_diario (
+  id uuid primary key default gen_random_uuid(),
+  base_id uuid not null,
+  veiculo_id uuid not null,
+  status text not null, 
+  observacao text,
+  data_referencia date not null,
+  atualizado_por uuid,
+  created_at timestamp default now()
+);
+```
+
+### 🔒 Regras importantes
+
+* **unique(base_id, veiculo_id, data_referencia)**
+* Impede duplicar o mesmo veículo no mesmo dia
+
+```sql
+create unique index uniq_status_diario
+on status_frota_diario (base_id, veiculo_id, data_referencia);
+```
+
+---
+
+## 3️⃣ FLUXO DIÁRIO (como a base trabalha)
+
+### 🧑‍💼 Base faz login → Atualização diária
+
+Quando clicar em **Salvar Atualização Diária**:
+
+✅ Backend faz:
+
+1. Define `data_referencia = current_date`
+2. Para cada veículo da base:
+
+   * Salva status
+   * Salva observação (campo livre)
+3. **Nunca apaga registros antigos**
+
+📌 Exemplo de status:
+
+* `em_rota`
+* `sem_equipe`
+* `manutencao`
+* `emprestado`
+* `devolvido`
+
+📌 Observação:
+
+> "Sem equipe — afastamento médico"
+> "Manutenção na oficina X, prazo 10/02"
+
+---
+
+## 4️⃣ DASHBOARD — COMO CALCULAR AS PORCENTAGENS
+
+### 🔵 A) Porcentagem DIÁRIA (HOJE)
+
+Query base:
+
+```sql
+select status, count(*) 
+from status_frota_diario
+where data_referencia = current_date
+group by status;
+```
+
+No frontend:
+
+```ts
+percentual = (quantidade_status / total_veiculos) * 100
+```
+
+👉 Isso alimenta:
+
+* Frota disponível
+* Em rota
+* Em manutenção
+* Parados
+
+---
+
+### 🟣 B) Porcentagem POR PERÍODO (DATA INICIAL / FINAL)
+
+Interface:
+
+* DatePicker inicial
+* DatePicker final
+* Botão **Consultar**
+
+Query:
+
+```sql
+select status, count(*) 
+from status_frota_diario
+where data_referencia between :data_inicio and :data_fim
+group by status;
+```
+
+📌 Aqui você mostra:
+
+* Média do período
+* Ou evolução por dia (gráfico)
+
+---
+
+## 5️⃣ VEÍCULOS PARADOS — COM OBSERVAÇÃO (parte vermelha da tela)
+
+### Query correta:
+
+```sql
+select 
+  v.placa,
+  v.modelo,
+  s.status,
+  s.observacao,
+  b.nome as base
+from status_frota_diario s
+join veiculos v on v.id = s.veiculo_id
+join bases b on b.id = s.base_id
+where 
+  s.data_referencia = current_date
+  and s.status in ('manutencao', 'sem_equipe', 'baixa_venda');
+```
+
+### No frontend:
+
+Mostrar assim:
+
+```
+PLACA: EPI2F71
+STATUS: Manutenção
+OBS: Oficina Murici — prazo 12/02
+```
+
+✔️ Isso transforma o painel em **gestão real**, não só número.
+
+---
+
+## 6️⃣ AUTOMAÇÃO DIÁRIA (opcional, mas forte)
+
+### ⏰ Zeragem automática (sem apagar histórico)
+
+Todo dia à 00:01:
+
+* Sistema **espera nova atualização**
+* Se a base não atualizar:
+
+  * Status fica como **"Pendente"**
+  * Dashboard mostra alerta
+
+📌 Pode ser:
+
+* Supabase Edge Function (cron)
+* Ou backend Node com node-cron
+
+---
+
+## 7️⃣ TEXTO PRONTO PARA PEDIR ISSO À IA DO REPLIT
+
+Se quiser mandar direto pra IA do Replit, usa isso 👇
+
+> **“Implantar um sistema de status diário de frota sem sobrescrever dados. Criar tabela `status_frota_diario` com data de referência, status e observação por veículo e base. O botão ‘Salvar Atualização Diária’ deve inserir registros com a data atual. O dashboard deve calcular porcentagens com base no dia atual e permitir filtro por data inicial e final. A seção ‘Veículos Parados’ deve listar placas com status e observações do dia selecionado. Não apagar histórico.”**
+
+---
+
+## 🚀 Resultado final
+
+Você passa a ter:
+
+* 📅 Histórico diário real
+* 📊 Percentual diário e por período
+* 📝 Observações por veículo
+* 🚨 Bases pendentes
+* 🧠 Auditoria completa da operação
+
+Se quiser, no próximo passo eu:
+
+* desenho o **layout do filtro por período**
+* ou te entrego **as APIs prontas (Express + Supabase)**
+* ou monto **o SQL completo com views otimizadas**
+
+Só me diz 👉 **backend, frontend ou banco primeiro?**

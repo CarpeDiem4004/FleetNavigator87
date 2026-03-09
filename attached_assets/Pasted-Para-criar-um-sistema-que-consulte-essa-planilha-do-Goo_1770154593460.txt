@@ -1,0 +1,124 @@
+Para criar um sistema que consulte essa planilha do Google Sheets e libere ou não o abastecimento com base nas condições, você pode seguir esta abordagem utilizando **Google Apps Script** (integrado ao Google Sheets) e um **webhook/endpoint** que será chamado quando chegar uma solicitação.
+
+---
+
+## **Passo a passo:**
+
+### 1. **Criar um script no Google Sheets para consultar os dados**
+Vá na planilha vinculada, clique em **Extensões > Apps Script**, e crie um novo script.
+
+### 2. **Código do Google Apps Script para consulta**
+
+```javascript
+function doPost(e) {
+  // Recebe os dados da solicitação
+  const data = JSON.parse(e.postData.contents);
+  const dataSolicitacao = data.data_solicitacao; // formato DD/MM/AAAA
+  const placaVeiculo = data.placa_veiculo;
+  const origem = data.origem;
+  const destino = data.destino;
+
+  // Acessa a planilha
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MURICI_LINE HAUL"); // ajuste o nome se necessário
+  const dados = sheet.getDataRange().getValues();
+
+  // Cabeçalhos (assumindo que a primeira linha tem os títulos)
+  const headers = dados[0];
+  const idxData = headers.indexOf("sta_origin_date");
+  const idxPlaca = headers.indexOf("vehicle_num");
+  const idxOrigem = headers.indexOf("origin_station_code");
+  const idxDestino = headers.indexOf("destination_station_code");
+
+  let encontrou = false;
+
+  // Percorre as linhas da planilha
+  for (let i = 1; i < dados.length; i++) {
+    const linha = dados[i];
+    const dataPlanilha = linha[idxData];
+    const placaPlanilha = linha[idxPlaca];
+    const origemPlanilha = linha[idxOrigem];
+    const destinoPlanilha = linha[idxDestino];
+
+    // Compara data, placa, origem e destino
+    if (dataPlanilha == dataSolicitacao &&
+        placaPlanilha == placaVeiculo &&
+        origemPlanilha == origem &&
+        destinoPlanilha == destino) {
+      encontrou = true;
+      break;
+    }
+  }
+
+  // Retorna resposta JSON
+  const resposta = {
+    "liberar_abastecimento": encontrou,
+    "motivo": encontrou ? "Dados encontrados na planilha" : "Dados não localizados na planilha para a data e veículo informados"
+  };
+
+  return ContentService
+    .createTextOutput(JSON.stringify(resposta))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+```
+
+### 3. **Publicar o script como uma Web App**
+No editor do Apps Script:
+- Clique em **"Implantar" > "Nova implantação"**.
+- Escolha **"Tipo de implantação" > "Web App"**.
+- Defina **"Executar como"** (sua conta) e **"Quem tem acesso"** (Qualquer pessoa, mesmo anônimo, se for uma API pública, ou apenas dentro da organização).
+- Clique em **"Implantar"** e **copie a URL da Web App**.
+
+---
+
+### 4. **Integrar com seu sistema de solicitações**
+Quando chegar uma solicitação de abastecimento no seu sistema, você deve **enviar uma requisição POST** para a URL da Web App com os dados no corpo, em JSON.
+
+**Exemplo de corpo da requisição:**
+```json
+{
+  "data_solicitacao": "08/02/2026",
+  "placa_veiculo": "SOC-SP8",
+  "origem": "HUB-LRP-01",
+  "destino": "HUB-LSP-51"
+}
+```
+
+**Exemplo de resposta (sucesso):**
+```json
+{
+  "liberar_abastecimento": true,
+  "motivo": "Dados encontrados na planilha"
+}
+```
+
+**Exemplo de resposta (falha):**
+```json
+{
+  "liberar_abastecimento": false,
+  "motivo": "Dados não localizados na planilha para a data e veículo informados"
+}
+```
+
+---
+
+### 5. **No seu sistema (backend), tratar a resposta**
+Se `liberar_abastecimento` for `true`, libera o abastecimento. Caso contrário, nega.
+
+---
+
+## **Resumo do fluxo:**
+1. Solicitação chega no seu sistema com **data, placa, origem, destino**.
+2. Seu sistema chama a **Web App do Google Apps Script** via POST.
+3. O script consulta a planilha e verifica se existe uma linha com essas informações na data correta.
+4. Retorna `true` ou `false`.
+5. Seu sistema libera ou não o abastecimento com base nisso.
+
+---
+
+## **Observações:**
+- Certifique-se de que os **nomes das colunas** no script correspondem exatamente aos da planilha.
+- O formato da data deve ser igual ao da planilha (`DD/MM/AAAA`).
+- A planilha deve estar sempre atualizada com as viagens do dia.
+- Para maior segurança, você pode adicionar autenticação via token na Web App.
+
+Precisa de ajuda para integrar no seu backend específico (Node.js, PHP, Python, etc.)?

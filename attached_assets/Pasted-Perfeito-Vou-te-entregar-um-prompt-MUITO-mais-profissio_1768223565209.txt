@@ -1,0 +1,134 @@
+Perfeito 👍
+Vou te entregar **um prompt MUITO mais profissional, claro e direto**, já no nível de **SaaS corporativo**, focado **somente no painel de mensagens**, sem mexer em Z-API (Zapi) nem integrações.
+
+A ideia é você **colar isso direto no Replit AI**.
+
+---
+
+## 🎯 OBJETIVO DO PAINEL
+
+Criar um **Painel de Mensagens de Atendimento de Saldo**, onde operadores possam:
+
+* Visualizar mensagens
+* Responder solicitações
+* Manter **histórico completo e auditável**
+* Registrar **quem enviou** e **quem respondeu**
+* Centralizar tudo em um único painel operacional
+
+---
+
+## ✅ PROMPT FINAL (PRONTO PARA USO NO REPLIT AI)
+
+```
+Crie um Painel de Mensagens de Atendimento de Saldo, focado apenas na interface (frontend).
+A integração com Z-API já está configurada e NÃO deve ser alterada.
+
+OBJETIVO DO PAINEL:
+Centralizar todas as mensagens relacionadas a solicitações de saldo (Ticket / Veloe / Line Haul),
+permitindo que operadores visualizem, respondam e acompanhem o histórico completo das conversas.
+
+FUNCIONALIDADES DO PAINEL:
+
+1. LISTA DE CONVERSAS (COLUNA ESQUERDA)
+- Mostrar todas as conversas ativas
+- Exibir:
+  - Placa do veículo
+  - Nome do motorista
+  - Base
+  - Projeto
+  - Tipo de saldo (Ticket, Veloe, Line Haul)
+  - Última mensagem (resumo)
+  - Data e hora da última interação
+  - Indicador visual de mensagem não lida
+- Conversas ordenadas por mais recente
+- Campo de busca por placa, motorista ou base
+- Filtros rápidos:
+  - Pendentes de resposta
+  - Respondidas
+  - Encerradas
+
+2. ÁREA DE CHAT (COLUNA DIREITA)
+- Exibir conversa em formato de chat (estilo WhatsApp corporativo)
+- Diferenciar visualmente:
+  - Mensagens do motorista
+  - Mensagens do operador
+- Cada mensagem deve mostrar:
+  - Conteúdo
+  - Data e hora
+  - Nome do remetente
+  - Tipo de usuário (Motorista ou Operador)
+- Suporte a mensagens de texto
+- Campo de digitação fixo no rodapé
+- Botão "Enviar Mensagem"
+
+3. REGISTRO E HISTÓRICO (AUDITORIA)
+- Toda mensagem enviada ou recebida deve gerar um registro automático
+- Criar uma aba ou painel lateral chamado "Histórico de Atendimento"
+- O histórico deve conter:
+  - Data e hora
+  - Ação realizada (Mensagem enviada / Mensagem recebida)
+  - Nome de quem enviou
+  - Nome de quem respondeu
+  - Tipo de saldo relacionado
+- O histórico não pode ser editável (somente leitura)
+
+4. IDENTIFICAÇÃO DE RESPONSABILIDADE
+- Ao responder uma mensagem, registrar automaticamente:
+  - Nome do operador logado
+  - Data e hora da resposta
+- Mostrar no chat algo como:
+  "Respondido por: João Silva – Operador | 12/01/2026 14:32"
+
+5. STATUS DO ATENDIMENTO
+- Cada conversa deve possuir um status:
+  - Aberto
+  - Em Atendimento
+  - Aguardando Motorista
+  - Finalizado
+- O operador pode alterar o status manualmente
+- Exibir o status de forma visual (badge colorido)
+
+6. PADRÃO VISUAL
+- Layout moderno, limpo e profissional
+- Interface estilo SaaS corporativo
+- Uso de cards, badges e ícones
+- Responsivo (desktop e tablet)
+- Manter padrão visual do sistema atual
+
+IMPORTANTE:
+- NÃO criar integrações externas
+- NÃO alterar configurações do Z-API
+- NÃO criar regras de backend
+- O foco é somente no painel visual e experiência do operador
+```
+
+---
+
+## 🧠 O QUE ESSE PROMPT GARANTE
+
+✔ Painel organizado
+✔ Histórico auditável (quem falou com quem)
+✔ Controle operacional
+✔ Base para SLA e compliance
+✔ Visual profissional (nível empresa grande)
+
+---
+
+## 🚀 Próximo passo (se quiser evoluir)
+
+Depois disso, dá pra adicionar:
+
+* SLA de resposta
+* Tempo médio de atendimento
+* Templates rápidos de resposta
+* Encerramento automático
+* Exportação do histórico por solicitação
+
+Se quiser, eu também posso:
+
+* Adaptar esse painel para **mobile**
+* Criar o **layout em React + Tailwind**
+* Criar o **modelo de tabela no Supabase**
+* Criar **regras de permissão por operador**
+
+Só me dizer 👊

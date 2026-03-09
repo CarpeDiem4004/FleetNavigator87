@@ -1,0 +1,168 @@
+OBJETIVO DO PAINEL
+
+Criar um Painel de Monitoramento de WhatsApp (Clientes) que permita ao time:
+	1.	Acompanhar mensagens dos grupos de clientes
+	2.	Receber alertas automáticos quando:
+	•	Um número específico for marcado
+	•	Palavras-chave forem usadas (ex: atraso, problema, urgência)
+	3.	Centralizar tudo dentro do Murici On Fleet 2.0
+
+⸻
+
+⚠️ IMPORTANTE (regra do WhatsApp)
+
+O WhatsApp NÃO permite leitura de mensagens de grupos pessoais comuns.
+
+👉 Solução correta e profissional:
+Usar WhatsApp Business API + grupos tratados como conversas de atendimento (ou canais dedicados).
+
+⸻
+
+🧠 ARQUITETURA RECOMENDADA (visão geral)
+
+WhatsApp Business API
+        ↓
+Webhook (Node.js / Express)
+        ↓
+Banco (Supabase / PostgreSQL)
+        ↓
+Motor de Regras (alertas)
+        ↓
+Painel Web (React)
+        ↓
+Notificações (Dashboard / Email / WhatsApp interno)
+
+
+⸻
+
+🧩 COMPONENTES UM A UM
+
+1️⃣ WhatsApp Business API
+
+Você pode usar:
+	•	Meta Cloud API (oficial)
+	•	Ou provedores:
+	•	Z-API
+	•	360dialog
+	•	Take Blip
+
+📌 Recomendo Meta Cloud API (menos custo e mais controle).
+
+⸻
+
+2️⃣ Webhook (backend)
+
+Toda mensagem recebida cai num endpoint seu.
+
+Exemplo (Node.js):
+
+POST /webhook/whatsapp
+
+Payload típico:
+
+{
+  "from": "5511999999999",
+  "group": "Cliente Mercado Livre - Line Haul",
+  "message": "João, pode ver esse atraso?",
+  "mentions": ["5511970558053"]
+}
+
+
+⸻
+
+3️⃣ Banco de Dados (Supabase)
+
+Tabelas sugeridas:
+
+📄 whatsapp_messages
+
+campo	tipo
+id	uuid
+grupo	text
+remetente	text
+mensagem	text
+data	timestamp
+mencionado	boolean
+numero_mencionado	text
+
+
+⸻
+
+📄 alert_rules
+
+campo	tipo
+id	uuid
+tipo	enum (numero / palavra)
+valor	text
+ativo	boolean
+
+
+⸻
+
+4️⃣ Motor de Alertas (regra de negócio)
+
+Sempre que chegar mensagem:
+
+if (mensagem.includes("5511970558053")) {
+  gerarAlerta("Você foi mencionado");
+}
+
+if (mensagem.includes("atraso")) {
+  gerarAlerta("Cliente citou atraso");
+}
+
+💡 Dá pra evoluir depois para IA classificar urgência.
+
+⸻
+
+🖥️ PAINEL NO MURICI ON FLEET
+
+Novo menu:
+
+📨 Central WhatsApp Clientes
+
+⸻
+
+Cards principais:
+	•	🔴 Menções Hoje
+	•	🟠 Mensagens Críticas
+	•	🟢 Mensagens Normais
+	•	🕒 Tempo sem resposta
+
+⸻
+
+Lista em tempo real:
+
+[08:42] Cliente Shopee - Line Haul
+"João, consegue validar essa rota?"
+🔔 Você foi mencionado
+
+
+⸻
+
+Filtros:
+	•	Cliente
+	•	Grupo
+	•	Palavra-chave
+	•	Status (respondido / pendente)
+
+⸻
+
+🔔 TIPOS DE ALERTA
+
+Você pode ativar por perfil:
+	•	🔔 Alerta no painel
+	•	📩 Email
+	•	📱 WhatsApp interno
+	•	📊 KPI no dashboard
+
+⸻
+
+🔐 SEGURANÇA & LGPD
+
+✔ Controle por permissão (gestor / operador)
+✔ Logs de acesso
+✔ Mensagens armazenadas com criptografia
+✔ Grupos visíveis só para quem precisa
+
+⸻

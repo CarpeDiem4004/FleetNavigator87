@@ -1,0 +1,66 @@
+Console.js:61 Erro ao excluir abastecimento: 
+AxiosError {message: 'Request failed with status code 401', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+
+
+O ChatGPT disse:
+Esse erro AxiosError: Request failed with status code 401 indica que a requisição para excluir o abastecimento está sem autenticação ou com um token inválido/ausente.
+
+Possíveis causas:
+Token de autenticação ausente ou expirado.
+
+Endpoint protegido sem enviar o cabeçalho Authorization com o Bearer token.
+
+O usuário atual não tem permissão para excluir esse dado.
+
+O Supabase não está aceitando o token atual.
+
+📌 Passos para corrigir
+✅ 1. Verifique se o token está sendo enviado
+No Axios, você precisa incluir o token do usuário autenticado no cabeçalho da requisição:
+
+js
+Copiar
+Editar
+const { data: { session } } = await supabase.auth.getSession();
+
+await axios.delete(`${API_URL}/abastecimento/${id}`, {
+  headers: {
+    Authorization: `Bearer ${session.access_token}`
+  }
+});
+Se você estiver usando supabase.auth.session() diretamente, ele foi descontinuado. O método atualizado é:
+
+js
+Copiar
+Editar
+const {
+  data: { session },
+  error
+} = await supabase.auth.getSession();
+✅ 2. Confirme se o endpoint /abastecimento/:id realmente exige autenticação
+No seu backend (Express.js ou outro), deve ter algo como:
+
+js
+Copiar
+Editar
+app.delete('/abastecimento/:id', authenticateUser, async (req, res) => {
+  // lógica para deletar
+});
+Se estiver usando middleware para proteger rotas, o middleware authenticateUser deve estar corretamente extraindo o token e validando.
+
+✅ 3. Verifique permissões no Supabase (se estiver excluindo direto pelo Supabase)
+Se você está usando Supabase diretamente via RLS (Row Level Security), verifique:
+
+A tabela abastecimento tem RLS ativado?
+
+Existe uma política que permita deletar linhas apenas se user_id = auth.uid()?
+
+Exemplo de política de deleção:
+
+sql
+Copiar
+Editar
+CREATE POLICY "Usuário pode deletar seus próprios abastecimentos"
+ON abastecimento
+FOR DELETE
+USING (user_id = auth.uid());

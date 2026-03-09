@@ -1,0 +1,894 @@
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/context/AuthContext";
+
+// Definindo o tipo User para uso interno do hook
+interface User {
+  id?: number;
+  name?: string;
+  email?: string;
+  role?: string;
+  baseId?: number;
+  basename?: string;
+  oficina_id?: number;
+  bases?: {
+    id: number;
+    name: string;
+  };
+}
+
+// Interface para o retorno do hook
+interface BasePermissionHook {
+  hasPermission: (route: string) => boolean;
+  getAccessibleRoutes: () => string[];
+  isUserFromBase: (baseId: number) => boolean;
+  getUserBase: () => {id: number | null, name: string | null};
+}
+
+// Lista de todas as rotas disponíveis no sistema
+const allRoutes = [
+  '/',                                 // Dashboard
+  '/executive-dashboard',              // Dashboard Executivo
+  '/vehicles',                         // Veículos
+  '/drivers',                          // Motoristas
+  '/maintenance',                      // Manutenções
+  '/manutencao',                       // Alias para Manutenções
+  '/tires',                            // Pneus
+  '/pneus',                            // Alias para Pneus
+  '/refueling',                        // Abastecimentos
+  '/abastecimento',                    // Alias para Abastecimentos
+  '/fuel-card',                        // Cartão de Combustível
+  '/fuel-card-requests',               // Painel de Solicitações Fuel Card
+  '/posto-remedios',                   // Posto Remédios
+  '/cartao-abastecimento',             // Cartão de Abastecimento
+  '/fines',                            // Multas
+  '/multas',                           // Alias para Multas
+  '/line-hall',                        // Line Hall (antigo)
+  '/line-hall-shopee',                 // Line Hall Shopee (novo)
+  '/fleet-management',                 // Gestão de Frota
+  '/gestao-de-frotas',                 // Alias para Gestão de Frota
+  '/fleet-management/inventory',       // Gestão de Estoque
+  '/fleet-management/maintenance',     // Sistema de Manutenção
+  '/fleet-management/workshops',       // Oficinas Credenciadas
+  '/fleet-management/budgets',         // Orçamentos
+  '/work-safety',                      // Segurança do Trabalho
+  '/seguranca-trabalho',               // Alias para Segurança do Trabalho
+  '/theft',                            // Roubo
+  '/roubo',                            // Alias para Roubo
+  '/sinister',                         // Sinistro
+  '/sinistro',                         // Alias para Sinistro
+  '/accidents',                        // Acidentes
+  '/acidentes',                        // Alias para Acidentes
+  '/users',                            // Usuários (só admin)
+  '/bases',                            // Bases (só admin)
+  '/bases/campinas',                   // Base Campinas
+  '/bases/campinas/despesas',          // Despesas Campinas
+  '/bases/campinas/solicitacao-pneus', // Solicitação de Pneus
+  '/bases/campinas/solicitacao-orcamento', // Solicitação de Orçamento
+  '/bases/campinas/manutencao-frota',  // Manutenção de Frota
+  '/bases/goiania',                    // Base Goiânia
+  '/bases/goiania/despesas',           // Despesas Goiânia
+  '/bases/goiania/multas',             // Multas Goiânia
+  '/bases/goiania/acidentes-trabalho', // Acidentes de Trabalho Goiânia
+  '/bases/goiania/sinistros',          // Sinistros Goiânia
+  '/bases/goiania/solicitacao-pneus',  // Solicitação de Pneus Goiânia
+  '/bases/goiania/solicitacao-orcamento', // Solicitação de Orçamento Goiânia
+  '/bases/goiania/manutencao-frota',   // Manutenção de Frota Goiânia
+  '/postos/visao-geral',               // Visão Geral dos Postos
+  '/postos',                           // Postos de Abastecimento
+  '/terceiros/gerenciamento',          // Gerenciamento de Terceiros
+  '/terceiros/dashboard',              // Dashboard de Terceiros
+  '/terceiros/login',                  // Login de Terceiros
+  '/admin/abastecimento-pos-pago',     // Sistema Pós-Pago
+  '/admin/abastecimento-pos-pago/links' // Links Públicos do Sistema Pós-Pago
+];
+
+// Regras de correspondência entre bases e rotas específicas
+const baseRouteMapping = {
+  'line hall': ['/line-hall', '/line-hall-shopee'],
+  'sc_lajeado_srs10sdd': [
+    '/bases/sc_lajeado_srs10sdd',
+    '/bases/lajeado',
+    // Rotas específicas da base (formato /bases/baseSlug/...)
+    '/bases/sc_lajeado_srs10sdd/sinistros',
+    '/bases/sc_lajeado_srs10sdd/acidentes-trabalho',
+    '/bases/sc_lajeado_srs10sdd/multas',
+    '/bases/sc_lajeado_srs10sdd/despesas',
+    '/bases/sc_lajeado_srs10sdd/cartao-combustivel',
+    '/bases/sc_lajeado_srs10sdd/solicitacao-orcamento',
+    '/bases/sc_lajeado_srs10sdd/manutencao-frota',
+    '/bases/sc_lajeado_srs10sdd/solicitacao-pneus',
+    '/bases/sc_lajeado_srs10sdd/cartoes-ativos',
+    '/bases/sc_lajeado_srs10sdd/veiculos',
+    '/bases/sc_lajeado_srs10sdd/external',
+    // Rotas com parâmetro dinâmico (formato /bases/:baseId/...)
+    '/bases/:baseId/cartao-combustivel',
+    '/bases/:baseId/despesas',
+    '/bases/:baseId/multas',
+    '/bases/:baseId/acidentes-trabalho',
+    '/bases/:baseId/sinistros',
+    '/bases/:baseId/solicitacao-pneus',
+    '/bases/:baseId/solicitacao-orcamento',
+    '/bases/:baseId/manutencao-frota',
+    '/bases/:baseId/veiculos',
+    '/bases/:baseId/external',
+    // Rotas globais do sistema acessíveis pelos templates
+    '/sinister',
+    '/sinistro', 
+    '/accidents',
+    '/acidentes',
+    '/theft',
+    '/roubo',
+    '/work-safety',
+    '/seguranca-trabalho',
+    '/fines',
+    '/multas',
+    '/vehicles',
+    '/drivers',
+    '/maintenance',
+    '/manutencao',
+    '/fuel-card',
+    '/cartao-combustivel',
+    '/fuel-card-requests',
+    '/tires',
+    '/pneus'
+  ],
+  'multas': ['/multas', '/fines'],
+  'pneus': ['/pneus', '/tires'],
+  'campinas': [
+    '/bases/campinas',
+    '/bases/campinas/despesas',
+    '/bases/campinas/solicitacao-pneus',
+    '/bases/campinas/solicitacao-orcamento',
+    '/bases/campinas/manutencao-frota'
+  ],
+  'goiania': [
+    '/bases/goiania',
+    '/bases/goiania/despesas',
+    '/bases/goiania/multas',
+    '/bases/goiania/acidentes-trabalho',
+    '/bases/goiania/sinistros',
+    '/bases/goiania/solicitacao-pneus',
+    '/bases/goiania/solicitacao-orcamento',
+    '/bases/goiania/manutencao-frota'
+  ],
+  'gestão de frotas': [
+    '/gestao-de-frotas', 
+    '/fleet-management', 
+    '/executive-dashboard',
+    '/fleet-management/inventory',
+    '/fleet-management/maintenance',
+    '/fleet-management/workshops',
+    '/maintenance', 
+    '/manutencao',
+    '/vehicles', 
+    '/refueling',
+    '/abastecimento',
+    '/tires',
+    '/pneus',
+    '/fines',
+    '/multas',
+    '/line-hall-shopee',
+    '/fuel-card',
+    '/fuel-card-requests'
+  ],
+  'frota': [
+    '/gestao-de-frotas', 
+    '/fleet-management', 
+    '/executive-dashboard',
+    '/fleet-management/inventory',
+    '/fleet-management/maintenance',
+    '/fleet-management/workshops',
+    '/maintenance', 
+    '/manutencao',
+    '/vehicles', 
+    '/refueling',
+    '/abastecimento',
+    '/tires',
+    '/pneus',
+    '/fines',
+    '/multas',
+    '/line-hall-shopee',
+    '/fuel-card',
+    '/fuel-card-requests'
+  ],
+  'segurança do trabalho': [
+    '/work-safety',
+    '/seguranca-trabalho'
+  ],
+  'sinistro': [
+    '/theft',
+    '/roubo',
+    '/sinister',
+    '/sinistro',
+    '/accidents',
+    '/acidentes'
+  ],
+  'gestor': [
+    // Gestor tem acesso completo a todas as bases do Grupo Pereira (GP01, GP02, GP03)
+    '/fleet-management',
+    '/fuel-card-requests',
+    '/executive-dashboard',
+    '/vehicles',
+    '/maintenance',
+    '/manutencao',
+    '/tires',
+    '/pneus',
+    '/fuel-card',
+    '/cartao-combustivel',
+    '/bases/gp01',
+    '/bases/gp01/despesas',
+    '/bases/gp01/multas',
+    '/bases/gp01/acidentes-trabalho',
+    '/bases/gp01/sinistros',
+    '/bases/gp01/solicitacao-pneus',
+    '/bases/gp01/solicitacao-orcamento',
+    '/bases/gp01/manutencao-frota',
+    '/bases/gp01/veiculos',
+    '/bases/gp02',
+    '/bases/gp02/despesas',
+    '/bases/gp02/multas',
+    '/bases/gp02/acidentes-trabalho',
+    '/bases/gp02/sinistros',
+    '/bases/gp02/solicitacao-pneus',
+    '/bases/gp02/solicitacao-orcamento',
+    '/bases/gp02/manutencao-frota',
+    '/bases/gp02/veiculos',
+    '/bases/gp02/external',
+    '/bases/gp03',
+    '/bases/gp03/despesas',
+    '/bases/gp03/multas',
+    '/bases/gp03/acidentes-trabalho',
+    '/bases/gp03/sinistros',
+    '/bases/gp03/solicitacao-pneus',
+    '/bases/gp03/solicitacao-orcamento',
+    '/bases/gp03/manutencao-frota',
+    '/bases/gp03/veiculos',
+    '/bases/gp03/external'
+  ],
+  'gp03': [
+    '/bases/gp03',
+    '/bases/gp03/cartao-combustivel',
+    '/bases/gp03/despesas',
+    '/bases/gp03/multas',
+    '/bases/gp03/acidentes-trabalho',
+    '/bases/gp03/sinistros',
+    '/bases/gp03/solicitacao-pneus',
+    '/bases/gp03/solicitacao-orcamento',
+    '/bases/gp03/manutencao-frota',
+    '/bases/gp03/veiculos',
+    '/bases/gp03/external'
+  ],
+  'gp02': [
+    '/bases/gp02',
+    '/bases/gp02/cartao-combustivel',
+    '/bases/gp02/despesas',
+    '/bases/gp02/multas',
+    '/bases/gp02/acidentes-trabalho',
+    '/bases/gp02/sinistros',
+    '/bases/gp02/solicitacao-pneus',
+    '/bases/gp02/solicitacao-orcamento',
+    '/bases/gp02/manutencao-frota',
+    '/bases/gp02/veiculos',
+    '/bases/gp02/external'
+  ],
+  'gp01': [
+    '/bases/gp01',
+    '/bases/gp01/cartao-combustivel',
+    '/bases/gp01/despesas',
+    '/bases/gp01/multas',
+    '/bases/gp01/acidentes-trabalho',
+    '/bases/gp01/sinistros',
+    '/bases/gp01/solicitacao-pneus',
+    '/bases/gp01/solicitacao-orcamento',
+    '/bases/gp01/manutencao-frota',
+    '/bases/gp01/veiculos',
+    '/bases/gp01/external'
+  ]
+};
+
+// Rotas básicas que TODAS as bases têm acesso (modelo padrão de acesso para qualquer base)
+const basicRoutes = [
+  '/',                                   // Dashboard
+  '/executive-dashboard',                // Dashboard Executivo
+  '/painel-operacional',                 // Painel Operacional (TEMPORÁRIO - para teste de manutenção)
+  '/vehicles',                           // Cadastro e gestão de veículos
+  '/drivers',                            // Cadastro e gestão de motoristas
+  '/maintenance',                        // Solicitações de manutenção
+  '/manutencao',                         // Alias para manutenção
+  '/tires',                              // Solicitações de pneus
+  '/pneus',                              // Alias para pneus
+  '/refueling',                          // Registros de abastecimento
+  '/abastecimento',                      // Alias para abastecimento
+  '/abastecimentos',                     // Dashboard de Abastecimento
+  '/fuel-card',                          // Cartão de Combustível
+  '/fuel-card-requests',                 // Painel de Solicitações Fuel Card
+  '/posto-remedios',                     // Posto Remédios
+  '/cartao-abastecimento',               // Cartão de Abastecimento
+  '/work-safety',                        // Informar acidentes de trabalho
+  '/seguranca-trabalho',                 // Alias para segurança do trabalho
+  '/theft',                              // Registro de roubos
+  '/roubo',                              // Alias para roubo
+  '/sinister',                           // Registros de sinistros
+  '/sinistro',                           // Alias para sinistro
+  '/accidents',                          // Registros de acidentes
+  '/acidentes',                          // Alias para acidentes
+  '/postos/visao-geral',                 // Visão Geral dos Postos
+  '/postos',                             // Postos de Abastecimento
+  '/postos/historico-consolidado',       // Histórico Consolidado de Abastecimentos
+  '/posto/alair_v2',                     // Posto Alair V2
+  '/posto/alair_v2/public',              // Posto Alair V2 Public
+  '/bases',                              // Bases
+  '/bases/campinas',                     // Base Campinas
+  '/bases/campinas/despesas',            // Despesas Campinas
+  '/bases/campinas/solicitacao-pneus',   // Solicitação de Pneus
+  '/bases/campinas/solicitacao-orcamento', // Solicitação de Orçamento
+  '/bases/campinas/manutencao-frota',    // Manutenção de Frota
+  '/bases/goiania',                      // Base Goiânia
+  '/bases/goiania/despesas',             // Despesas Goiânia
+  '/bases/goiania/multas',               // Multas Goiânia
+  '/bases/goiania/acidentes-trabalho',   // Acidentes de Trabalho Goiânia
+  '/bases/goiania/sinistros',            // Sinistros Goiânia
+  '/bases/goiania/solicitacao-pneus',    // Solicitação de Pneus Goiânia
+  '/bases/goiania/solicitacao-orcamento', // Solicitação de Orçamento Goiânia
+  '/bases/goiania/manutencao-frota',     // Manutenção de Frota Goiânia
+  '/users',                              // Página de Usuários (acesso para todos, verificação adicional feita no hasPermission)
+  '/admin/abastecimento-pos-pago',       // Sistema Pós-Pago 
+  '/admin/abastecimento-pos-pago/links'  // Links Públicos do Sistema Pós-Pago
+];
+
+export const useBasePermission = (): BasePermissionHook => {
+  const { user: authUser } = useAuth();
+  const user = authUser as User | null;
+  
+  // Esta função verifica se uma rota está na lista de rotas para uma base específica
+  const isRouteForBase = useCallback((route: string, basename: string): boolean => {
+    const baseLower = basename.toLowerCase();
+    
+    // Verificar todas as chaves possíveis de baseRouteMapping
+    for (const base in baseRouteMapping) {
+      if (baseLower.includes(base)) {
+        const routesForBase = baseRouteMapping[base as keyof typeof baseRouteMapping];
+        
+        // Verificar correspondência exata
+        if (routesForBase.includes(route)) {
+          console.log(`Rota ${route} permitida para base: ${baseLower}`);
+          return true;
+        }
+        
+        // Verificar rotas com parâmetros dinâmicos
+        for (const allowedRoute of routesForBase) {
+          if (allowedRoute.includes(':baseId')) {
+            // Transformar rota com parâmetro em regex para comparar
+            const routePattern = allowedRoute.replace(':baseId', '[^/]+');
+            const regex = new RegExp(`^${routePattern}$`);
+            if (regex.test(route)) {
+              console.log(`Rota dinâmica ${route} permitida para base: ${baseLower} (padrão: ${allowedRoute})`);
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }, []);
+  
+  // Verifica se o usuário tem permissão para acessar a rota
+  const hasPermission = useCallback((route: string): boolean => {
+    // Se for um link '#' usado para menus com subitens, sempre permitir
+    if (route === '#') {
+      return true;
+    }
+    
+    // Se não houver usuário, não tem permissão para nada
+    if (!user) {
+      console.log(`Permission denied - No user`);
+      return false;
+    }
+    
+    // VERIFICAÇÃO RIGOROSA DE ADMIN E CEO - Várias formas de detectar admin ou CEO
+    const isAdmin = (
+      user.role?.toLowerCase() === 'admin' || 
+      user.role?.toUpperCase() === 'ADMIN' ||
+      user.role === 'admin' ||
+      user.role === 'ADMIN' ||
+      user.role?.toLowerCase() === 'ceo' || 
+      user.role?.toUpperCase() === 'CEO' ||
+      user.role === 'ceo' ||
+      user.role === 'CEO' ||
+      user.role?.toLowerCase() === 'gerente_geral' ||
+      user.role === 'gerente_geral' ||
+      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com', 'rogerio.goncalves@muricionfleet.com', 'rogerio.goncalves@muricitransportes.com.br'].includes(user.email.toLowerCase()))
+    );
+    
+    if (isAdmin) {
+      console.log(`Permission granted for admin/CEO user to route: ${route} (role: '${user.role}', email: '${user.email}')`);
+      return true;
+    }
+    
+    // Verificação especial para Sistema Pós-Pago - sempre permitir para admin
+    if (route.startsWith('/admin/abastecimento-pos-pago') && isAdmin) {
+      console.log(`Sistema Pós-Pago access granted for admin user: ${route}`);
+      return true;
+    }
+    
+    // Verificação adicional para a rota exata do Sistema Pós-Pago
+    if (route === '/admin/abastecimento-pos-pago' && isAdmin) {
+      console.log(`Sistema Pós-Pago route access granted for admin user: ${route}`);
+      return true;
+    }
+    
+    // Oficinas têm acesso apenas à rota de dashboard da oficina
+    if (user.role === 'oficina') {
+      const oficinaRoutes = ['/oficina/dashboard', '/oficinas/dashboard'];
+      const hasAccess = oficinaRoutes.includes(route);
+      console.log(`Oficina user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (oficina_id=${user.oficina_id})`);
+      return hasAccess;
+    }
+    
+    // Usuários não-admin e não-CEO não podem acessar a página de usuários ou bases
+    if ((route === '/users' || route === '/bases') && 
+        user.role?.toLowerCase() !== 'admin' && 
+        user.role?.toUpperCase() !== 'ADMIN' &&
+        user.role?.toLowerCase() !== 'ceo' && 
+        user.role?.toUpperCase() !== 'CEO' &&
+        user.role?.toLowerCase() !== 'gerente_geral' &&
+        user.role !== 'gerente_geral') {
+      console.log(`Permission denied for non-admin/non-CEO user to ${route}`);
+      return false;
+    }
+    
+    // Sempre permitir acesso à dashboard
+    if (route === '/') {
+      return true;
+    }
+    
+    // Sempre permitir acesso ao Posto Remédios (rota externa)
+    if (route === '/posto-remedios') {
+      console.log(`Posto Remédios access granted for user: ${user.email}`);
+      return true;
+    }
+    
+    // Line Hall Role - acesso ao Line Hall e operações relacionadas (case-insensitive)
+    if (user.role?.toLowerCase() === 'line_hall') {
+      // Rotas permitidas para o role line_hall
+      const allowedRoutes = [
+        '/line-haul',                 // Página principal do Line Haul (completa)
+        '/line-hall-shopee',          // Página secundária do Line Hall
+        '/line-hall-fuel-requests',   // Solicitações de combustível Line Hall
+        '/line-hall-maintenance',     // Manutenção Line Hall
+        '/line-hall-checklists',      // Checklists Line Hall
+        '/fuel-card-requests',        // Painel de Solicitações de Cartão
+        '/fuel-cards',                // Painel de Gestão de Cartões (rota alternativa)
+        '/linehaul-abastecimento',    // Formulário público de abastecimento
+        '/vehicles',                  // Cadastro de veículos (necessário para Line Hall)
+        '/drivers',                   // Cadastro de motoristas (necessário para Line Hall)
+        '/stopped-vehicles',          // Veículos parados
+        '/line-hall'                  // Rotas do Line Hall
+      ];
+      
+      // Verificar se a rota atual está na lista de permitidas
+      const hasAccess = allowedRoutes.some(allowedRoute => route === allowedRoute || route.startsWith(allowedRoute));
+      console.log(`Line Hall role permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+    
+    // OPERADOR 1 LINE HAUL - acesso completo ao Line Haul SEM módulo de combustível/cartão
+    if (user.role?.toLowerCase() === 'operador_1_line_haul') {
+      // Rotas BLOQUEADAS (módulo de combustível/cartão)
+      const blockedRoutes = [
+        '/fuel-card-requests',
+        '/fuel-cards',
+        '/fuel-card',
+        '/line-hall-fuel-requests',
+        '/linehaul-abastecimento',
+        '/cartao-abastecimento',
+        '/refueling',
+        '/abastecimento'
+      ];
+      
+      // Verificar se está tentando acessar rotas bloqueadas
+      if (blockedRoutes.some(blocked => route === blocked || route.startsWith(blocked + '/'))) {
+        console.log(`OPERADOR_1_LINE_HAUL role permission DENIED for fuel/card route: ${route}`);
+        return false;
+      }
+      
+      // Rotas permitidas (Line Haul completo sem combustível)
+      const allowedRoutes = [
+        '/line-haul',                 // Página principal do Line Haul (completa)
+        '/line-hall-shopee',          // Página secundária do Line Hall
+        '/line-hall-maintenance',     // Manutenção Line Hall
+        '/line-hall-checklists',      // Checklists Line Hall
+        '/vehicles',                  // Cadastro de veículos
+        '/drivers',                   // Cadastro de motoristas
+        '/stopped-vehicles',          // Veículos parados
+        '/line-hall'                  // Rotas do Line Hall
+      ];
+      
+      const hasAccess = allowedRoutes.some(allowedRoute => route === allowedRoute || route.startsWith(allowedRoute));
+      console.log(`OPERADOR_1_LINE_HAUL role permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+    
+    // Line Hall Base - permite acesso somente ao Line Hall e bloqueia outras rotas específicas
+    if (user.basename === "Line Hall" || user.baseId === 11) {
+      // Se o usuário for Line Hall, só mostra Line Hall no menu e dashboard
+      const hasAccess = route === '/line-hall' || route === '/line-hall-shopee' || route === '/';
+      console.log(`Line Hall user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (baseId=${user.baseId}, basename=${user.basename})`);
+      return hasAccess;
+    }
+    
+    // Gestão de Frotas - permite acesso a rotas relacionadas à frota, MAS NÃO AO DASHBOARD
+    if (user.basename === "Gestão de Frotas" || user.baseId === 12 || user.role === 'gestor_frota') {
+      // Rotas acessíveis - removida a rota '/' (dashboard)
+      const frotaRoutes = [
+        '/gestao-de-frotas', 
+        '/fleet-management',                          // Página principal da Gestão de Frotas
+        '/executive-dashboard',                       // Dashboard Executivo
+        '/fleet-management/maintenance',              // Sistema de manutenção
+        '/fleet-management/budgets',                  // Sistema de orçamentos
+        '/fleet-management/workshops',                // Oficinas credenciadas
+        '/fleet-management/inventory',                // Gestão de estoque
+        '/fleet-management/parts-inventory',          // Estoque de peças
+        '/fleet-management/operational-analysis',     // Análise da operação  
+        '/fleet-management/fleet-overview',           // Visão geral da frota
+        '/fleet-management/downtime-analysis',        // Dias de veículos parados em manutenção
+        '/fleet-management/downtime',                 // Alias para dias parados
+        '/fleet-management/operation',                // Alias para análise de operação
+        '/fleet-management/overview',                 // Alias para visão geral
+        '/fleet-management/indicadores-manutencao',   // Indicadores de manutenção
+        '/maintenance',                               // Sistema de manutenção (rota antiga)
+        '/manutencao',                                // Solicitações de manutenção
+        '/tratativa-manutencao',                      // Tratativas de manutenção
+        '/vehicles',                                  // Veículos
+        '/refueling',                                 // Abastecimentos
+        '/fuel-card',                                 // Cartão de Combustível
+        '/fuel-card-requests',                        // Painel de Solicitações Fuel Card
+        '/posto-remedios',                            // Posto Remédios
+        '/cartao-abastecimento',                     // Cartão de Abastecimento
+        '/tires',                                     // Pneus
+        '/fines',                                     // Multas
+        '/line-hall-shopee',                          // Line Hall Shopee
+        '/accidents',                                 // Acidentes/Roubos
+        '/work-safety',                               // Segurança do Trabalho
+        '/postos/visao-geral',                        // Visão Geral dos Postos
+        '/postos',                                    // Postos de Abastecimento
+        '/postos/historico-consolidado',              // Histórico Consolidado de Abastecimentos
+        '/oficina/murici',                           // Oficina Murici
+        // Módulo de Parceiros de Guincho
+        '/fleet-management/towing-partners',          // Lista de parceiros de guincho 
+        '/fleet-management/towing-partners/requests', // Solicitações de serviço
+        '/fleet-management/towing-partners-payments', // Pagamentos de serviços
+        '/fleet-management/towing-partners/detail',   // Detalhes de parceiros
+        '/fleet-management/towing-partners/external', // Acesso externo
+        '/fleet-management/ford-partner',             // Detalhes do parceiro Ford
+        // Padrão para qualquer ID de parceiro de guincho
+        '/fleet-management/towing-partners/' // Rota base que permite acesso a qualquer subpágina
+      ];
+      
+      // Verificação melhorada para rotas com parâmetros dinâmicos (como IDs)
+      let hasAccess = frotaRoutes.includes(route);
+      
+      // Se não encontrou correspondência exata, verificar se a rota começa com alguma rota base permitida
+      if (!hasAccess) {
+        hasAccess = frotaRoutes.some(allowedRoute => {
+          // Verificar se a rota termina com '/' para indicar que é uma rota base
+          if (allowedRoute.endsWith('/') && route.startsWith(allowedRoute)) {
+            console.log(`Rota ${route} permitida por corresponder ao padrão base: ${allowedRoute}`);
+            return true;
+          }
+          return false;
+        });
+      }
+      
+      // Se estiver tentando acessar o dashboard, redirecionar para página de redirecionamento
+      if (route === '/') {
+        console.log(`Usuário de Gestão de Frotas tentando acessar o dashboard - redirecionando para /fleet-redirect`);
+        
+        // Redirecionar programaticamente para a página de redirecionamento
+        setTimeout(() => {
+          window.location.href = '/fleet-redirect';
+        }, 100);
+        
+        // Temporariamente permitir acesso ao dashboard enquanto redireciona
+        return true;
+      }
+      
+      if (hasAccess) {
+        console.log(`Acesso PERMITIDO para usuário de Gestão de Frotas à rota: ${route}`);
+        return true;
+      } else {
+        console.log(`Acesso NEGADO para usuário de Gestão de Frotas à rota: ${route}`);
+        return false;
+      }
+    }
+    
+    // Multas - permite acesso somente às multas
+    if (user.basename === "Multas" || user.baseId === 9) {
+      const hasAccess = route === '/multas' || route === '/fines' || route === '/';
+      console.log(`Multas user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+    
+    // Pneus - permite acesso somente aos pneus (sem acesso ao dashboard)
+    if (user.basename === "Pneus" || user.baseId === 10 || user.role === 'pneus') {
+      // Lista de rotas permitidas para usuários de pneus
+      const tiresRoutes = ['/pneus', '/tires', '/tires/entrada'];
+      const hasAccess = tiresRoutes.includes(route);
+      console.log(`Pneus user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      
+      // NEGAR explicitamente o acesso ao dashboard - o redirecionamento será feito pelo ProtectedRoute
+      if (route === '/') {
+        console.log(`Acesso NEGADO ao dashboard para usuário de Pneus`);
+        return false;
+      }
+      
+      return hasAccess;
+    }
+    
+    // Perfil Posto Campinas V2 - acesso específico ao link externo
+    if (user.basename === 'Posto Campinas V2' || user.baseId === 20) {
+      // Lista de rotas permitidas para usuários do Posto Campinas V2
+      const campanasV2Routes = [
+        '/',                               // Dashboard
+        '/postos/campinas_v2/public',      // Link externo do Posto Campinas V2
+        '/postos/campinas_v2',             // Posto Campinas V2
+        '/fuel-card',                      // Cartão de Combustível
+        '/fuel-card/station-profile',      // Perfil da Estação
+        '/fuel-card/dashboard',            // Dashboard de Cartões
+        '/fuel-card/requests',             // Solicitações de Cartão
+        '/postos',                         // Postos de Abastecimento
+        '/postos/visao-geral',             // Visão Geral dos Postos
+        '/postos/historico-consolidado',   // Histórico Consolidado de Abastecimentos
+        '/posto-remedios'                  // Posto Remédios
+      ];
+      const hasAccess = campanasV2Routes.includes(route);
+      console.log(`Posto Campinas V2 user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (user: ${user.email}, baseId: ${user.baseId})`);
+      return hasAccess;
+    }
+
+    // Perfil Posto - permite acesso às funcionalidades de gerenciamento de postos e solicitações de cartão combustível
+    if (user.role === 'posto') {
+      // Lista de rotas permitidas para usuários com perfil de Posto
+      const postoRoutes = [
+        '/',                               // Dashboard
+        '/fuel-card',                      // Cartão de Combustível
+        '/fuel-card/station-profile',      // Perfil da Estação
+        '/fuel-card/dashboard',            // Dashboard de Cartões
+        '/fuel-card/requests',             // Solicitações de Cartão
+        '/postos',                         // Postos de Abastecimento
+        '/postos/visao-geral',             // Visão Geral dos Postos
+        '/postos/historico-consolidado',   // Histórico Consolidado de Abastecimentos
+        '/posto-remedios'                  // Posto Remédios
+      ];
+      const hasAccess = postoRoutes.includes(route);
+      console.log(`Posto user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+    
+    // Perfil Gestor de Combustível - acesso às funcionalidades de controle de cartão e visualização dos postos
+    if (user.role === 'gestor_combustivel') {
+      // Lista de rotas permitidas para usuários com perfil de Gestor de Combustível
+      const gestorCombustivelRoutes = [
+        '/',                               // Dashboard
+        '/fleet-management',               // Gestão de Frota - Acesso principal
+        '/fuel-card',                      // Cartão de Combustível
+        '/fuel-card/dashboard',            // Dashboard de Cartões
+        '/fuel-card/requests',             // Solicitações de Cartão
+        '/fuel-card-requests',             // Painel de Solicitações de Cartão de Abastecimento
+        '/postos',                         // Postos de Abastecimento
+        '/postos/visao-geral',             // Visão Geral dos Postos
+        '/postos/historico-consolidado',   // Histórico Consolidado de Abastecimentos
+        '/vehicles',                       // Veículos (para consulta)
+        '/executive-dashboard'             // Dashboard Executivo
+      ];
+      const hasAccess = gestorCombustivelRoutes.includes(route);
+      console.log(`Gestor de Combustível permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+    
+    // Perfil Gestor de Equipamentos - acesso às funcionalidades de gestão de equipamentos
+    if (user.role === 'gestor_equipamentos') {
+      // Lista de rotas permitidas para usuários com perfil de Gestor de Equipamentos
+      const gestorEquipamentosRoutes = [
+        '/',                               // Dashboard
+        '/equipment',                      // Gestão de Equipamentos
+        '/equipment/request',              // Formulário de Solicitação de Equipamentos
+        '/equipment/requests/admin',       // Gerenciar Solicitações de Equipamentos
+        '/vehicles',                       // Veículos
+        '/maintenance',                    // Manutenções
+        '/manutencao',                     // Alias para Manutenção
+        '/fleet-management',               // Gestão de Frota
+        '/fleet-management/inventory',     // Gestão de Estoque
+        '/fleet-management/parts-inventory', // Estoque de Peças
+        '/fleet-management/maintenance',   // Sistema de Manutenção
+        '/fleet-management/workshops',     // Oficinas Credenciadas
+        '/fleet-management/budgets',       // Orçamentos
+        '/fleet-management/fleet-overview', // Visão Geral da Frota
+        '/fleet-management/operational-analysis', // Análise Operacional
+        '/fleet-management/downtime-analysis', // Análise de Tempo Parado
+        '/fleet-management/downtime',      // Alias para Tempo Parado
+        '/fleet-management/operation',     // Alias para Operação
+        '/fleet-management/overview',      // Alias para Visão Geral
+        '/drivers',                        // Motoristas
+        '/tires',                          // Pneus
+        '/pneus',                          // Alias para Pneus
+        '/executive-dashboard'             // Dashboard Executivo
+      ];
+      const hasAccess = gestorEquipamentosRoutes.includes(route);
+      console.log(`Gestor de Equipamentos permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+
+    // Perfil Operador de Gestão de Frota - acesso ao fleet-management e configurações
+    if (user.role === 'operador_frota') {
+      const operadorFrotaRoutes = [
+        '/operator-dashboard',          // Mantido para compatibilidade (redireciona internamente)
+        '/operator-permissions',        // Configuração de permissões (admin usa)
+        '/vehicles',                    // Veículos
+        '/refueling',                   // Abastecimento
+        '/fuel-card',                   // Cartão de Combustível
+        '/fuel-card-requests',          // Solicitações de Cartão
+        '/maintenance',                 // Manutenção
+        '/manutencao',                  // Alias
+        '/fleet-management',            // Gestão de Frota
+        '/fleet-management/maintenance',
+        '/fleet-management/indicadores-manutencao',
+        '/fleet-management/workshops',
+        '/fleet-management/budgets',
+        '/fleet-management/coca-cola',
+        '/fleet-management/inventory',
+        '/fleet-management/parts-inventory',
+        '/tires',                       // Pneus
+        '/fines',                       // Multas
+        '/accidents',                   // Acidentes
+        '/drivers',                     // Motoristas
+        '/work-safety',                 // Segurança
+        '/executive-dashboard',         // Dashboard Executivo
+        '/painel-operacional',          // Painel Operacional
+        '/line-hall-shopee',            // Line Hall
+      ];
+      const hasAccess = operadorFrotaRoutes.some(r => route === r || route.startsWith(r + '/'));
+      console.log(`Operador Frota permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+
+    // Usuário Micael - acesso específico para Goiânia SGO4
+    if (user.email === "micael@muricionfleet.com" || 
+        (user.name === "micael" && user.baseId === 101 && user.basename === "Goiânia SGO4")) {
+      
+      // Permitir acesso à manutenção e pneus + dashboard
+      const micaelRoutes = ['/', '/maintenance', '/manutencao', '/tires', '/pneus'];
+      const hasAccess = micaelRoutes.includes(route);
+      
+      // Negar explicitamente acesso ao painel de controle
+      if (route === '/control-panel' || route === '/dashboard/control') {
+        console.log(`Acesso NEGADO ao painel de controle para usuário Micael`);
+        return false;
+      }
+      
+      console.log(`Usuário Micael permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+      return hasAccess;
+    }
+
+    // Usuários do GRUPO_PEREIRA (base 151) - acesso total às rotas GP03
+    if (user.basename === 'GRUPO_PEREIRA' || user.baseId === 151) {
+      // Lista completa de rotas GP03 permitidas para usuários do GRUPO_PEREIRA
+      const gp03Routes = [
+        '/',                                     // Dashboard
+        '/bases/gp03',                           // Base GP03 principal
+        '/bases/gp03/external',                  // Base GP03 externa
+        '/bases/gp03/cartao-combustivel',        // Cartão Combustível GP03
+        '/bases/gp03/despesas',                  // Despesas GP03
+        '/bases/gp03/multas',                    // Multas GP03
+        '/bases/gp03/acidentes-trabalho',        // Acidentes de Trabalho GP03
+        '/bases/gp03/sinistros',                 // Sinistros GP03
+        '/bases/gp03/solicitacao-pneus',         // Solicitação de Pneus GP03
+        '/bases/gp03/solicitacao-orcamento',     // Solicitação de Orçamento GP03
+        '/bases/gp03/manutencao-frota',          // Manutenção de Frota GP03
+        '/bases/gp03/veiculos',                  // Veículos GP03
+        '/bases/gp03/cartoes-ativos',            // Cartões Ativos GP03
+        // Rotas globais também permitidas
+        '/fuel-card',                            // Cartão de Combustível global
+        '/fuel-card-requests',                   // Solicitações de Cartão
+        '/vehicles',                             // Veículos
+        '/maintenance',                          // Manutenção
+        '/manutencao',                           // Alias para Manutenção
+        '/accidents',                            // Acidentes
+        '/acidentes',                            // Alias para Acidentes
+        '/work-safety',                          // Segurança do Trabalho
+        '/seguranca-trabalho',                   // Alias para Segurança
+        '/sinister',                             // Sinistros
+        '/sinistro',                             // Alias para Sinistros
+        '/fines',                                // Multas
+        '/multas',                               // Alias para Multas
+        '/tires',                                // Pneus
+        '/pneus'                                 // Alias para Pneus
+      ];
+      
+      const hasAccess = gp03Routes.includes(route);
+      console.log(`GRUPO_PEREIRA (GP03) user permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (user: ${user.email}, baseId: ${user.baseId})`);
+      return hasAccess;
+    }
+    
+    // Modelo padrão de base - TODAS as bases têm acesso a estas funcionalidades
+    if (user.baseId || user.basename) {
+      // Primeiro, verificar se a rota está nas rotas básicas (modelo padrão para todas as bases)
+      if (basicRoutes.includes(route)) {
+        console.log(`Acesso PERMITIDO para base ${user.basename || user.baseId} à rota básica: ${route}`);
+        return true;
+      }
+      
+      // Depois, verificar se a base tem permissões adicionais específicas via mapeamento
+      if (user.basename) {
+        const hasSpecificAccess = isRouteForBase(route, user.basename);
+        if (hasSpecificAccess) {
+          console.log(`Acesso PERMITIDO para base específica "${user.basename}" à rota: ${route}`);
+          return true;
+        }
+      }
+      
+      console.log(`Acesso NEGADO para base ${user.basename || user.baseId} à rota não básica: ${route}`);
+      return false;
+    }
+    
+    // Se o usuário não tem base específica (caso raro), mas não é admin, permitir apenas rotas básicas
+    const isAdminUser = (
+      user.role?.toLowerCase() === 'admin' || 
+      user.role?.toUpperCase() === 'ADMIN' ||
+      user.role === 'admin' ||
+      user.role === 'ADMIN' ||
+      (user.email && ['joao.paulo@muricionfleet.com', 'regio@muricionfleet.com', 'andre.rosa@muricionfleet.com', 'admin@muricionfleet.com', 'rogerio.goncalves@muricionfleet.com', 'rogerio.goncalves@muricitransportes.com.br'].includes(user.email.toLowerCase()))
+    );
+    
+    if (!user.baseId && !user.basename && !isAdminUser) {
+      const hasAccess = basicRoutes.includes(route);
+      console.log(`User without specific base permission check for route ${route}: ${hasAccess ? 'GRANTED' : 'DENIED'} (role: '${user.role}', baseId: ${user.baseId}, basename: '${user.basename}', isAdmin: ${isAdminUser})`);
+      return hasAccess;
+    }
+    
+    // Se chegamos até aqui e o usuário é admin (backup final), permitir acesso
+    if (user.role?.toLowerCase() === 'admin') {
+      console.log(`Admin fallback permission granted for route: ${route} (admin user: ${user.email})`);
+      return true;
+    }
+    
+    // Negar acesso por padrão
+    console.log(`Permission denied by default for route: ${route} (user: ${user.email}, baseId: ${user.baseId}, basename: ${user.basename})`);
+    return false;
+  }, [user, isRouteForBase]);
+  
+  // Obtém todas as rotas que o usuário tem permissão para acessar
+  const getAccessibleRoutes = useCallback((): string[] => {
+    return allRoutes.filter(route => hasPermission(route));
+  }, [hasPermission]);
+  
+  // Verifica se o usuário pertence a uma base específica
+  const isUserFromBase = useCallback((baseId: number): boolean => {
+    if (user?.role === 'admin' || user?.role === 'ADMIN') return true;
+    return user?.baseId === baseId;
+  }, [user]);
+  
+  // Obtém a base do usuário atual
+  const getUserBase = useCallback(() => {
+    // Se o usuário não existir ou não tiver base, retorna null
+    if (!user || (!user.baseId && !user.basename)) {
+      return { id: null, name: null };
+    }
+    
+    // Tenta obter o nome da base da relação ou do campo basename
+    // Temos que fazer uma verificação de tipo para baseName
+    const baseName = user.bases?.name || user.basename || null;
+    
+    return {
+      id: user.baseId || null,
+      name: baseName
+    };
+  }, [user]);
+
+  return {
+    hasPermission,
+    getAccessibleRoutes,
+    isUserFromBase,
+    getUserBase
+  };
+}

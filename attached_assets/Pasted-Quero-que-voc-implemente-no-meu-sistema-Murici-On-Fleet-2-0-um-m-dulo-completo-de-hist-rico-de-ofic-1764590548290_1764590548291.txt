@@ -1,0 +1,74 @@
+Quero que você implemente no meu sistema Murici On Fleet 2.0 um módulo completo de histórico de oficinas e histórico de orçamentos para cada manutenção.
+
+OBJETIVO:
+Registrar cada oficina por onde o veículo passou, todos os orçamentos enviados, trocas de oficina e motivo da troca, mantendo auditoria completa.
+
+CRIE AS SEGUINTES TABELAS NO SUPABASE:
+
+Tabela: manutencao
+- id (uuid)
+- placa (text)
+- problema_relatado (text)
+- data_abertura (timestamp)
+- data_fechamento (timestamp)
+- status (text)
+- oficina_atual_id (uuid)
+
+Tabela: manutencao_oficinas
+- id (uuid)
+- manutencao_id (uuid) FK
+- oficina_id (uuid) FK
+- data_envio (timestamp)
+- data_retorno (timestamp)
+- km_envio (numeric)
+- motivo_troca (text)
+
+Tabela: manutencao_orcamentos
+- id (uuid)
+- manutencao_oficina_id (uuid) FK
+- valor_estimado (numeric)
+- valor_pecas (numeric)
+- valor_mao_obra (numeric)
+- itens (jsonb)
+- aprovado (boolean)
+- data_orcamento (timestamp)
+
+AGORA IMPLEMENTE AS ROTAS NO BACKEND EXPRESS.JS:
+
+1. POST /manutencao
+   - cria nova manutenção
+
+2. POST /manutencao/:id/oficina
+   - adiciona uma nova oficina à manutenção
+   - atualiza oficina_atual_id na tabela manutencao
+
+3. POST /manutencao/oficina/:id/orcamento
+   - registra novo orçamento enviado pela oficina atual
+
+4. PATCH /manutencao/oficina/:id/trocar
+   - fecha oficina atual (data_retorno + motivo)
+   - cria nova oficina na mesma manutenção
+   - atualiza oficina_atual_id
+
+5. GET /manutencao/:id/historico
+   - retorna timeline completa:
+     • oficinas por onde passou
+     • orçamentos de cada oficina
+     • aprovado / reprovado
+     • motivo da troca
+
+NO FRONTEND REACT:
+
+Criar componentes:
+- Timeline da manutenção com todas as oficinas e orçamentos
+- Modal “Adicionar orçamento”
+- Modal “Trocar de oficina”
+- Lista de orçamentos da manutenção
+- Exibir qual orçamento foi aprovado
+
+REQUISITOS:
+- Usar Supabase client já configurado
+- Usar o padrão do projeto atual
+- Garantir que cada troca de oficina e cada orçamento fique registrado para auditoria
+
+Entregue o código completo e pronto para usar.

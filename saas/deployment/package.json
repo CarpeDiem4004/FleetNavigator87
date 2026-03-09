@@ -1,0 +1,90 @@
+{
+  "name": "murici-saas-external-links",
+  "version": "1.0.0",
+  "description": "SaaS transformation of Murici Fleet Management external base links",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "mkdir -p dist && cp -r frontend/* dist/",
+    "build:backend": "echo 'Backend build complete'",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint backend/**/*.js",
+    "security": "npm audit",
+    "docker:build": "docker build -t murici-saas .",
+    "docker:run": "docker run -p 3001:3001 murici-saas",
+    "deploy:replit": "replit deploy"
+  },
+  "keywords": [
+    "saas",
+    "fleet-management",
+    "external-links",
+    "murici",
+    "replit",
+    "jwt",
+    "pwa"
+  ],
+  "author": "Murici Fleet Management",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0",
+    "pg": "^8.11.3",
+    "jsonwebtoken": "^9.0.2",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.3.1",
+    "joi": "^17.11.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "eslint": "^8.56.0",
+    "@types/jest": "^29.5.8"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/murici/saas-external-links.git"
+  },
+  "bugs": {
+    "url": "https://github.com/murici/saas-external-links/issues"
+  },
+  "homepage": "https://github.com/murici/saas-external-links#readme",
+  "eslintConfig": {
+    "env": {
+      "node": true,
+      "es2021": true,
+      "jest": true
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+      "ecmaVersion": 2021,
+      "sourceType": "module"
+    },
+    "rules": {
+      "no-console": "off",
+      "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+      "prefer-const": "error",
+      "no-var": "error"
+    }
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverage": true,
+    "coverageDirectory": "coverage",
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ]
+  }
+}

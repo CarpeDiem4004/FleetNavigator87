@@ -1,0 +1,7 @@
+import { getUsers } from '@/api/users'; // ajuste o path se necessário
+
+const { data: users, isLoading } = useQuery({
+  queryKey: ['usuarios'],
+  queryFn: getUsers,
+  enabled: user?.role === 'admin',
+});

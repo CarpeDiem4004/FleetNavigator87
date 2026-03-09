@@ -1,0 +1,80 @@
+useFetchWithAuth.ts:130 [FetchWithAuth] Não foi possível obter token JWT para requisição: /api/recebimentos/osasco_v2
+
+
+O ChatGPT disse:
+Esse erro:
+
+bash
+Copiar
+Editar
+[FetchWithAuth] Não foi possível obter token JWT para requisição: /api/recebimentos/osasco_v2
+significa que sua função ou hook useFetchWithAuth está tentando fazer uma requisição autenticada para a rota /api/recebimentos/osasco_v2, mas não conseguiu obter o token JWT necessário para isso.
+
+✅ Resumo técnico
+Você provavelmente tem algo assim no useFetchWithAuth:
+
+ts
+Copiar
+Editar
+const { data: { session } } = await supabase.auth.getSession();
+const token = session?.access_token;
+Se session for null, então o token será undefined, e você verá essa mensagem.
+
+✅ Como corrigir
+1. Confirme se o usuário está logado
+O usuário precisa estar autenticado para que supabase.auth.getSession() retorne um token JWT.
+
+🔍 Teste:
+ts
+Copiar
+Editar
+const sessionResponse = await supabase.auth.getSession();
+console.log('Sessão atual:', sessionResponse);
+Se sessionResponse.data.session for null, o usuário não está logado.
+
+2. Corrija o useFetchWithAuth para tratar falta de sessão
+ts
+Copiar
+Editar
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+export const fetchWithAuth = async (url: string, options = {}) => {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (!session || error) {
+    console.error('[FetchWithAuth] Não foi possível obter token JWT para requisição:', url);
+    throw new Error('Usuário não autenticado');
+  }
+
+  const token = session.access_token;
+
+  const headers = {
+    ...options?.headers,
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+
+  const res = await fetch(url, { ...options, headers });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status}: ${text}`);
+  }
+
+  return res.json();
+};
+3. Verifique se a rota realmente exige autenticação
+Se /api/recebimentos/osasco_v2 for uma rota pública, remova a exigência de JWT.
+
+Caso contrário, garanta que o token esteja presente no Authorization e que o backend esteja configurado para validá-lo.
+
+✅ Dica extra
+Se estiver usando Supabase, e o usuário está logado no app, o supabase.auth.getSession() deve retornar um token.
+
+Mas se estiver testando a API em um ambiente separado (ex: Vercel + local), pode ocorrer falta de sessão.
+

@@ -1,0 +1,57 @@
+index-Bgvw1d9F.js:1354 [PWA] Service Worker registration failed: SecurityError: Failed to register a ServiceWorker for scope ('https://muricionfleet-joaopaulo60.replit.app/') with script ('https://muricionfleet-joaopaulo60.replit.app/service-worker.js'): The script has an unsupported MIME type ('text/html').
+O ChatGPT disse:
+
+Esse erro do Service Worker acontece porque o navegador tentou registrar o arquivo
+service-worker.js, mas o servidor (no Replit, no seu caso) está devolvendo HTML em vez de JavaScript.
+
+📌 Isso normalmente significa que:
+
+O arquivo service-worker.js não existe na pasta pública, então o servidor retorna a página padrão (HTML).
+
+Ou ele existe, mas não está sendo servido com o MIME type correto (text/javascript).
+
+Por que isso acontece no Replit
+
+No Replit, se você tentar acessar um arquivo que não está na pasta estática (public/ ou equivalente), o servidor Express/Vite/Next pode redirecionar para o HTML principal, e o browser entende que está recebendo HTML (por isso o MIME type 'text/html').
+
+Como corrigir
+
+Certifique-se que o service-worker.js está na pasta pública
+Se você estiver usando React ou Vite:
+
+/public/service-worker.js
+
+
+E o conteúdo deve ser um JavaScript válido de Service Worker.
+
+No registro, aponte para o caminho correto
+No seu código de registro, garanta algo assim:
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .then(registration => {
+        console.log('Service Worker registrado com sucesso:', registration);
+      })
+      .catch(error => {
+        console.error('Falha ao registrar o Service Worker:', error);
+      });
+  });
+}
+
+
+Se estiver usando framework que gera PWA (ex: Vite + plugin)
+
+No Vite, use o plugin vite-plugin-pwa que cuida do registro e gera o service worker automaticamente.
+
+No CRA (Create React App), o service worker padrão fica em src/service-worker.js e é gerado no build.
+
+Verificar se o servidor não intercepta a rota
+No Express, adicione algo como:
+
+app.use(express.static('public'));
+
+
+💡 Resumindo: o seu erro não impede o login/permissão, mas quebra a parte PWA do app.
+Primeiro precisamos garantir que o arquivo service-worker.js real está sendo servido no Replit.

@@ -1,0 +1,84 @@
+Perfeito 👌 agora você matou o ponto certo.
+O problema **não é o tamanho**, é o **FUNDO**.
+
+O ícone do Git fica bom porque ele é:
+
+* **transparente**
+* **sem fundo quadrado**
+* desenhado pensando em **16×16 / 32×32**
+
+O seu ficou quadrado porque a IA gerou com **fundo preenchido**.
+
+---
+
+## ✅ O QUE PRECISA SER FEITO (conceito certo)
+
+Para ficar igual ao Git (profissional em aba):
+
+✔ Fundo **TRANSPARENTE**
+✔ Só o símbolo (caminhão + rota + sinal)
+✔ Sem retângulo, sem borda
+✔ Alto contraste
+✔ Leitura perfeita em 16×16
+
+---
+
+## 🧠 PROMPT CORRETO (copiar e colar na IA)
+
+Use ESSE prompt, ele resolve 100% 👇
+
+> Ajuste o ícone anexado para uso como **favicon profissional**, no mesmo padrão visual do ícone do Git.
+>
+> Regras obrigatórias:
+>
+> * **Remover completamente o fundo** (fundo transparente – alpha)
+> * **Não usar fundo quadrado ou retângulo**
+> * Manter apenas o símbolo (caminhão, rota, pin e sinal)
+> * Preservar o design, formas e identidade visual
+>
+> Otimização:
+>
+> * Ajustar o ícone para leitura perfeita em **16x16 e 32x32**
+> * Simplificar detalhes finos sem alterar o conceito
+> * Manter alto contraste
+>
+> Cores:
+>
+> * Tema inspirado na bandeira do Brasil (verde, amarelo e branco)
+> * Sem gradientes pesados
+>
+> Exportar o resultado final em:
+>
+> * `favicon.ico` (multitamanho)
+> * Fundo totalmente transparente
+
+---
+
+## 🔴 FRASE IMPORTANTE (não pule)
+
+Se quiser garantir ainda mais, adicione no final:
+
+> Se houver fundo visível, o resultado está incorreto.
+
+---
+
+## 📌 COMO VALIDAR (igual Git)
+
+Depois que aplicar:
+
+1. Aba do navegador → fundo **some**
+2. Ícone “flutua” na aba
+3. Fica bom mesmo pequeno (igual GitHub, GitLab, etc.)
+
+---
+
+## 🚛 Dica profissional (experiência real)
+
+Todo favicon bom:
+
+* nasce pensando em **16×16**
+* NÃO tem fundo
+* é reconhecível só pelo símbolo
+
+Você está no caminho certo 👏
+Se quiser, no próximo passo eu te ajudo a **simplificar o desenho exatamente para favicon**, sem perder o conceito OnFleet.

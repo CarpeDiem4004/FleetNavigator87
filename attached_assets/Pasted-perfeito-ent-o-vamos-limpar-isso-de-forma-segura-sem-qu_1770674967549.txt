@@ -1,0 +1,184 @@
+perfeito 👍 então vamos **limpar isso de forma segura**, sem quebrar histórico e já deixando o banco **pronto para nunca mais repetir o problema**.
+
+Vou te passar em **3 etapas** (ordem correta, não pule):
+
+---
+
+## 🧩 CENÁRIO ASSUMIDO
+
+Vou assumir que hoje você tem algo assim (ajusta os nomes se necessário):
+
+Tabela atual (exemplo):
+
+```sql
+rotas
+id
+nome        -- texto livre (bagunçado)
+```
+
+E que essa tabela já é usada em solicitações / viagens / abastecimentos.
+
+---
+
+## 1️⃣ Criar uma versão PADRONIZADA do nome (sem perder dados)
+
+Primeiro, vamos criar uma coluna de normalização (chave lógica):
+
+```sql
+ALTER TABLE rotas
+ADD COLUMN nome_normalizado TEXT;
+```
+
+Agora vamos preencher essa coluna removendo variações:
+
+```sql
+UPDATE rotas
+SET nome_normalizado =
+  lower(
+    regexp_replace(
+      regexp_replace(
+        regexp_replace(nome, '\s*-\s*sp$', '', 'gi'),
+      '\s+sp$', '', 'gi'),
+    'soc\s*sp\s*', '', 'gi')
+  );
+```
+
+📌 Exemplo do que vira:
+
+| nome original    | nome_normalizado |
+| ---------------- | ---------------- |
+| Cravinhos        | cravinhos        |
+| Cravinhos SP     | cravinhos        |
+| Cravinhos - SP   | cravinhos        |
+| SoC SP Cravinhos | cravinhos        |
+
+---
+
+## 2️⃣ Identificar duplicações (confere antes de apagar)
+
+⚠️ **RODE ISSO PRIMEIRO, SÓ PARA VER**
+
+```sql
+SELECT
+  nome_normalizado,
+  COUNT(*) qtd
+FROM rotas
+GROUP BY nome_normalizado
+HAVING COUNT(*) > 1;
+```
+
+Se aparecer `cravinhos | 4`, está tudo certo — achamos as duplicações.
+
+---
+
+## 3️⃣ Escolher o registro “oficial” e apagar os outros
+
+### 3.1️⃣ Ver quais IDs serão mantidos
+
+Normalmente usamos o **menor ID** como oficial:
+
+```sql
+SELECT
+  nome_normalizado,
+  MIN(id) AS id_oficial,
+  ARRAY_AGG(id) AS todos_ids
+FROM rotas
+GROUP BY nome_normalizado
+HAVING COUNT(*) > 1;
+```
+
+---
+
+### 3.2️⃣ Atualizar tabelas dependentes (MUITO IMPORTANTE)
+
+Se você tem, por exemplo:
+
+* `solicitacoes_abastecimento`
+* `viagens_line_hall`
+* `checklists`
+
+E todas usam `rota_id`, rode algo assim:
+
+```sql
+UPDATE solicitacoes_abastecimento sa
+SET rota_id = r_oficial.id_oficial
+FROM (
+  SELECT
+    MIN(id) AS id_oficial,
+    id
+  FROM rotas
+  GROUP BY nome_normalizado, id
+) r_oficial
+WHERE sa.rota_id = r_oficial.id;
+```
+
+👉 Se quiser, me diga **quais tabelas usam rota/local**, que eu ajusto o SQL certinho.
+
+---
+
+### 3.3️⃣ Agora sim: apagar duplicados
+
+```sql
+DELETE FROM rotas r
+USING rotas r2
+WHERE r.nome_normalizado = r2.nome_normalizado
+AND r.id > r2.id;
+```
+
+✔️ Fica apenas **1 registro por local**.
+
+---
+
+## 4️⃣ Blindagem para nunca mais duplicar 🚨
+
+Crie um índice único:
+
+```sql
+CREATE UNIQUE INDEX rotas_nome_normalizado_unique
+ON rotas (nome_normalizado);
+```
+
+Agora:
+❌ ninguém consegue salvar `Cravinhos`, `Cravinhos SP`, etc
+✔ tudo aponta para o mesmo ID
+
+---
+
+## 5️⃣ Padrão de exibição (opcional, mas recomendado)
+
+Adicione uma coluna final bonita:
+
+```sql
+ALTER TABLE rotas
+ADD COLUMN nome_padrao TEXT;
+```
+
+Exemplo:
+
+```sql
+UPDATE rotas
+SET nome_padrao = initcap(nome_normalizado) || ' - SP';
+```
+
+E no frontend:
+
+* **mostra:** `nome_padrao`
+* **salva:** `rota_id`
+
+---
+
+## 🧠 Resultado final
+
+* Autocomplete limpo
+* Sem opções duplicadas
+* Relatórios confiáveis
+* Dash sem número errado
+* Banco no padrão enterprise (🔥 Murici style)
+
+Se quiser, no próximo passo eu:
+
+* adapto isso exatamente ao **Supabase**
+* ajusto para **cidade + UF automaticamente**
+* ou faço o **SQL reversível (com backup antes)**
+
+Me diz como está hoje o nome da tabela e onde ela é usada que eu deixo 100% plug-and-play. 🚀

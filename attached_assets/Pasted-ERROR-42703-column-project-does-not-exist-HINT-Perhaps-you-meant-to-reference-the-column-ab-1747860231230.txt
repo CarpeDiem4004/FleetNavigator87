@@ -1,0 +1,106 @@
+ERROR:  42703: column "project" does not exist
+HINT:  Perhaps you meant to reference the column "abastecimentos_posto_campinas_v2.projeto".
+QUERY:  
+    CREATE VIEW historico_consolidado_abastecimentos AS
+    
+    -- Campinas V2
+    SELECT 
+        id,
+        placa,
+        km_atual AS km,
+        hodometro_atual,
+        tipo_combustivel,
+        litros AS quantidade_litros,
+        motorista AS nome_motorista,
+        motorista_rg AS rg_motorista,
+        operador AS nome_operador,
+        valor_litro,
+        valor_total,
+        tipo_veiculo,
+        observacoes,
+        lavagem,
+        tipo_lavagem,
+        COALESCE(projeto, project, 'Não definido') AS projeto,
+        to_char(created_at, 'DD/MM/YYYY HH24:MI') AS data_hora,
+        created_at,
+        'Campinas_v2' AS posto
+    FROM abastecimentos_posto_campinas_v2
+    
+    UNION ALL
+    
+    -- Osasco V2
+    SELECT 
+        id,
+        placa,
+        km_atual AS km,
+        hodometro_atual,
+        tipo_combustivel,
+        litros AS quantidade_litros,
+        motorista AS nome_motorista,
+        motorista_rg AS rg_motorista,
+        operador AS nome_operador,
+        valor_litro,
+        valor_total,
+        tipo_veiculo,
+        observacoes,
+        lavagem,
+        tipo_lavagem,
+        COALESCE(projeto, project, 'Não definido') AS projeto,
+        to_char(created_at, 'DD/MM/YYYY HH24:MI') AS data_hora,
+        created_at,
+        'Osasco_v2' AS posto
+    FROM abastecimentos_posto_osasco_v2
+    
+    UNION ALL
+    
+    -- ABC V2
+    SELECT 
+        id,
+        placa,
+        km_atual AS km,
+        hodometro_atual,
+        tipo_combustivel,
+        litros AS quantidade_litros,
+        motorista AS nome_motorista,
+        motorista_rg AS rg_motorista,
+        operador AS nome_operador,
+        valor_litro,
+        valor_total,
+        tipo_veiculo,
+        observacoes,
+        lavagem,
+        tipo_lavagem,
+        COALESCE(projeto, project, 'Não definido') AS projeto,
+        to_char(created_at, 'DD/MM/YYYY HH24:MI') AS data_hora,
+        created_at,
+        'ABC_v2' AS posto
+    FROM abastecimentos_posto_abc_v2
+    
+    UNION ALL
+    
+    -- Alair V2 (se existir)
+    SELECT 
+        id,
+        placa,
+        km_atual AS km,
+        hodometro_atual,
+        tipo_combustivel,
+        litros AS quantidade_litros,
+        motorista AS nome_motorista,
+        motorista_rg AS rg_motorista,
+        operador AS nome_operador,
+        valor_litro,
+        valor_total,
+        tipo_veiculo,
+        observacoes,
+        lavagem,
+        tipo_lavagem,
+        COALESCE(projeto, project, 'Não definido') AS projeto,
+        to_char(created_at, 'DD/MM/YYYY HH24:MI') AS data_hora,
+        created_at,
+        'Alair_v2' AS posto
+    FROM abastecimentos_posto_alair_v2
+    
+    ORDER BY created_at DESC;
+    
+CONTEXT:  PL/pgSQL function update_historico_consolidado_view() line 7 at EXECUTE

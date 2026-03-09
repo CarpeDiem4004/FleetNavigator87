@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Formulário Cartão Combustível</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-group { margin: 10px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Teste Formulário Cartão Combustível</h1>
+    
+    <form id="fuelCardForm">
+        <div class="form-group">
+            <label for="plate">Placa:</label>
+            <input type="text" id="plate" name="plate" value="ABC1234" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="odometer">Quilometragem:</label>
+            <input type="number" id="odometer" name="odometer" value="12345" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="cardNumber">Número do Cartão:</label>
+            <input type="text" id="cardNumber" name="cardNumber" value="1234567890" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="cardType">Tipo de Cartão:</label>
+            <select id="cardType" name="cardType" required>
+                <option value="vinculado">Vinculado à placa</option>
+                <option value="especifico">Específico por número</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="amount">Valor (R$):</label>
+            <input type="number" id="amount" name="amount" value="150" step="0.01" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="provider">Provedor:</label>
+            <select id="provider" name="provider" required>
+                <option value="">Selecione</option>
+                <option value="Ticket">Ticket</option>
+                <option value="Alelo">Alelo</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="fuelType">Tipo de Combustível:</label>
+            <select id="fuelType" name="fuelType" required>
+                <option value="">Selecione</option>
+                <option value="Diesel">Diesel</option>
+                <option value="Gasolina">Gasolina</option>
+                <option value="Etanol">Etanol</option>
+                <option value="GNV">GNV</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="fuelTime">Horário de Abastecimento:</label>
+            <select id="fuelTime" name="fuelTime" required>
+                <option value="">Selecione</option>
+                <option value="Antes das 17h">Antes das 17h</option>
+                <option value="Após das 18h">Após das 18h</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="driverName">Nome do Motorista:</label>
+            <input type="text" id="driverName" name="driverName" value="João Silva" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="driverPhone">Telefone do Motorista:</label>
+            <input type="tel" id="driverPhone" name="driverPhone" value="11999999999" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="projectId">Projeto ID:</label>
+            <input type="number" id="projectId" name="projectId" value="1" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="baseId">Base ID:</label>
+            <input type="number" id="baseId" name="baseId" value="2" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="reason">Observações:</label>
+            <textarea id="reason" name="reason" rows="3" required>Teste de solicitação de cartão</textarea>
+        </div>
+        
+        <button type="submit">Enviar Solicitação</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('fuelCardForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Enviando...</p>';
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            // Converter números
+            data.odometer = parseInt(data.odometer);
+            data.amount = parseFloat(data.amount);
+            data.projectId = parseInt(data.projectId);
+            data.baseId = parseInt(data.baseId);
+            
+            console.log('Dados do formulário:', data);
+            
+            try {
+                const response = await fetch('/api/fuel-card/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                    credentials: 'include'
+                });
+                
+                const result = await response.json();
+                console.log('Resposta:', result);
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<p class="success">Solicitação enviada com sucesso!</p>';
+                } else {
+                    resultDiv.innerHTML = '<p class="error">Erro: ' + result.message + '</p>';
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                resultDiv.innerHTML = '<p class="error">Erro de conexão: ' + error.message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>

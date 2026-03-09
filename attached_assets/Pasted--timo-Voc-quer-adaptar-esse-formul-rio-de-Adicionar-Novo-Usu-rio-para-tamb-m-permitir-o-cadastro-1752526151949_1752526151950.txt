@@ -1,0 +1,107 @@
+Ótimo! Você quer adaptar esse formulário de "Adicionar Novo Usuário" para também permitir o cadastro de Coordenadores de Projeto, com seleção de várias bases e/ou projetos, sem impactar os usuários já existentes no sistema. Vamos fazer isso passo a passo:
+
+✅ O que manter como está
+A estrutura de auth.users não precisa mudar.
+
+Usuários atuais continuam funcionando.
+
+Campos como nome, e-mail, senha, status continuam iguais.
+
+🛠 O que adicionar (sem quebrar o que já existe)
+1. No campo "Perfil"
+Adicione a opção:
+
+Coordenador de Projeto
+
+2. Modificar o campo "Base" para múltiplas seleções
+Atualmente é um select simples. Para coordenadores, altere para permitir selecionar múltiplas bases (e projetos, se quiser).
+
+Exemplo com múltipla seleção em HTML:
+
+html
+Copiar
+Editar
+<select multiple name="bases[]" class="form-select">
+  <option value="base_1">Base Osasco</option>
+  <option value="base_2">Base ABC</option>
+  <option value="base_3">Base Campinas</option>
+</select>
+Ou com uma UI mais moderna (React com react-select):
+
+tsx
+Copiar
+Editar
+<Select
+  isMulti
+  options={baseOptions}
+  onChange={(selected) => setSelectedBases(selected)}
+/>
+⚙️ Backend / Supabase – o que precisa fazer
+Tabelas que devem existir:
+roles → onde você define "coordenador"
+
+user_roles → define o papel de cada usuário
+
+coordinator_scope → onde você liga o coordenador às bases/projetos
+
+Exemplo no backend ao cadastrar um novo coordenador:
+ts
+Copiar
+Editar
+// Após cadastrar o usuário no auth.users
+const user_id = user.id;
+
+// 1. Definir papel como 'coordenador'
+await supabase.from('user_roles').insert({
+  user_id,
+  role_id: await getRoleId('coordenador')  // função que busca o id da role
+});
+
+// 2. Cadastrar escopo do coordenador
+for (const baseId of selectedBases) {
+  await supabase.from('coordinator_scope').insert({
+    user_id,
+    project_id: selectedProjectId,  // se for por projeto também
+    base_id: baseId,
+  });
+}
+📋 Exemplo de fluxo no frontend
+Admin preenche o formulário, seleciona o perfil "Coordenador"
+
+Aparece um campo adicional de múltiplas bases (e projetos se quiser)
+
+Ao clicar em Adicionar, o sistema:
+
+Cria o usuário no Supabase Auth
+
+Salva user_roles
+
+Salva as entradas em coordinator_scope
+
+🔒 Segurança (RLS)
+Você deve proteger todas as consultas por base e projeto com políticas RLS, como:
+
+sql
+Copiar
+Editar
+-- Exemplo: mostrar dados de veículos só para coordenador que tem escopo naquela base
+create policy "coordenador vê veículos da base autorizada"
+on veiculos for select
+using (
+  exists (
+    select 1 from coordinator_scope
+    where coordinator_scope.user_id = auth.uid()
+      and coordinator_scope.base_id = veiculos.base_id
+  )
+);
+✅ Resultado final
+Com essa implementação, você terá:
+
+✔ Perfis com acesso granular (coordenador → só nas bases autorizadas)
+
+✔ Cadastro no painel de admin igual ao atual
+
+✔ Nenhum impacto nos usuários já cadastrados
+
+✔ Autorização controlada por base/projeto automaticamente via RLS
+

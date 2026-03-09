@@ -1,0 +1,76 @@
+HistoricoSupabaseView.tsx:103 
+ GET https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/api/historico-direto/posto%20campinas%20v2?t=1747419719418 404 (Not Found)
+
+
+O ChatGPT disse:
+Esse erro:
+
+perl
+Copiar
+Editar
+GET .../api/historico-direto/posto%20campinas%20v2 404 (Not Found)
+significa que o frontend tentou acessar a URL:
+
+bash
+Copiar
+Editar
+/api/historico-direto/posto campinas v2
+mas o servidor respondeu com 404 – Not Found, ou seja, essa rota não existe.
+
+✅ Problemas detectados
+🚨 1. Espaços na URL (%20 = espaço)
+A string posto campinas v2 tem espaços, que foram codificados como %20 na URL. Isso pode fazer com que o backend não reconheça a rota.
+
+🧩 2. Rota mal definida no backend
+Pode ser que no seu Express ou API Routes (Next.js, Replit, etc.), você só tenha definido:
+
+ts
+Copiar
+Editar
+app.get('/api/historico-direto/:posto', ...)
+Mas o Express não lida bem com espaços como parte de parâmetros de rota se não forem devidamente tratados.
+
+✅ Como corrigir
+✅ Opção 1: Use encodeURIComponent no parâmetro
+Ao montar a URL no frontend, faça isso:
+
+ts
+Copiar
+Editar
+const posto = encodeURIComponent("posto campinas v2");
+
+await fetch(`/api/historico-direto/${posto}`);
+Isso garante que a URL fique correta e decodificável no backend.
+
+✅ Opção 2: Trate o parâmetro corretamente no backend
+No Express.js ou handler de rota, faça algo assim:
+
+ts
+Copiar
+Editar
+app.get('/api/historico-direto/:posto', (req, res) => {
+  const posto = decodeURIComponent(req.params.posto);
+  // Ex: "posto campinas v2"
+  ...
+});
+✅ Opção 3: Use query string em vez de path
+Melhor ainda, evite passar nomes com espaços no path. Use query string:
+
+ts
+Copiar
+Editar
+// Frontend
+fetch(`/api/historico-direto?posto=posto campinas v2`);
+ts
+Copiar
+Editar
+// Backend
+app.get('/api/historico-direto', (req, res) => {
+  const posto = req.query.posto;
+});
+✅ Recomendações finais
+Evite espaços em URLs de rota. Use hífen ou underline se possível, ou prefira query strings.
+
+Verifique se a rota /api/historico-direto/posto campinas v2 realmente existe no seu backend.
+
+Se estiver usando arquivos api/historico-direto/[posto].ts (Next.js), certifique-se de usar decodeURIComponent() no handler.

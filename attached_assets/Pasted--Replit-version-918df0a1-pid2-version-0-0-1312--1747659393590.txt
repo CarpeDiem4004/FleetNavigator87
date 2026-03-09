@@ -1,0 +1,814 @@
+ Replit version 918df0a1, pid2 version 0.0.1312
+ 
+      /////////////////////
+   ///////////////////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////        Curious and driven?
+  ///////////////@@@@@@@///////        Work with us!
+  ///////////////@@@@@@@///////
+  ///////////////@@@@@@@///////        https://join.replit.com/hack.with.us
+  ////////@@@@@@@//////////////
+  ////////@@@@@@@//////////////
+  ////////@@@@@@#//////////////
+   ///////////////////////////
+      /////////////////////
+      
+ [LaunchDarkly] LaunchDarkly client initialized
+ 
+ [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiI0MDg5Mjc4OSIsImtpbmQiOiJ1c2VyIiwibmFtZSI6ImpvYW9wYXVsbzYwIiwicm9sZXMiOlsiaW50ZW50X2J1c2luZXNzIiwib25ib2FyZGluZ19qb2JfYml6Iiwib25ib2FyZGluZ19yb2xlX2V4ZWMiXSwiZW1haWwiOiJqb2FvLnBhdWxvQGNhcnBlZGllbXRyYW5zcG9ydGVzLmNvbSIsInRpbWVfY3JlYXRlZCI6MTc0MzAwNDE3OTQwNCwiX21ldGEiOnsicHJpdmF0ZUF0dHJpYnV0ZXMiOlsiZW1haWwiXX19
+ stallwart: failed ping 1
+ stallwart: failed ping 2
+ stallwart: failed ping 3
+ stallwart: failed ping 1
+muricionfleet:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+ WARN: A component changed from uncontrolled to controlled.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.
+ Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'battery'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'layout-animations'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'navigation-override'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'oversized-images'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'publickey-credentials'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'speaker-selection'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'unoptimized-images'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'unsized-media'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Unrecognized feature: 'pointer-lock'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-bde49f89dbbd4d8c.js:1
+ stallwart: failed ping 1
+ stallwart: failed ping 2
+ stallwart: failed ping 3
+ stallwart: failed ping 4
+ stallwart: failed ping 5
+ stallwart: session stalled
+ [LaunchDarkly] Closing stream connection
+ task queue exceeded allotted deadline by 22ms
+(anonymous) @ _app-d15c1590f240deb0.js:38
+ task queue exceeded allotted deadline by 65ms
+(anonymous) @ _app-d15c1590f240deb0.js:38
+ [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiI0MDg5Mjc4OSIsImtpbmQiOiJ1c2VyIiwibmFtZSI6ImpvYW9wYXVsbzYwIiwicm9sZXMiOlsiaW50ZW50X2J1c2luZXNzIiwib25ib2FyZGluZ19qb2JfYml6Iiwib25ib2FyZGluZ19yb2xlX2V4ZWMiXSwiZW1haWwiOiJqb2FvLnBhdWxvQGNhcnBlZGllbXRyYW5zcG9ydGVzLmNvbSIsInRpbWVfY3JlYXRlZCI6MTc0MzAwNDE3OTQwNCwiX21ldGEiOnsicHJpdmF0ZUF0dHJpYnV0ZXMiOlsiZW1haWwiXX19
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'ambient-light-sensor'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'ambient-light-sensor'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'battery'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'battery'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'execution-while-not-rendered'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'execution-while-not-rendered'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'execution-while-out-of-viewport'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'layout-animations'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'layout-animations'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'legacy-image-formats'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'legacy-image-formats'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'navigation-override'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'navigation-override'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'oversized-images'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'oversized-images'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'publickey-credentials'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'publickey-credentials'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'speaker-selection'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'speaker-selection'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'unoptimized-images'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'unoptimized-images'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'unsized-media'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Unrecognized feature: 'unsized-media'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Allow attribute will take precedence over 'allowfullscreen'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Allow attribute will take precedence over 'allowfullscreen'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arut%3A:32 Allow attribute will take precedence over 'allowpaymentrequest'.
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+ [LaunchDarkly] Closing stream connection
+ [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiI0MDg5Mjc4OSIsImtpbmQiOiJ1c2VyIiwibmFtZSI6ImpvYW9wYXVsbzYwIiwicm9sZXMiOlsiaW50ZW50X2J1c2luZXNzIiwib25ib2FyZGluZ19qb2JfYml6Iiwib25ib2FyZGluZ19yb2xlX2V4ZWMiXSwiZW1haWwiOiJqb2FvLnBhdWxvQGNhcnBlZGllbXRyYW5zcG9ydGVzLmNvbSIsInRpbWVfY3JlYXRlZCI6MTc0MzAwNDE3OTQwNCwiX21ldGEiOnsicHJpdmF0ZUF0dHJpYnV0ZXMiOlsiZW1haWwiXX19
+ [LaunchDarkly] Closing stream connection
+ [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiI0MDg5Mjc4OSIsImtpbmQiOiJ1c2VyIiwibmFtZSI6ImpvYW9wYXVsbzYwIiwicm9sZXMiOlsiaW50ZW50X2J1c2luZXNzIiwib25ib2FyZGluZ19qb2JfYml6Iiwib25ib2FyZGluZ19yb2xlX2V4ZWMiXSwiZW1haWwiOiJqb2FvLnBhdWxvQGNhcnBlZGllbXRyYW5zcG9ydGVzLmNvbSIsInRpbWVfY3JlYXRlZCI6MTc0MzAwNDE3OTQwNCwiX21ldGEiOnsicHJpdmF0ZUF0dHJpYnV0ZXMiOlsiZW1haWwiXX19
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+ Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+ Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+ Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners/6' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+attached_assets/image_1747658532254.png:1  Failed to load resource: the server responded with a status of 404 ()
+ [LaunchDarkly] Closing stream connection
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+ [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiI0MDg5Mjc4OSIsImtpbmQiOiJ1c2VyIiwibmFtZSI6ImpvYW9wYXVsbzYwIiwicm9sZXMiOlsiaW50ZW50X2J1c2luZXNzIiwib25ib2FyZGluZ19qb2JfYml6Iiwib25ib2FyZGluZ19yb2xlX2V4ZWMiXSwiZW1haWwiOiJqb2FvLnBhdWxvQGNhcnBlZGllbXRyYW5zcG9ydGVzLmNvbSIsInRpbWVfY3JlYXRlZCI6MTc0MzAwNDE3OTQwNCwiX21ldGEiOnsicHJpdmF0ZUF0dHJpYnV0ZXMiOlsiZW1haWwiXX19
+ Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+ Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners/6' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+ [LaunchDarkly] Closing stream connection
+ [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiI0MDg5Mjc4OSIsImtpbmQiOiJ1c2VyIiwibmFtZSI6ImpvYW9wYXVsbzYwIiwicm9sZXMiOlsiaW50ZW50X2J1c2luZXNzIiwib25ib2FyZGluZ19qb2JfYml6Iiwib25ib2FyZGluZ19yb2xlX2V4ZWMiXSwiZW1haWwiOiJqb2FvLnBhdWxvQGNhcnBlZGllbXRyYW5zcG9ydGVzLmNvbSIsInRpbWVfY3JlYXRlZCI6MTc0MzAwNDE3OTQwNCwiX21ldGEiOnsicHJpdmF0ZUF0dHJpYnV0ZXMiOlsiZW1haWwiXX19
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+ Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+ [vite] connecting...
+ [vite] connected.
+ Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+Mt.forEach.n.<computed> @ eruda.js:2
+ [supabase-compat] Verificando variáveis de ambiente do Supabase:
+ - VITE_SUPABASE_URL disponível: true
+ - VITE_SUPABASE_ANON_KEY disponível: true
+Console.js:61 - VITE_SUPABASE_SERVICE_KEY disponível: true
+Console.js:61 [supabase-compat] Criando nova instância do cliente Supabase
+Console.js:61 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+Mt.forEach.n.<computed> @ Console.js:61
+Console.js:61 [supabase-compat] Criando nova instância do cliente Supabase Admin
+Console.js:61 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+Mt.forEach.n.<computed> @ Console.js:61
+Console.js:61 Verificando variáveis de ambiente do Supabase:
+Console.js:61 - VITE_SUPABASE_URL disponível: true
+Console.js:61 - VITE_SUPABASE_ANON_KEY disponível: true
+Console.js:61 - VITE_SUPABASE_SERVICE_KEY disponível: true
+Console.js:61 Supabase Service Key (primeiros 10 caracteres): eyJhbGciOi...
+Console.js:61 Configuração Supabase Cliente: Object
+Console.js:61 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+Mt.forEach.n.<computed> @ Console.js:61
+Console.js:61 AuthContext Provider valores: Array(5)
+Console.js:61 Verificando estado de autenticação inicial...
+Console.js:61 Verificando autenticação tradicional...
+Console.js:61 Token JWT encontrado, tentando verificar...
+Console.js:61 Supabase: Usuário não autenticado, limpando dados
+Console.js:61 [FetchWithAuth] Modo de autenticação de emergência ativado
+Console.js:61 [FetchWithAuth] Usando token de emergência existente
+Console.js:61 [FetchWithAuth] Token JWT inicializado com sucesso
+Console.js:61 AuthContext Provider valores: Array(5)
+Console.js:61 [FetchWithAuth] Substituindo fetch global para injetar JWT automaticamente
+Console.js:61 Token JWT verificado com sucesso: Object
+Console.js:61 Usuário autenticado via token: Object
+Console.js:61 Verificação de autenticação completa, isLoading=false
+Console.js:61 AuthContext Provider valores: Array(5)
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners: PERMITIDO
+Console.js:61 [ProtectedRoute] Verificando JWT...
+Console.js:61 [ProtectedRoute] Token JWT encontrado, verificando validade...
+Console.js:61 AuthContext Provider valores: Array(5)
+Console.js:61 Verificando estado de autenticação inicial...
+Console.js:61 Verificando autenticação tradicional...
+Console.js:61 Token JWT encontrado, tentando verificar...
+Console.js:61 [FetchWithAuth] Requisição para /api/hybrid/auth/verify Object
+Console.js:61 AuthContext Provider valores: Array(5)
+hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user:1 
+            
+            
+           Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+Console.js:61 [ProtectedRoute] Token JWT inválido: AuthApiError: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+    at handleError2 (@supabase_supabase-js.js?v=eb4d71cf:4523:9)
+    at async _handleRequest2 (@supabase_supabase-js.js?v=eb4d71cf:4564:5)
+    at async _request (@supabase_supabase-js.js?v=eb4d71cf:4548:16)
+    at async SupabaseAuthClient._getUser (@supabase_supabase-js.js?v=eb4d71cf:5801:16)
+    at async SupabaseAuthClient.getUser (@supabase_supabase-js.js?v=eb4d71cf:5790:14)
+    at async verifyJwt (ProtectedRoute.tsx:170:45)
+Mt.forEach.n.<computed> @ Console.js:61
+Console.js:61 [AuthManager] Iniciando tentativa de recuperação automática
+Console.js:61 [AuthManager] Token encontrado em authToken, verificando validade...
+Console.js:61 [QueryClient] Adicionando token JWT à requisição GET: /api/towing/partners
+Console.js:61 [QueryClient] Enviando requisição GET para /api/towing/partners
+Console.js:61 [FetchWithAuth] Requisição para /api/towing/partners Object
+Console.js:61 [QueryClient] Adicionando token JWT à requisição GET: /api/towing/partners/summary
+Console.js:61 [QueryClient] Enviando requisição GET para /api/towing/partners/summary
+Console.js:61 [FetchWithAuth] Requisição para /api/towing/partners/summary Object
+hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user:1 
+            
+            
+           Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+Console.js:61 [AuthManager] Token em authToken é inválido, removendo...
+Mt.forEach.n.<computed> @ Console.js:61
+Console.js:61 [AuthManager] Tentando obter token de emergência...
+Console.js:61 [FetchWithAuth] Modo de autenticação de emergência ativado
+Console.js:61 [FetchWithAuth] Usando token de emergência existente
+Console.js:61 [FetchWithAuth] Token JWT adicionado automaticamente a: /api/get-jwt-token
+Console.js:61 [FetchWithAuth] Requisição para /api/get-jwt-token Object
+Console.js:61 [AuthManager] Token de emergência obtido com sucesso
+Console.js:61 Token JWT verificado com sucesso: Object
+Console.js:61 Usuário autenticado via token: Object
+Console.js:61 Verificação de autenticação completa, isLoading=false
+Console.js:61 AuthContext Provider valores: Array(5)
+Console.js:61 [ProtectedRoute] Verificando JWT...
+Console.js:61 [ProtectedRoute] Token JWT encontrado, verificando validade...
+hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user:1 
+            
+            
+           Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+Console.js:61 [AuthManager] Token de emergência obtido, mas não é válido no Supabase: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+Mt.forEach.n.<computed> @ Console.js:61
+Console.js:61 [AuthManager] Usando token de emergência mesmo assim para fluxo alternativo
+Console.js:61 [ProtectedRoute] Recuperação automática bem-sucedida após token inválido
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners: PERMITIDO
+hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user:1 
+            
+            
+           Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+Console.js:61 [ProtectedRoute] Token JWT inválido: AuthApiError: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+    at handleError2 (@supabase_supabase-js.js?v=eb4d71cf:4523:9)
+    at async _handleRequest2 (@supabase_supabase-js.js?v=eb4d71cf:4564:5)
+    at async _request (@supabase_supabase-js.js?v=eb4d71cf:4548:16)
+    at async SupabaseAuthClient._getUser (@supabase_supabase-js.js?v=eb4d71cf:5801:16)
+    at async SupabaseAuthClient.getUser (@supabase_supabase-js.js?v=eb4d71cf:5790:14)
+    at async verifyJwt (ProtectedRoute.tsx:170:45)
+Mt.forEach.n.<computed> @ Console.js:61
+Console.js:61 [AuthManager] Iniciando tentativa de recuperação automática
+Console.js:61 [AuthManager] Token encontrado em authToken, verificando validade...
+hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user:1 
+            
+            
+           Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+Console.js:61 [AuthManager] Token em authToken é inválido, removendo...
+Mt.forEach.n.<computed> @ Console.js:61
+Console.js:61 [AuthManager] Tentando obter token de emergência...
+Console.js:61 [FetchWithAuth] Modo de autenticação de emergência ativado
+Console.js:61 [FetchWithAuth] Usando token de emergência existente
+Console.js:61 [FetchWithAuth] Token JWT adicionado automaticamente a: /api/get-jwt-token
+Console.js:61 [FetchWithAuth] Requisição para /api/get-jwt-token Object
+Console.js:61 [AuthManager] Token de emergência obtido com sucesso
+hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user:1 
+            
+            
+           Failed to load resource: the server responded with a status of 403 ()
+user:1  Failed to load resource: the server responded with a status of 403 ()
+Console.js:61 [AuthManager] Token de emergência obtido, mas não é válido no Supabase: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+Mt.forEach.n.<computed> @ Console.js:61
+Console.js:61 [AuthManager] Usando token de emergência mesmo assim para fluxo alternativo
+Console.js:61 [ProtectedRoute] Recuperação automática bem-sucedida após token inválido
+Console.js:61 Navegando para parceiro: 6
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners/6' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Console.js:61 Navegando para parceiro: 3
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners/3' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Console.js:61 Navegando para parceiro: 5
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners/5' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Console.js:61 Navegando para parceiro: 2
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners/2' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners/6' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+Console.js:61 Navegando para parceiro: 6
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners/6' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'message' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] 'setTimeout' handler took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+[Violation] Forced reflow while executing JavaScript took <N>ms
+@tanstack_react-query.js?v=eb4d71cf:270 [Violation] 'visibilitychange' handler took 468ms
+_app-d15c1590f240deb0.js:38 [Violation] 'visibilitychange' handler took 469ms
+[Violation] 'requestIdleCallback' handler took 154ms
+[Violation] 'requestIdleCallback' handler took 73ms
+_app-d15c1590f240deb0.js:1 [Violation] 'setInterval' handler took 152ms
+_app-d15c1590f240deb0.js:1 [Violation] 'setInterval' handler took 72ms
+_app-d15c1590f240deb0.js:38 [Violation] 'paste' handler took 171ms
+framework-bde49f89dbbd4d8c.js:1 [Violation] 'paste' handler took 658ms
+_app-d15c1590f240deb0.js:38 [Violation] 'requestAnimationFrame' handler took 903ms
+_app-d15c1590f240deb0.js:38 [LaunchDarkly] Closing stream connection
+_app-d15c1590f240deb0.js:38 [Violation] 'requestAnimationFrame' handler took 1462ms
+_app-d15c1590f240deb0.js:38 [Violation] 'requestAnimationFrame' handler took 995ms
+Console.js:61 [vite] hot updated: /src/pages/fleet-management/towing-partners/index.tsx
+Console.js:61 [vite] hot updated: /src/index.css?v=y3lXLrNe1Enk-MAhLRPRr
+Console.js:61 [vite] connecting...
+Console.js:61 [vite] connected.
+Console.js:61 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+Mt.forEach.n.<computed> @ Console.js:61
+_GoTrueClient @ @supabase_supabase-js.js?v=eb4d71cf:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=eb4d71cf:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=eb4d71cf:7102
+SupabaseClient @ @supabase_supabase-js.js?v=eb4d71cf:6975
+createClient @ @supabase_supabase-js.js?v=eb4d71cf:7142
+getSupabaseAdminClient @ supabaseClient.js:34
+(anonymous) @ supabaseClient.js:41
+Console.js:61 [supabase-compat] Verificando variáveis de ambiente do Supabase:
+Console.js:61 - VITE_SUPABASE_URL disponível: true
+Console.js:61 - VITE_SUPABASE_ANON_KEY disponível: true
+Console.js:61 - VITE_SUPABASE_SERVICE_KEY disponível: true
+Console.js:61 [supabase-compat] Criando nova instância do cliente Supabase
+Console.js:61 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+Mt.forEach.n.<computed> @ Console.js:61
+_GoTrueClient @ @supabase_supabase-js.js?v=eb4d71cf:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=eb4d71cf:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=eb4d71cf:7102
+SupabaseClient @ @supabase_supabase-js.js?v=eb4d71cf:6975
+createClient @ @supabase_supabase-js.js?v=eb4d71cf:7142
+getSupabaseClient @ supabase-compat.ts:61
+(anonymous) @ supabase-compat.ts:101
+Console.js:61 [supabase-compat] Criando nova instância do cliente Supabase Admin
+Console.js:61 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+Mt.forEach.n.<computed> @ Console.js:61
+_GoTrueClient @ @supabase_supabase-js.js?v=eb4d71cf:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=eb4d71cf:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=eb4d71cf:7102
+SupabaseClient @ @supabase_supabase-js.js?v=eb4d71cf:6975
+createClient @ @supabase_supabase-js.js?v=eb4d71cf:7142
+getSupabaseAdminClient @ supabase-compat.ts:85
+(anonymous) @ supabase-compat.ts:102
+Console.js:61 Verificando variáveis de ambiente do Supabase:
+Console.js:61 - VITE_SUPABASE_URL disponível: true
+Console.js:61 - VITE_SUPABASE_ANON_KEY disponível: true
+Console.js:61 - VITE_SUPABASE_SERVICE_KEY disponível: true
+Console.js:61 Supabase Service Key (primeiros 10 caracteres): eyJhbGciOi...
+Console.js:61 Configuração Supabase Cliente: {url: 'https://hvsmxxqkuyjhpsiojupb.supabase.co', anonKeyAvailable: true, serviceKeyAvailable: true}
+Console.js:61 Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+Mt.forEach.n.<computed> @ Console.js:61
+_GoTrueClient @ @supabase_supabase-js.js?v=eb4d71cf:5040
+SupabaseAuthClient @ @supabase_supabase-js.js?v=eb4d71cf:6906
+_initSupabaseAuthClient @ @supabase_supabase-js.js?v=eb4d71cf:7102
+SupabaseClient @ @supabase_supabase-js.js?v=eb4d71cf:6975
+createClient @ @supabase_supabase-js.js?v=eb4d71cf:7142
+(anonymous) @ RegisterPostoUser.tsx:23
+Console.js:61 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+Console.js:61 Verificando estado de autenticação inicial...
+Console.js:61 Verificando autenticação tradicional...
+Console.js:61 Token JWT encontrado, tentando verificar...
+Console.js:61 Supabase: Usuário não autenticado, limpando dados
+Console.js:61 [FetchWithAuth] Modo de autenticação de emergência ativado
+Console.js:61 [FetchWithAuth] Usando token de emergência existente
+Console.js:61 [FetchWithAuth] Token JWT inicializado com sucesso
+Console.js:61 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+Console.js:61 [FetchWithAuth] Substituindo fetch global para injetar JWT automaticamente
+Console.js:61 Token JWT verificado com sucesso: {success: true, message: 'Token válido', user: {…}, verifiedAt: '2025-05-19T12:54:54.299Z', expiresAt: null}
+Console.js:61 Usuário autenticado via token: {id: 1, name: 'Administrador', email: 'admin@muricionfleet.com', password: 'MuricionAdmin2025', role: 'admin', …}
+Console.js:61 Verificação de autenticação completa, isLoading=false
+Console.js:61 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+Console.js:61 [ProtectedRoute] Verificando JWT...
+Console.js:61 [ProtectedRoute] Token JWT encontrado, verificando validade...
+Console.js:61 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+Console.js:61 Verificando estado de autenticação inicial...
+Console.js:61 Verificando autenticação tradicional...
+Console.js:61 Token JWT encontrado, tentando verificar...
+Console.js:61 [FetchWithAuth] Requisição para /api/hybrid/auth/verify {hasAuthHeader: true, credentials: 'include'}
+Console.js:61 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+ProtectedRoute.tsx:170 
+            
+            
+           GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+window.fetch @ Network.js:219
+(anonymous) @ @supabase_supabase-js.js?v=eb4d71cf:4309
+_handleRequest2 @ @supabase_supabase-js.js?v=eb4d71cf:4558
+_request @ @supabase_supabase-js.js?v=eb4d71cf:4548
+_getUser @ @supabase_supabase-js.js?v=eb4d71cf:5801
+getUser @ @supabase_supabase-js.js?v=eb4d71cf:5790
+verifyJwt @ ProtectedRoute.tsx:170
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=eb4d71cf:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=eb4d71cf:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=eb4d71cf:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=eb4d71cf:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=eb4d71cf:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=eb4d71cf:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=eb4d71cf:19447
+(anonymous) @ chunk-276SZO74.js?v=eb4d71cf:19328
+workLoop @ chunk-276SZO74.js?v=eb4d71cf:197
+flushWork @ chunk-276SZO74.js?v=eb4d71cf:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=eb4d71cf:384
+Console.js:61 [ProtectedRoute] Token JWT inválido: AuthApiError: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+    at handleError2 (@supabase_supabase-js.js?v=eb4d71cf:4523:9)
+    at async _handleRequest2 (@supabase_supabase-js.js?v=eb4d71cf:4564:5)
+    at async _request (@supabase_supabase-js.js?v=eb4d71cf:4548:16)
+    at async SupabaseAuthClient._getUser (@supabase_supabase-js.js?v=eb4d71cf:5801:16)
+    at async SupabaseAuthClient.getUser (@supabase_supabase-js.js?v=eb4d71cf:5790:14)
+    at async verifyJwt (ProtectedRoute.tsx:170:45)
+Mt.forEach.n.<computed> @ Console.js:61
+verifyJwt @ ProtectedRoute.tsx:173
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=eb4d71cf:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=eb4d71cf:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=eb4d71cf:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=eb4d71cf:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=eb4d71cf:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=eb4d71cf:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=eb4d71cf:19447
+(anonymous) @ chunk-276SZO74.js?v=eb4d71cf:19328
+workLoop @ chunk-276SZO74.js?v=eb4d71cf:197
+flushWork @ chunk-276SZO74.js?v=eb4d71cf:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=eb4d71cf:384
+Console.js:61 [AuthManager] Iniciando tentativa de recuperação automática
+Console.js:61 [AuthManager] Token encontrado em authToken, verificando validade...
+Console.js:61 Token JWT verificado com sucesso: {success: true, message: 'Token válido', user: {…}, verifiedAt: '2025-05-19T12:54:55.090Z', expiresAt: null}
+Console.js:61 Usuário autenticado via token: {id: 1, name: 'Administrador', email: 'admin@muricionfleet.com', password: 'MuricionAdmin2025', role: 'admin', …}
+Console.js:61 Verificação de autenticação completa, isLoading=false
+Console.js:61 AuthContext Provider valores: (5) ['user: object', 'isLoading: boolean', 'login: function', 'register: function', 'logout: function']
+Console.js:61 [ProtectedRoute] Verificando JWT...
+Console.js:61 [ProtectedRoute] Token JWT encontrado, verificando validade...
+authManager.ts:176 
+            
+            
+           GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+window.fetch @ Network.js:219
+(anonymous) @ @supabase_supabase-js.js?v=eb4d71cf:4309
+_handleRequest2 @ @supabase_supabase-js.js?v=eb4d71cf:4558
+_request @ @supabase_supabase-js.js?v=eb4d71cf:4548
+_getUser @ @supabase_supabase-js.js?v=eb4d71cf:5801
+getUser @ @supabase_supabase-js.js?v=eb4d71cf:5790
+attemptAutoRecovery @ authManager.ts:176
+verifyJwt @ ProtectedRoute.tsx:176
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=eb4d71cf:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=eb4d71cf:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=eb4d71cf:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=eb4d71cf:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=eb4d71cf:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=eb4d71cf:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=eb4d71cf:19447
+(anonymous) @ chunk-276SZO74.js?v=eb4d71cf:19328
+workLoop @ chunk-276SZO74.js?v=eb4d71cf:197
+flushWork @ chunk-276SZO74.js?v=eb4d71cf:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=eb4d71cf:384
+Console.js:61 [AuthManager] Token em authToken é inválido, removendo...
+Mt.forEach.n.<computed> @ Console.js:61
+attemptAutoRecovery @ authManager.ts:187
+await in attemptAutoRecovery
+verifyJwt @ ProtectedRoute.tsx:176
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=eb4d71cf:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=eb4d71cf:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=eb4d71cf:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=eb4d71cf:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=eb4d71cf:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=eb4d71cf:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=eb4d71cf:19447
+(anonymous) @ chunk-276SZO74.js?v=eb4d71cf:19328
+workLoop @ chunk-276SZO74.js?v=eb4d71cf:197
+flushWork @ chunk-276SZO74.js?v=eb4d71cf:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=eb4d71cf:384
+Console.js:61 [AuthManager] Tentando obter token de emergência...
+Console.js:61 [FetchWithAuth] Modo de autenticação de emergência ativado
+Console.js:61 [FetchWithAuth] Usando token de emergência existente
+Console.js:61 [FetchWithAuth] Token JWT adicionado automaticamente a: /api/get-jwt-token
+Console.js:61 [FetchWithAuth] Requisição para /api/get-jwt-token {hasAuthHeader: true, credentials: 'include'}
+ProtectedRoute.tsx:170 
+            
+            
+           GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+window.fetch @ Network.js:219
+(anonymous) @ @supabase_supabase-js.js?v=eb4d71cf:4309
+_handleRequest2 @ @supabase_supabase-js.js?v=eb4d71cf:4558
+_request @ @supabase_supabase-js.js?v=eb4d71cf:4548
+_getUser @ @supabase_supabase-js.js?v=eb4d71cf:5801
+getUser @ @supabase_supabase-js.js?v=eb4d71cf:5790
+verifyJwt @ ProtectedRoute.tsx:170
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=eb4d71cf:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=eb4d71cf:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=eb4d71cf:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=eb4d71cf:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=eb4d71cf:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=eb4d71cf:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=eb4d71cf:19447
+(anonymous) @ chunk-276SZO74.js?v=eb4d71cf:19328
+workLoop @ chunk-276SZO74.js?v=eb4d71cf:197
+flushWork @ chunk-276SZO74.js?v=eb4d71cf:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=eb4d71cf:384
+Console.js:61 [ProtectedRoute] Token JWT inválido: AuthApiError: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+    at handleError2 (@supabase_supabase-js.js?v=eb4d71cf:4523:9)
+    at async _handleRequest2 (@supabase_supabase-js.js?v=eb4d71cf:4564:5)
+    at async _request (@supabase_supabase-js.js?v=eb4d71cf:4548:16)
+    at async SupabaseAuthClient._getUser (@supabase_supabase-js.js?v=eb4d71cf:5801:16)
+    at async SupabaseAuthClient.getUser (@supabase_supabase-js.js?v=eb4d71cf:5790:14)
+    at async verifyJwt (ProtectedRoute.tsx:170:45)
+Mt.forEach.n.<computed> @ Console.js:61
+verifyJwt @ ProtectedRoute.tsx:173
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=eb4d71cf:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=eb4d71cf:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=eb4d71cf:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=eb4d71cf:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=eb4d71cf:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=eb4d71cf:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=eb4d71cf:19447
+(anonymous) @ chunk-276SZO74.js?v=eb4d71cf:19328
+workLoop @ chunk-276SZO74.js?v=eb4d71cf:197
+flushWork @ chunk-276SZO74.js?v=eb4d71cf:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=eb4d71cf:384
+Console.js:61 [AuthManager] Iniciando tentativa de recuperação automática
+Console.js:61 [AuthManager] Tentando obter token de emergência...
+Console.js:61 [FetchWithAuth] Modo de autenticação de emergência ativado
+Console.js:61 [FetchWithAuth] Usando token de emergência existente
+Console.js:61 [FetchWithAuth] Token JWT adicionado automaticamente a: /api/get-jwt-token
+Console.js:61 [FetchWithAuth] Requisição para /api/get-jwt-token {hasAuthHeader: true, credentials: 'include'}
+Console.js:61 [AuthManager] Token de emergência obtido com sucesso
+Console.js:61 [AuthManager] Token de emergência obtido com sucesso
+authManager.ts:221 
+            
+            
+           GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+window.fetch @ Network.js:219
+(anonymous) @ @supabase_supabase-js.js?v=eb4d71cf:4309
+_handleRequest2 @ @supabase_supabase-js.js?v=eb4d71cf:4558
+_request @ @supabase_supabase-js.js?v=eb4d71cf:4548
+_getUser @ @supabase_supabase-js.js?v=eb4d71cf:5801
+getUser @ @supabase_supabase-js.js?v=eb4d71cf:5790
+attemptAutoRecovery @ authManager.ts:221
+await in attemptAutoRecovery
+verifyJwt @ ProtectedRoute.tsx:176
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=eb4d71cf:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=eb4d71cf:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=eb4d71cf:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=eb4d71cf:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=eb4d71cf:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=eb4d71cf:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=eb4d71cf:19447
+(anonymous) @ chunk-276SZO74.js?v=eb4d71cf:19328
+workLoop @ chunk-276SZO74.js?v=eb4d71cf:197
+flushWork @ chunk-276SZO74.js?v=eb4d71cf:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=eb4d71cf:384
+Console.js:61 [AuthManager] Token de emergência obtido, mas não é válido no Supabase: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+Mt.forEach.n.<computed> @ Console.js:61
+attemptAutoRecovery @ authManager.ts:223
+await in attemptAutoRecovery
+verifyJwt @ ProtectedRoute.tsx:176
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=eb4d71cf:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=eb4d71cf:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=eb4d71cf:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=eb4d71cf:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=eb4d71cf:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=eb4d71cf:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=eb4d71cf:19447
+(anonymous) @ chunk-276SZO74.js?v=eb4d71cf:19328
+workLoop @ chunk-276SZO74.js?v=eb4d71cf:197
+flushWork @ chunk-276SZO74.js?v=eb4d71cf:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=eb4d71cf:384
+Console.js:61 [AuthManager] Usando token de emergência mesmo assim para fluxo alternativo
+Console.js:61 [ProtectedRoute] Recuperação automática bem-sucedida após token inválido
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+authManager.ts:221 
+            
+            
+           GET https://hvsmxxqkuyjhpsiojupb.supabase.co/auth/v1/user 403 (Forbidden)
+window.fetch @ Network.js:219
+(anonymous) @ @supabase_supabase-js.js?v=eb4d71cf:4309
+_handleRequest2 @ @supabase_supabase-js.js?v=eb4d71cf:4558
+_request @ @supabase_supabase-js.js?v=eb4d71cf:4548
+_getUser @ @supabase_supabase-js.js?v=eb4d71cf:5801
+getUser @ @supabase_supabase-js.js?v=eb4d71cf:5790
+attemptAutoRecovery @ authManager.ts:221
+await in attemptAutoRecovery
+verifyJwt @ ProtectedRoute.tsx:176
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=eb4d71cf:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=eb4d71cf:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=eb4d71cf:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=eb4d71cf:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=eb4d71cf:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=eb4d71cf:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=eb4d71cf:19447
+(anonymous) @ chunk-276SZO74.js?v=eb4d71cf:19328
+workLoop @ chunk-276SZO74.js?v=eb4d71cf:197
+flushWork @ chunk-276SZO74.js?v=eb4d71cf:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=eb4d71cf:384
+Console.js:61 [AuthManager] Token de emergência obtido, mas não é válido no Supabase: invalid JWT: unable to parse or verify signature, token signature is invalid: signature is invalid
+Mt.forEach.n.<computed> @ Console.js:61
+attemptAutoRecovery @ authManager.ts:223
+await in attemptAutoRecovery
+verifyJwt @ ProtectedRoute.tsx:176
+await in verifyJwt
+(anonymous) @ ProtectedRoute.tsx:282
+commitHookEffectListMount @ chunk-276SZO74.js?v=eb4d71cf:16915
+commitPassiveMountOnFiber @ chunk-276SZO74.js?v=eb4d71cf:18156
+commitPassiveMountEffects_complete @ chunk-276SZO74.js?v=eb4d71cf:18129
+commitPassiveMountEffects_begin @ chunk-276SZO74.js?v=eb4d71cf:18119
+commitPassiveMountEffects @ chunk-276SZO74.js?v=eb4d71cf:18109
+flushPassiveEffectsImpl @ chunk-276SZO74.js?v=eb4d71cf:19490
+flushPassiveEffects @ chunk-276SZO74.js?v=eb4d71cf:19447
+(anonymous) @ chunk-276SZO74.js?v=eb4d71cf:19328
+workLoop @ chunk-276SZO74.js?v=eb4d71cf:197
+flushWork @ chunk-276SZO74.js?v=eb4d71cf:176
+performWorkUntilDeadline @ chunk-276SZO74.js?v=eb4d71cf:384
+Console.js:61 [AuthManager] Usando token de emergência mesmo assim para fluxo alternativo
+Console.js:61 [ProtectedRoute] Recuperação automática bem-sucedida após token inválido
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+_app-d15c1590f240deb0.js:38 [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiI0MDg5Mjc4OSIsImtpbmQiOiJ1c2VyIiwibmFtZSI6ImpvYW9wYXVsbzYwIiwicm9sZXMiOlsiaW50ZW50X2J1c2luZXNzIiwib25ib2FyZGluZ19qb2JfYml6Iiwib25ib2FyZGluZ19yb2xlX2V4ZWMiXSwiZW1haWwiOiJqb2FvLnBhdWxvQGNhcnBlZGllbXRyYW5zcG9ydGVzLmNvbSIsInRpbWVfY3JlYXRlZCI6MTc0MzAwNDE3OTQwNCwiX21ldGEiOnsicHJpdmF0ZUF0dHJpYnV0ZXMiOlsiZW1haWwiXX19
+_app-d15c1590f240deb0.js:38 [LaunchDarkly] Closing stream connection
+_app-d15c1590f240deb0.js:38 [Violation] 'requestAnimationFrame' handler took 1519ms
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners: PERMITIDO
+Console.js:61 [QueryClient] Adicionando token JWT à requisição GET: /api/towing/partners
+Console.js:61 [QueryClient] Enviando requisição GET para /api/towing/partners
+Console.js:61 [FetchWithAuth] Requisição para /api/towing/partners {hasAuthHeader: true, credentials: 'include'}
+Console.js:61 [QueryClient] Adicionando token JWT à requisição GET: /api/towing/partners/summary
+Console.js:61 [QueryClient] Enviando requisição GET para /api/towing/partners/summary
+Console.js:61 [FetchWithAuth] Requisição para /api/towing/partners/summary {hasAuthHeader: true, credentials: 'include'}
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+d @ main-d066b0515ee7df8a.js:1
+(anonymous) @ _app-d15c1590f240deb0.js:6
+lU @ framework-bde49f89dbbd4d8c.js:1
+t.useMemo @ framework-bde49f89dbbd4d8c.js:1
+(anonymous) @ _app-d15c1590f240deb0.js:6
+ld @ framework-bde49f89dbbd4d8c.js:1
+ou @ framework-bde49f89dbbd4d8c.js:1
+i @ framework-bde49f89dbbd4d8c.js:1
+uI @ framework-bde49f89dbbd4d8c.js:1
+uM @ framework-bde49f89dbbd4d8c.js:1
+uS @ framework-bde49f89dbbd4d8c.js:1
+C @ framework-bde49f89dbbd4d8c.js:1
+z @ framework-bde49f89dbbd4d8c.js:1
+_app-d15c1590f240deb0.js:1 [Violation] 'setInterval' handler took 70ms
+[Violation] 'requestIdleCallback' handler took 60ms
+Console.js:61 Navegando para parceiro: 6
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners/:id (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners/:id: PERMITIDO
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners/6' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+d @ main-d066b0515ee7df8a.js:1
+(anonymous) @ _app-d15c1590f240deb0.js:6
+lU @ framework-bde49f89dbbd4d8c.js:1
+t.useMemo @ framework-bde49f89dbbd4d8c.js:1
+(anonymous) @ _app-d15c1590f240deb0.js:6
+ld @ framework-bde49f89dbbd4d8c.js:1
+ou @ framework-bde49f89dbbd4d8c.js:1
+i @ framework-bde49f89dbbd4d8c.js:1
+uI @ framework-bde49f89dbbd4d8c.js:1
+uM @ framework-bde49f89dbbd4d8c.js:1
+uS @ framework-bde49f89dbbd4d8c.js:1
+C @ framework-bde49f89dbbd4d8c.js:1
+z @ framework-bde49f89dbbd4d8c.js:1
+Console.js:61 Permission granted for admin user to route: /fleet-management/towing-partners (admin role: admin, email: admin@muricionfleet.com)
+Console.js:61 [ProtectedRoute] Verificação de permissão para /fleet-management/towing-partners: PERMITIDO
+chunk-276SZO74.js?v=eb4d71cf:18625 [Violation] 'click' handler took 164ms
+_app-d15c1590f240deb0.js:38 Invalid href 'https://38c24b99-832f-4a3d-ad77-ec177e172dd1-00-1ruweyufd75y7.picard.replit.dev//fleet-management/towing-partners' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-d15c1590f240deb0.js:38
+d @ main-d066b0515ee7df8a.js:1
+(anonymous) @ _app-d15c1590f240deb0.js:6
+lU @ framework-bde49f89dbbd4d8c.js:1
+t.useMemo @ framework-bde49f89dbbd4d8c.js:1
+(anonymous) @ _app-d15c1590f240deb0.js:6
+ld @ framework-bde49f89dbbd4d8c.js:1
+ou @ framework-bde49f89dbbd4d8c.js:1
+i @ framework-bde49f89dbbd4d8c.js:1
+uI @ framework-bde49f89dbbd4d8c.js:1
+uM @ framework-bde49f89dbbd4d8c.js:1
+uS @ framework-bde49f89dbbd4d8c.js:1
+C @ framework-bde49f89dbbd4d8c.js:1
+z @ framework-bde49f89dbbd4d8c.js:1

@@ -1,0 +1,171 @@
+Perfeito, agora deu pra ver **exatamente onde está o problema** 👀
+Isso **não é erro “aleatório”** — é **falha de autorização + filtro de base** mal resolvido. Vamos resolver **de vez**, sem gambiarra.
+
+---
+
+## 🚨 O QUE ESTÁ QUEBRANDO (CAUSA REAL)
+
+Pelo console da direita dá pra ver 3 sinais claros:
+
+### 1️⃣ **401 Unauthorized**
+
+```
+GET /api/vehicles 401 (Unauthorized)
+```
+
+➡️ A página de **Cadastro de Veículos** tenta buscar veículos **antes** de ter:
+
+* sessão válida
+* base definida
+* permissão confirmada
+
+---
+
+### 2️⃣ **AuthContext ainda não carregou**
+
+```
+AuthContext Provider values: { user: object, isLoading: true }
+```
+
+➡️ O React está tentando renderizar a tela **enquanto `isLoading === true`**
+
+---
+
+### 3️⃣ **Filtro de base não aplicado**
+
+Quando a base (ex: **Coca-Cola**) não vem:
+
+* a query vai sem `base_id`
+* o backend bloqueia (correto)
+* retorna 401
+
+---
+
+## ✅ SOLUÇÃO DEFINITIVA (PADRÃO PROFISSIONAL)
+
+Você precisa aplicar **3 correções juntas**.
+Se fizer só uma, o erro volta.
+
+---
+
+## 🔧 1️⃣ BLOQUEAR A TELA ATÉ A AUTENTICAÇÃO FINALIZAR
+
+No **ProtectedRoute** ou na página de veículos:
+
+```tsx
+const { user, isLoading } = useAuth()
+
+if (isLoading) {
+  return <div>Carregando sessão...</div>
+}
+
+if (!user) {
+  return <Navigate to="/login" />
+}
+```
+
+📌 **Nunca renderizar a página antes do AuthContext estar pronto**
+
+---
+
+## 🔧 2️⃣ SÓ BUSCAR VEÍCULOS SE TIVER BASE ATIVA
+
+No `useEffect` do cadastro de veículos:
+
+```tsx
+useEffect(() => {
+  if (!user || !activeBaseId) return
+
+  fetchVehicles()
+}, [user, activeBaseId])
+```
+
+❌ ERRADO (como está hoje):
+
+```tsx
+useEffect(() => {
+  fetchVehicles()
+}, [])
+```
+
+---
+
+## 🔧 3️⃣ GARANTIR QUE TODA QUERY ENVIE `base_id`
+
+No backend (`/api/vehicles`):
+
+```ts
+if (!req.user || !req.user.base_id) {
+  return res.status(401).json({ error: "Base não definida" })
+}
+```
+
+E a query:
+
+```ts
+SELECT * 
+FROM vehicles 
+WHERE base_id = $1
+```
+
+Nunca:
+
+```sql
+SELECT * FROM vehicles
+```
+
+---
+
+## 🔐 REGRA DE OURO DO SISTEMA
+
+> 🔒 **SEM BASE = SEM DADOS**
+
+Isso vale para:
+
+* veículos
+* motoristas
+* abastecimentos
+* status diário
+* manutenção
+
+---
+
+## 🧠 COMO PEDIR PARA A IA DO REPLIT RESOLVER ISSO
+
+Copia e cola **exatamente isso** 👇
+
+```
+Analise a tela de cadastro de veículos.
+
+Problema:
+- A página tenta buscar veículos antes do AuthContext finalizar
+- A base ativa não está garantida
+- A API retorna 401 por falta de base_id
+
+Implemente:
+1) Bloqueio de renderização enquanto auth.isLoading === true
+2) Fetch de veículos apenas se user e activeBaseId existirem
+3) Validação no backend exigindo base_id
+4) Queries sempre filtradas por base_id
+
+Objetivo:
+Nunca permitir erro 401 ao abrir a tela de veículos.
+Sem base ativa, mostrar aviso em vez de quebrar a página.
+```
+
+---
+
+## 🟢 RESULTADO FINAL
+
+Depois disso:
+
+* ✅ Página abre sempre
+* ✅ Base Coca-Cola aparece corretamente
+* ✅ Veículos já vêm filtrados
+* ✅ Zero erro 401
+* ✅ Sistema pronto pra escalar
+
+Se quiser, no próximo passo eu:
+
+* reviso **seu código atual**
+* ou te entrego **o ProtectedRoute + hook de base prontos** 🚀

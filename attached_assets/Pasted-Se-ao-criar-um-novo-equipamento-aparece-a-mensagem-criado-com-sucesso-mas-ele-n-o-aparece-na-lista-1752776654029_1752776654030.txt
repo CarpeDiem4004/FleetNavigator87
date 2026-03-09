@@ -1,0 +1,67 @@
+Se ao criar um novo equipamento aparece a mensagem “criado com sucesso” mas ele não aparece na lista, há alguns possíveis motivos para isso, com base na sua imagem e console do navegador:
+
+✅ Checklist de verificação
+🔁 Estado não está sendo atualizado após o insert
+Verifique se, após inserir o novo equipamento no Supabase, o estado que armazena a lista está sendo atualizado corretamente.
+
+Exemplo de erro comum:
+
+tsx
+Copiar
+Editar
+await supabase.from('equipamentos').insert(novoEquipamento);
+// Faltando: fetchEquipamentos() ou setEquipamentos([...])
+✅ Correção sugerida:
+Após criar o equipamento, chame novamente a função que busca os dados:
+
+tsx
+Copiar
+Editar
+await supabase.from('equipamentos').insert(novoEquipamento);
+fetchEquipamentos(); // <- garantir que você reatualize a lista
+🧼 Filtro ativo na lista
+Verifique se você está com algum filtro ativado (ex: aba “Disponíveis”, “Em Uso”, etc.). Talvez o equipamento criado não esteja com o status que esse filtro exibe.
+
+✅ Correção sugerida:
+
+Teste clicar em “Total de Equipamentos” para exibir todos os equipamentos.
+
+Verifique o valor salvo no campo status (deve estar batendo com os filtros).
+
+🐛 Erro de mapeamento ou renderização
+Verifique se há algum erro de formatação ou algum map que dependa de campos obrigatórios que estão null, como número de série.
+
+Exemplo de erro silencioso:
+
+tsx
+Copiar
+Editar
+equipamentos.map(e => <div>{e.numeroSerie.toUpperCase()}</div>)
+// se numeroSerie for null → erro → lista não renderiza
+✅ Correção sugerida:
+Trate dados ausentes:
+
+tsx
+Copiar
+Editar
+{equipamentos.map(e => (
+  <tr key={e.id}>
+    <td>{e.nome || 'Sem nome'}</td>
+    <td>{e.numeroSerie || 'N/A'}</td>
+    ...
+  </tr>
+))}
+📤 Confirme se o dado está realmente salvo no Supabase
+A mensagem “criado com sucesso” pode estar aparecendo mesmo sem confirmação do insert.
+
+✅ Sugestão:
+
+Verifique no painel do Supabase (tabela equipamentos) se o novo registro está realmente lá.
+
+Se não estiver, revise a função de insert e o console.log da resposta de retorno:
+
+tsx
+Copiar
+Editar
+const { data, error } = await supabase.from('equipamentos').insert({...});
+console.log(data, error);

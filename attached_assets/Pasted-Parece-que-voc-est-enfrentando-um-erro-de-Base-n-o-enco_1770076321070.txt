@@ -1,0 +1,64 @@
+Parece que você está enfrentando um erro de "Base não encontrada" ao acessar a página `gestaonfleet.com.br/bases/120/Public` em um aplicativo web que usa Supabase como backend (baseado nos logs do console, como autenticação, realtime listeners e sincronizações). O site parece ser relacionado a gerenciamento de frotas ("Gestão On Fleet"), possivelmente um sistema de gestão ou dashboard para empresas, com login bem-sucedido para "SQ (QUEIMADOS) SR2".
+
+Vou explicar **como investigar isso de forma segura**, sem risco de "quebrar" o sistema (ou seja, sem alterar dados, deletar nada ou executar comandos destrutivos). O foco é em diagnóstico passivo: observar logs, verificar configurações e testar acessos leves. Se você for o desenvolvedor ou usuário com acesso administrativo, siga esses passos. Caso contrário, use isso para reportar o problema ao suporte ou dev team de forma clara.
+
+### Passos para Investigar Sem Riscos
+1. **Verifique o Básico no Navegador (Sem Alterar Nada):**
+   - Abra o DevTools (pressione F12 ou Ctrl+Shift+I no Chrome).
+   - Vá para a aba **Console** (como na sua imagem): Procure por erros vermelhos ou warnings relacionados a Supabase, API calls ou "base". Na sua captura, não há erros óbvios, só logs de sucesso (autenticação, realtime configurado, sincronização concluída). Isso sugere que o app carrega, mas o recurso específico (base 120) não existe ou não é acessível.
+   - Vá para a aba **Network**: Recarregue a página (F5) e filtre por "supabase" ou "api". Veja as requisições HTTP:
+     - Procure por chamadas para endpoints como `/rest/v1/` ou `/realtime/v1/` (padrão do Supabase).
+     - Cheque o status: Se houver 404 (Not Found) ou 403 (Forbidden), é problema de existência ou permissão. Anote o corpo da resposta para detalhes (ex: "relation does not exist").
+     - Evite clicar em nada que envie POST/PUT/DELETE – só observe.
+
+2. **Confira a URL e Parâmetros:**
+   - Teste variações seguras da URL sem alterar o sistema:
+     - Tente `/bases/120` (sem "/Public") para ver se é um modo privado.
+     - Se você souber outros IDs de bases, teste um válido (ex: `/bases/1/Public`) para comparar.
+     - Verifique se "120" é o ID correto – pode ser um erro de digitação ou link errado. Pergunte ao admin ou cheque documentação interna.
+   - Acesse a homepage `gestaonfleet.com.br` e navegue manualmente para ver se há listas de "bases" disponíveis.
+
+3. **Acesse o Dashboard do Supabase (Se Você Tiver Acesso Admin):**
+   - Logue no painel do Supabase (supabase.com/dashboard) com as credenciais do projeto.
+   - Vá para **Database** > Tables: Procure por uma tabela chamada "bases" ou similar, e veja se há uma linha com ID 120.
+     - Use a query SQL no editor: `SELECT * FROM bases WHERE id = 120;` (só SELECT, nada de UPDATE ou DELETE).
+     - Cheque permissões (RLS - Row Level Security): A base pode não ser pública, mesmo com "/Public" na URL.
+   - Em **Authentication**: Confirme se seu usuário tem roles/permissões para acessar essa base.
+   - Em **Realtime**: Veja se há canais/subscriptions para "bases" – isso explica os logs de realtime na sua imagem.
+
+4. **Teste em Ambiente Seguro:**
+   - Use um navegador em modo anônimo ou uma VM para testar sem afetar sua sessão principal.
+   - Se for dev, clone o repo do app (se for open-source ou você tiver acesso) e rode localmente com `npm start` ou similar, alterando o ID para depurar.
+   - Evite: Qualquer comando que modifique dados, como dropar tables ou resetar auth.
+
+5. **Colete Mais Infos para Análise:**
+   - Capture o full console log e network requests (exporte como HAR file no DevTools > Network > Save as HAR).
+   - Verifique a data/hora: Sua imagem mostra 02/02/2026 – se for um app com dados temporais, pode ser um issue de timezone (logs mostram America/Sao_Paulo).
+   - Busque por erros semelhantes: Google "Supabase base not found" ou "relation does not exist Supabase" para dicas gerais.
+
+### Como Pedir Ajuda (para Suporte ou Dev)
+Se você não puder investigar sozinho, envie um report claro assim (copie e adapte):
+```
+Assunto: Erro "Base não encontrada" em /bases/120/Public
+
+Olá equipe,
+Estou acessando [URL completa] e recebo o erro: "Base não encontrada - A base solicitada não existe ou não está disponível para acesso público."
+- Login: Bem-sucedido para SQ (QUEIMADOS) SR2.
+- Console logs: [cole os logs da sua imagem, como timezone, auth, realtime].
+- Network: [descreva qualquer requisição falha, ex: 404 em API].
+- Data/hora: 02/02/2026, 20:46.
+- Navegador: Chrome (ou o seu).
+- Anexo: Screenshot anexado.
+
+Podem investigar sem alterar dados? Suspeito de ID errado, permissão ou base inexistente no Supabase.
+Obrigado!
+```
+
+### Possíveis Soluções Baseadas no Que Vejo
+- **ID Incorreto:** Confirme se 120 existe – talvez seja 12 ou outro número.
+- **Permissões:** A base não é pública; mude para modo autenticado ou adicione RLS rules no Supabase.
+- **Config App:** No código do app (provavelmente React, pelos logs de AuthContext), verifique o fetch para "bases" – pode ser um query errado como `from('bases').select('*').eq('id', 120)`.
+- **Servidor Down:** Minha tentativa de acessar o site retornou erro 503 (indisponível), mas sua página carrega – pode ser intermitente; tente mais tarde.
+- Se for dev, atualize o Supabase client ou cheque chaves API.
+
+Se me der mais detalhes (ex: logs completos, código relevante ou acesso simulado), posso ajudar mais. O que exatamente você suspeita?

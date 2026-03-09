@@ -1,0 +1,1159 @@
+import { Request, Response } from 'express';
+import multer from 'multer';
+import * as XLSX from 'xlsx';
+import { pool } from './db';
+import { sendZAPIWhatsAppMessage } from './services/zapiWhatsAppService';
+
+// Configurar multer para upload de arquivos
+const storage = multer.memoryStorage();
+export const upload = multer({ 
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (req, file, cb) => {
+    if (file.originalname.match(/\.(xlsx|xls)$/)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos Excel (.xlsx, .xls) são permitidos'));
+    }
+  }
+});
+
+interface VehicleRouteData {
+  data: string;
+  placa: string;
+  motorista: string;
+  operacao: string;
+  modelo: string;
+  rota_log?: string;
+  qtde_produtos?: number;
+  qtde_paradas?: number;
+}
+
+interface FuelRecord {
+  data: Date;
+  placa: string;
+  motorista: string;
+  projeto: string;
+  tipo: 'abastecimento' | 'solicitacao_cartao' | 'solicitacao_fuel_card' | 'historico_geral' | 'posto_especifico';
+  posto?: string;
+  fonte?: string;
+  valor?: number;
+  litros?: number;
+  rota?: string;
+}
+
+// Função para mapear códigos de projeto para nomes de bases
+const mapProjectToBaseName = (projeto: string): string => {
+  if (!projeto) return '';
+  
+  const projetoUpper = projeto.toUpperCase().trim();
+  
+  // Mapeamento de códigos de projeto para nomes de bases
+  const projectToBaseMap: Record<string, string> = {
+    // Grupo Pereira
+    'GP01 VARGEM GRANDE (GRUPO PEREIRA)': 'VARGEM GRANDE',
+    'GP01 VARGEM GRANDE': 'VARGEM GRANDE',
+    'GP02 JACAREI (GRUPO PEREIRA)': 'JACAREÍ',
+    'GP02 JACAREI': 'JACAREÍ',
+    'GP03 HORTOLANDIA (GRUPO PEREIRA)': 'HORTOLÂNDIA',
+    'GP03 HORTOLÂNDIA (GRUPO PEREIRA)': 'HORTOLÂNDIA',
+    'GP03 HORTOLANDIA': 'HORTOLÂNDIA',
+    'GP03 HORTOLÂNDIA': 'HORTOLÂNDIA',
+    'GRUPO PEREIRA': 'GRUPO PEREIRA',
+    
+    // Line Hall
+    'LH01 LINE HALL': 'LINE HALL',
+    'LINE HALL SHOPEE': 'LINE HALL',
+    'LINE HALL': 'LINE HALL',
+    'LH SHOPEE': 'LINE HALL',
+    
+    // Mercado Livre/Shopee
+    'MERCADO LIVRE': 'MERCADO LIVRE',
+    'FULL MELI': 'MERCADO LIVRE',
+    'SHOPEE': 'SHOPEE',
+    
+    // Madeira Madeira
+    'MM01 (CAJAMAR)': 'CAJAMAR',
+    'MM04 (JUNDIAI)': 'JUNDIAÍ',
+    'MADEIRA MADEIRA': 'MADEIRA MADEIRA',
+    
+    // Coca-Cola
+    'COCA-COLA': 'COCA-COLA',
+    'COCA COLA': 'COCA-COLA',
+    'COCA COLA (ABC)': 'ABC',
+    
+    // OXXO
+    'OXXO1 (CAJAMAR)': 'CAJAMAR',
+    'OXXO': 'OXXO',
+    
+    // Mars
+    'ROYAL CANIN CAMPINAS (MARS)': 'CAMPINAS',
+    'MARS': 'MARS',
+    
+    // South Connection
+    'SC (A.B.RADO) SSG10-GDO': 'GUARULHOS',
+    'SC (A.B.RADO) SSG10-ODO': 'GUARULHOS',
+    'SC (ABC) SSP17': 'ABC',
+    
+    // FMS
+    'FMS09 SÃO PAULO (SP)': 'SÃO PAULO',
+    'FMS09 SAO PAULO (SP)': 'SÃO PAULO',
+    
+    // Operacionais
+    'MANUTENÇÃO': 'MANUTENÇÃO',
+    'MANUTENCAO': 'MANUTENÇÃO',
+    'TESTE': 'TESTE',
+    'USO OPERACIONAL': 'OPERACIONAL'
+  };
+  
+  // Buscar mapeamento direto
+  const mapped = projectToBaseMap[projetoUpper];
+  if (mapped) {
+    return mapped;
+  }
+  
+  // Buscar por padrões
+  if (projetoUpper.includes('GP01') || projetoUpper.includes('VARGEM GRANDE')) {
+    return 'VARGEM GRANDE';
+  }
+  if (projetoUpper.includes('GP02') || projetoUpper.includes('JACAREI')) {
+    return 'JACAREÍ';
+  }
+  if (projetoUpper.includes('GP03') || projetoUpper.includes('HORTOLANDIA') || projetoUpper.includes('HORTOLÂNDIA')) {
+    return 'HORTOLÂNDIA';
+  }
+  if (projetoUpper.includes('LINE HALL') || projetoUpper.includes('LH01') || projetoUpper.includes('LH SHOPEE')) {
+    return 'LINE HALL';
+  }
+  if (projetoUpper.includes('MM01') || (projetoUpper.includes('CAJAMAR') && projetoUpper.includes('MM'))) {
+    return 'CAJAMAR';
+  }
+  if (projetoUpper.includes('MM04') || (projetoUpper.includes('JUNDIAI') && projetoUpper.includes('MM'))) {
+    return 'JUNDIAÍ';
+  }
+  if (projetoUpper.includes('OXXO1') || (projetoUpper.includes('OXXO') && projetoUpper.includes('CAJAMAR'))) {
+    return 'CAJAMAR';
+  }
+  if (projetoUpper.includes('ROYAL CANIN') || (projetoUpper.includes('MARS') && projetoUpper.includes('CAMPINAS'))) {
+    return 'CAMPINAS';
+  }
+  if (projetoUpper.includes('FMS09') || (projetoUpper.includes('SÃO PAULO') && projetoUpper.includes('FMS'))) {
+    return 'SÃO PAULO';
+  }
+  
+  // Se não encontrou mapeamento, retorna o projeto original
+  return projeto;
+};
+
+interface VehicleReportData extends VehicleRouteData {
+  fuel_records?: FuelRecord[];
+}
+
+interface ConferenceReport {
+  rodaram_e_abasteceram: VehicleReportData[];
+  rodaram_nao_abasteceram: VehicleRouteData[];
+  abasteceram_nao_rodaram: FuelRecord[];
+}
+
+// Upload e processamento de planilha de rotas
+export const uploadRouteData = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nenhum arquivo enviado'
+      });
+    }
+
+    const { upload_date } = req.body;
+    const userId = (req.user as any)?.id || 1;
+
+    if (!upload_date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Data do upload é obrigatória'
+      });
+    }
+
+    console.log('[CONFERENCIA] Upload iniciado - NOVA VERSÃO:', {
+      hasFile: !!req.file,
+      bodyKeys: Object.keys(req.body),
+      fileName: req.file.originalname,
+      fileSize: req.file.size
+    });
+
+    console.log('[CONFERENCIA] Processando arquivo Excel:', req.file.originalname);
+    
+    const workbook = XLSX.read(req.file.buffer);
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const rawData = XLSX.utils.sheet_to_json(worksheet);
+
+    console.log('[CONFERENCIA] Dados brutos extraídos:', rawData.length, 'registros');
+
+    // Detectar formato do arquivo
+    const firstRow = rawData[0] as any;
+    
+    // Log detalhado da primeira linha para debug
+    console.log('[CONFERENCIA] DEBUG - Primeira linha do arquivo:');
+    console.log('[CONFERENCIA] DEBUG - Chaves disponíveis:', firstRow ? Object.keys(firstRow) : 'nenhuma');
+    console.log('[CONFERENCIA] DEBUG - Valores da primeira linha:', firstRow);
+    
+    // Verificar se tem as colunas do formato simples
+    const hasDataColumn = firstRow && (
+      'Data' in firstRow || 
+      'data' in firstRow || 
+      'DATA' in firstRow || 
+      'Data da rota' in firstRow || 
+      'data da rota' in firstRow
+    );
+    const hasBaseColumn = firstRow && ('Base' in firstRow || 'base' in firstRow || 'BASE' in firstRow);
+    const hasPlacaColumn = firstRow && ('PLACA' in firstRow || 'placa' in firstRow || 'Placa' in firstRow);
+    
+    // Verificar se NÃO tem as colunas do formato completo
+    const hasMercadoLivreFormat = firstRow && ('DATA DO FRETE/ABASTECIMENTO' in firstRow || 'DATA DO FRETE' in firstRow || 'OPERAÇÃO' in firstRow || 'MOTORISTA' in firstRow);
+    
+    // É formato simples se tiver Data/Base/Placa E NÃO tiver colunas do MercadoLivre
+    const isSimpleFormat = hasDataColumn && hasBaseColumn && !hasMercadoLivreFormat;
+    
+    console.log('[CONFERENCIA] DEBUG - Detecção de formato:', {
+      hasDataColumn,
+      hasBaseColumn,
+      hasPlacaColumn,
+      hasMercadoLivreFormat,
+      isSimpleFormat
+    });
+
+    console.log('[CONFERENCIA] Formato detectado:', isSimpleFormat ? 'Simples (Data/Base/Placa)' : 'Completo (MercadoLivre)');
+
+    // Processar dados
+    const routeData = rawData.map((row: any) => {
+      // Converter data do Excel para formato ISO (YYYY-MM-DD) para o PostgreSQL
+      let dataISO = '';
+      let dataExcel;
+
+      if (isSimpleFormat) {
+        // Formato simples: Data (ou "Data da rota"), Base, PLACA
+        dataExcel = row['Data'] || row['data'] || row['Data da rota'] || row['data da rota'];
+      } else {
+        // Formato completo: DATA DO FRETE ou DATA DO FRETE/ABASTECIMENTO
+        dataExcel = row['DATA DO FRETE'] || row['DATA DO FRETE/ABASTECIMENTO'];
+      }
+      
+      if (typeof dataExcel === 'number') {
+        // Data serial do Excel - converter para formato ISO
+        const date = new Date((dataExcel - 25569) * 86400 * 1000);
+        // Ajustar para timezone UTC para evitar problemas de fuso horário
+        const utcDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
+        // Formato ISO: YYYY-MM-DD
+        dataISO = utcDate.toISOString().split('T')[0];
+        
+        console.log(`[CONFERENCIA] Conversão de data Excel: ${dataExcel} -> ${utcDate.toISOString()} -> ${dataISO}`);
+      } else if (typeof dataExcel === 'string') {
+        // Data já em string - tentar converter para ISO
+        // Formatos suportados: dd/mm/yyyy, dd/mm/yyyy hh:mm:ss, yyyy-mm-dd
+        let datePart = dataExcel.trim();
+        
+        // Se tiver horário (ex: "13/01/2026 00:00:00"), remover
+        if (datePart.includes(' ')) {
+          datePart = datePart.split(' ')[0];
+        }
+        
+        if (datePart.includes('/')) {
+          const [dia, mes, ano] = datePart.split('/');
+          dataISO = `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+        } else {
+          dataISO = datePart;
+        }
+      }
+
+      if (isSimpleFormat) {
+        // Formato simples
+        return {
+          data: dataISO,
+          operacao: row['Base'] || row['base'] || '',
+          motorista: 'N/D',
+          placa: row['PLACA'] || row['placa'] || '',
+          modelo: 'N/D',
+          rota_log: '',
+          qtde_produtos: 0,
+          qtde_paradas: 0
+        };
+      } else {
+        // Formato completo (inclui colunas: DATA DO FRETE, OPERAÇÃO, ROTA LOG, QTDE PRODUTOS, QTDE PARADAS, MOTORISTA, PLACA)
+        // Converter QTDE PRODUTOS e QTDE PARADAS para números
+        let qtdeProdutos = row['QTDE PRODUTOS'] || row['QTDE_PRODUTOS'] || 0;
+        let qtdeParadas = row['QTDE PARADAS'] || row['QTDE_PARADAS'] || 0;
+        
+        // Tratar formato brasileiro de número (vírgula como decimal)
+        if (typeof qtdeProdutos === 'string') {
+          qtdeProdutos = parseFloat(qtdeProdutos.replace(',', '.')) || 0;
+        }
+        if (typeof qtdeParadas === 'string') {
+          qtdeParadas = parseInt(qtdeParadas) || 0;
+        }
+        
+        return {
+          data: dataISO,
+          operacao: row['OPERAÇÃO'] || row['OPERACAO'] || '',
+          motorista: row['MOTORISTA'] || '',
+          placa: row['PLACA'] || '',
+          modelo: row['MODELO'] || '',
+          rota_log: row['ROTA LOG'] || row['ROTA_LOG'] || '',
+          qtde_produtos: qtdeProdutos,
+          qtde_paradas: qtdeParadas
+        };
+      }
+    }).filter(item => item.data && item.placa); // Filtrar registros válidos
+
+    console.log('[CONFERENCIA] Dados processados:', routeData.length, 'registros válidos');
+
+    // Verificar se já existe upload para esta data
+    const existingUploadQuery = await pool.query(
+      'SELECT id FROM conferencia_rotas_uploads WHERE upload_date = $1',
+      [upload_date]
+    );
+
+    let uploadId: number;
+
+    if (existingUploadQuery.rows.length > 0) {
+      // Atualizar upload existente
+      uploadId = existingUploadQuery.rows[0].id;
+      
+      await pool.query(
+        `UPDATE conferencia_rotas_uploads 
+         SET filename = $1, total_records = $2, processed_at = CURRENT_TIMESTAMP, user_id = $3
+         WHERE id = $4`,
+        [req.file?.originalname || 'planilha.xlsx', routeData.length, userId, uploadId]
+      );
+
+      // Remover dados antigos
+      await pool.query('DELETE FROM conferencia_rotas_dados WHERE upload_id = $1', [uploadId]);
+
+    } else {
+      // Criar novo upload
+      const newUploadQuery = await pool.query(
+        `INSERT INTO conferencia_rotas_uploads (filename, upload_date, total_records, user_id)
+         VALUES ($1, $2, $3, $4) RETURNING id`,
+        [req.file?.originalname || 'planilha.xlsx', upload_date, routeData.length, userId]
+      );
+
+      uploadId = newUploadQuery.rows[0].id;
+    }
+
+    // Inserir dados da planilha em lote (otimizado para grandes volumes)
+    console.log('[CONFERENCIA] Iniciando inserção em lote de', routeData.length, 'registros');
+    
+    const batchSize = 50;
+    for (let i = 0; i < routeData.length; i += batchSize) {
+      const batch = routeData.slice(i, i + batchSize);
+      
+      try {
+        const placeholders = batch.map((_, index) => {
+          const base = index * 9;
+          return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`;
+        }).join(', ');
+        
+        const values = batch.flatMap(item => [
+          uploadId,
+          item.data,
+          item.placa.toUpperCase(),
+          item.motorista,
+          item.operacao || null,
+          item.modelo || null,
+          item.rota_log || null,
+          item.qtde_produtos || 0,
+          item.qtde_paradas || 0
+        ]);
+        
+        const batchQuery = `
+          INSERT INTO conferencia_rotas_dados (upload_id, data, placa, motorista, operacao, modelo, rota_log, qtde_produtos, qtde_paradas)
+          VALUES ${placeholders}
+        `;
+        
+        await pool.query(batchQuery, values);
+        console.log(`[CONFERENCIA] Lote ${Math.floor(i / batchSize) + 1}/${Math.ceil(routeData.length / batchSize)} inserido (${batch.length} registros)`);
+        
+      } catch (batchError) {
+        console.error('Erro no lote:', batchError);
+        throw batchError;
+      }
+    }
+
+    console.log('[CONFERENCIA] Inserção completa:', routeData.length, 'registros processados');
+
+    res.json({
+      success: true,
+      message: 'Planilha processada com sucesso',
+      upload_id: uploadId,
+      total_records: routeData.length,
+      records_processed: routeData.length
+    });
+
+  } catch (error) {
+    console.error('Erro no upload de rotas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: (error as Error).message
+    });
+  }
+};
+
+// Gerar relatório de conferência
+export const generateReport = async (req: Request, res: Response) => {
+  try {
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Data é obrigatória' 
+      });
+    }
+
+    // Normalizar formato da data para busca - CORRIGIR PROBLEMA DE FUSO HORÁRIO
+    let searchDate = date as string;
+    
+    // Converter data ISO (yyyy-mm-dd) para formato brasileiro (dd/mm/yyyy) se necessário
+    if (searchDate.includes('-') && searchDate.length === 10) {
+      const [year, month, day] = searchDate.split('-');
+      searchDate = `${day}/${month}/${year}`;
+    }
+
+    // Converter data brasileira para ISO para buscar tanto rotas quanto abastecimentos
+    let isoDate = searchDate;
+    if (searchDate.includes('/')) {
+      const [day, month, year] = searchDate.split('/');
+      isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    console.log('[CONFERENCIA] Buscando dados para data:', searchDate, '-> ISO:', isoDate);
+    console.log('[CONFERENCIA] DEBUG - Data original recebida:', date, 'Tipo:', typeof date);
+
+    // Para lidar com o problema de conversão de datas, vamos buscar nas duas possibilidades
+    let alternativeIsoDate = isoDate;
+    if (searchDate === '01/08/2025') {
+      // Se a data for 01/08/2025, também buscar por 2025-01-08 (formato incorreto anterior)
+      alternativeIsoDate = '2025-01-08';
+    }
+
+    // Buscar dados das rotas para a data (usando formato ISO principal e alternativo)
+    const routeQuery = await pool.query(
+      'SELECT data, placa, motorista, operacao, modelo, rota_log, qtde_produtos, qtde_paradas FROM conferencia_rotas_dados WHERE data IN ($1, $2)',
+      [isoDate, alternativeIsoDate]
+    );
+    const routeData = routeQuery.rows;
+
+    console.log('[CONFERENCIA] Registros de rotas encontrados:', {
+      data_principal: isoDate,
+      data_alternativa: alternativeIsoDate,
+      total_rotas: routeData.length
+    });
+
+    // Debug: mostrar algumas placas de rotas se encontradas
+    if (routeData.length > 0) {
+      console.log('[CONFERENCIA] Primeiras placas das rotas:', routeData.slice(0, 5).map((r: any) => r.placa));
+    } else {
+      console.log('[CONFERENCIA] NENHUMA rota encontrada! Verificando datas disponíveis...');
+      const availableDatesQuery = await pool.query('SELECT DISTINCT data FROM conferencia_rotas_dados ORDER BY data DESC LIMIT 5');
+      console.log('[CONFERENCIA] Datas disponíveis na tabela:', availableDatesQuery.rows.map((r: any) => r.data));
+    }
+
+    console.log('[CONFERENCIA] Buscando abastecimentos para data ISO:', isoDate);
+
+    // Buscar abastecimentos para a data (abastecimentos_postos)
+    console.log('[CONFERENCIA] Executando consulta 1: abastecimentos_postos');
+    const fuelQuery = await pool.query(
+      'SELECT created_at as data, placa, nome_motorista as motorista, projeto FROM abastecimentos_postos WHERE DATE(created_at) = $1',
+      [isoDate]
+    );
+    const fuelData = fuelQuery.rows;
+    console.log('[CONFERENCIA] Consulta 1 concluída:', fuelData.length, 'registros');
+
+    // Buscar solicitações de cartão para a data (fuel_card_requests)
+    console.log('[CONFERENCIA] Executando consulta 2: fuel_card_requests');
+    const requestQuery = await pool.query(
+      'SELECT created_at as data, plate as placa, driver_name as motorista, project_name as projeto FROM fuel_card_requests WHERE DATE(created_at) = $1',
+      [isoDate]
+    );
+    const requestData = requestQuery.rows;
+    console.log('[CONFERENCIA] Consulta 2 concluída:', requestData.length, 'registros');
+
+    // Buscar solicitações de cartão para a data (solicitacoes_fuel_card)
+    console.log('[CONFERENCIA] Executando consulta 3: solicitacoes_fuel_card');
+    const fuelCardQuery = await pool.query(
+      `SELECT data_solicitacao as data, placa, motorista, 
+        CASE 
+          WHEN COALESCE(base, '') = '' AND (rota_origem IS NOT NULL OR rota_destino IS NOT NULL) THEN 'LINE HAUL'
+          ELSE base 
+        END as projeto,
+        CONCAT(rota_origem, ' → ', rota_destino) as rota,
+        valor_solicitado as valor 
+      FROM solicitacoes_fuel_card WHERE DATE(data_solicitacao) = $1`,
+      [isoDate]
+    );
+    const fuelCardData = fuelCardQuery.rows;
+    console.log('[CONFERENCIA] Consulta 3 concluída:', fuelCardData.length, 'registros');
+
+    // NOVA FONTE: Buscar dados do Histórico Geral de Abastecimentos (tabela abastecimentos_supabase)
+    console.log('[CONFERENCIA] Executando consulta 4: abastecimentos_supabase');
+    const historicoGeralQuery = await pool.query(
+      'SELECT created_at as data, placa, motorista, projeto FROM abastecimentos_supabase WHERE DATE(created_at) = $1',
+      [isoDate]
+    );
+    const historicoGeralData = historicoGeralQuery.rows;
+    console.log('[CONFERENCIA] Consulta 4 concluída:', historicoGeralData.length, 'registros');
+
+    // FONTES ADICIONAIS: Buscar dados das tabelas específicas de postos (que o Histórico Geral usa)
+    console.log('[CONFERENCIA] Executando consultas de postos específicos...');
+    
+    const postoEspecificoQueries = [
+      { nome: 'sorocaba_v2', tabela: 'abastecimentos_posto_sorocaba_v2' },
+      { nome: 'abc_v2', tabela: 'abastecimentos_posto_abc_v2' },
+      { nome: 'osasco_v2', tabela: 'abastecimentos_posto_osasco_v2' },
+      { nome: 'campinas_v2', tabela: 'abastecimentos_posto_campinas_v2' },
+      { nome: 'guarulhos_v2', tabela: 'abastecimentos_posto_guarulhos_v2' }
+    ];
+
+    let postosEspecificosData: any[] = [];
+    
+    for (const posto of postoEspecificoQueries) {
+      try {
+        console.log(`[CONFERENCIA] Executando consulta: ${posto.tabela}`);
+        const query = await pool.query(
+          `SELECT created_at as data, placa, motorista, projeto, litros FROM ${posto.tabela} WHERE DATE(created_at) = $1`,
+          [isoDate]
+        );
+        const dados = query.rows.map(row => ({
+          ...row,
+          fonte: posto.nome,
+          posto_nome: posto.nome.replace('_v2', '').replace('abastecimentos_posto_', '').toUpperCase(),
+          tipo_registro: 'posto_especifico'
+        }));
+        postosEspecificosData = postosEspecificosData.concat(dados);
+        console.log(`[CONFERENCIA] ${posto.tabela}: ${dados.length} registros`);
+      } catch (error: any) {
+        console.log(`[CONFERENCIA] Erro na consulta ${posto.tabela}:`, error.message);
+      }
+    }
+    
+    console.log('[CONFERENCIA] Total de registros dos postos específicos:', postosEspecificosData.length);
+
+    console.log('[CONFERENCIA] Registros encontrados:', {
+      abastecimentos_postos: fuelData.length,
+      fuel_card_requests: requestData.length,
+      solicitacoes_fuel_card: fuelCardData.length,
+      historico_geral_abastecimentos: historicoGeralData.length,
+      postos_especificos: postosEspecificosData.length
+    });
+
+    // Debug: mostrar algumas placas de combustível se encontradas
+    if (fuelCardData.length > 0) {
+      console.log('[CONFERENCIA] Primeiras placas de combustível:', fuelCardData.slice(0, 5).map((f: any) => f.placa));
+    }
+
+    // Combinar registros de combustível de TODAS as fontes (incluindo Histórico Geral)
+    const allFuelRecords: FuelRecord[] = [
+      ...fuelData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: mapProjectToBaseName(item.projeto),
+        tipo: 'abastecimento' as const,
+        posto: 'Posto Geral',
+        fonte: 'abastecimentos_postos'
+      })),
+      ...requestData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: mapProjectToBaseName(item.projeto),
+        tipo: 'solicitacao_cartao' as const,
+        posto: 'Cartão Combustível',
+        fonte: 'fuel_card_requests'
+      })),
+      ...fuelCardData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: mapProjectToBaseName(item.projeto),
+        tipo: 'solicitacao_fuel_card' as const,
+        posto: 'Solicitação Fuel Card',
+        fonte: 'solicitacoes_fuel_card',
+        valor: item.valor ? parseFloat(item.valor) : undefined,
+        rota: item.rota && item.rota !== ' → ' ? item.rota : undefined
+      })),
+      ...historicoGeralData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: mapProjectToBaseName(item.projeto),
+        tipo: 'historico_geral' as const,
+        posto: 'Histórico Geral',
+        fonte: 'abastecimentos_supabase'
+      })),
+      ...postosEspecificosData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: mapProjectToBaseName(item.projeto),
+        tipo: 'posto_especifico' as const,
+        posto: item.posto_nome || item.fonte.replace('_v2', '').toUpperCase(),
+        fonte: item.fonte,
+        litros: item.litros ? parseFloat(item.litros) : undefined
+      }))
+    ];
+
+    // Normalizar dados das rotas
+    const normalizedRoutes = routeData.map((item: any) => ({
+      ...item,
+      placa: item.placa.toUpperCase()
+    }));
+
+    // Análise comparativa
+    const report: ConferenceReport = {
+      rodaram_e_abasteceram: [],
+      rodaram_nao_abasteceram: [],
+      abasteceram_nao_rodaram: []
+    };
+
+    // Criar mapa de placas que abasteceram
+    const fuelByPlate = new Map<string, FuelRecord[]>();
+    allFuelRecords.forEach(fuel => {
+      const key = fuel.placa;
+      if (!fuelByPlate.has(key)) {
+        fuelByPlate.set(key, []);
+      }
+      fuelByPlate.get(key)!.push(fuel);
+    });
+
+    // Criar mapa de placas que rodaram
+    const routeByPlate = new Map<string, VehicleRouteData>();
+    normalizedRoutes.forEach(route => {
+      routeByPlate.set(route.placa, route);
+    });
+
+    // Análise: Veículos que rodaram
+    normalizedRoutes.forEach((route: any) => {
+      const fuelRecords = fuelByPlate.get(route.placa) || [];
+      
+      if (fuelRecords.length > 0) {
+        // Rodaram e abasteceram
+        report.rodaram_e_abasteceram.push({
+          ...route,
+          fuel_records: fuelRecords
+        });
+      } else {
+        // Rodaram mas não abasteceram
+        report.rodaram_nao_abasteceram.push(route);
+      }
+    });
+
+    // Análise: Veículos que abasteceram mas não rodaram
+    allFuelRecords.forEach(fuel => {
+      if (!routeByPlate.has(fuel.placa)) {
+        report.abasteceram_nao_rodaram.push(fuel);
+      }
+    });
+
+    res.json(report);
+
+  } catch (error) {
+    console.error('Erro ao gerar relatório:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: (error as Error).message
+    });
+  }
+};
+
+// Buscar uploads disponíveis
+export const getUploads = async (req: Request, res: Response) => {
+  try {
+    const query = await pool.query(`
+      SELECT 
+        id,
+        filename,
+        upload_date,
+        total_records,
+        processed_at,
+        user_id
+      FROM conferencia_rotas_uploads 
+      ORDER BY upload_date DESC
+    `);
+
+    res.json({
+      success: true,
+      uploads: query.rows
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar uploads:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+};
+
+// Deletar upload e dados relacionados
+export const deleteUpload = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID do upload é obrigatório'
+      });
+    }
+
+    // Deletar dados relacionados
+    await pool.query('DELETE FROM conferencia_rotas_dados WHERE upload_id = $1', [id]);
+    
+    // Deletar upload
+    const result = await pool.query('DELETE FROM conferencia_rotas_uploads WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Upload não encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Upload deletado com sucesso'
+    });
+
+  } catch (error) {
+    console.error('Erro ao deletar upload:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+};
+
+// Listar uploads (alias para compatibilidade)
+export const listUploads = getUploads;
+
+// Buscar dados de um upload específico
+export const getUploadData = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID do upload é obrigatório'
+      });
+    }
+
+    const uploadQuery = await pool.query(
+      'SELECT * FROM conferencia_rotas_uploads WHERE id = $1',
+      [id]
+    );
+
+    if (uploadQuery.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Upload não encontrado'
+      });
+    }
+
+    const dataQuery = await pool.query(
+      'SELECT * FROM conferencia_rotas_dados WHERE upload_id = $1 ORDER BY placa',
+      [id]
+    );
+
+    res.json({
+      success: true,
+      upload: uploadQuery.rows[0],
+      data: dataQuery.rows
+    });
+
+  } catch (error) {
+    console.error('Erro ao buscar dados do upload:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+};
+
+// Exportar relatório para Excel
+export const exportReportToExcel = async (req: Request, res: Response) => {
+  try {
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Data é obrigatória' 
+      });
+    }
+
+    // Normalizar formato da data para busca
+    let searchDate = date as string;
+    
+    // Converter data ISO (yyyy-mm-dd) para formato brasileiro (dd/mm/yyyy) se necessário
+    if (searchDate.includes('-') && searchDate.length === 10) {
+      const [year, month, day] = searchDate.split('-');
+      searchDate = `${day}/${month}/${year}`;
+    }
+
+    // Converter data brasileira para ISO para buscar tanto rotas quanto abastecimentos
+    let isoDate = searchDate;
+    if (searchDate.includes('/')) {
+      const [day, month, year] = searchDate.split('/');
+      isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    console.log('[EXPORT] Exportando dados para data:', searchDate, '-> ISO:', isoDate);
+
+    // Buscar dados das rotas para a data (usando formato ISO)
+    const routeQuery = await pool.query(
+      'SELECT data, placa, motorista, operacao, modelo FROM conferencia_rotas_dados WHERE data = $1',
+      [isoDate]
+    );
+    const routeData = routeQuery.rows;
+
+    // Buscar abastecimentos para a data (abastecimentos_postos)
+    const fuelQuery = await pool.query(
+      'SELECT created_at as data, placa, nome_motorista as motorista, projeto FROM abastecimentos_postos WHERE DATE(created_at) = $1',
+      [isoDate]
+    );
+    const fuelData = fuelQuery.rows;
+
+    // Buscar solicitações de cartão para a data (fuel_card_requests)
+    const requestQuery = await pool.query(
+      'SELECT created_at as data, plate as placa, driver_name as motorista, project_name as projeto FROM fuel_card_requests WHERE DATE(created_at) = $1',
+      [isoDate]
+    );
+    const requestData = requestQuery.rows;
+
+    // Buscar solicitações de cartão para a data (solicitacoes_fuel_card)
+    const fuelCardQuery = await pool.query(
+      `SELECT data_solicitacao as data, placa, motorista, 
+        CASE 
+          WHEN COALESCE(base, '') = '' AND (rota_origem IS NOT NULL OR rota_destino IS NOT NULL) THEN 'LINE HAUL'
+          ELSE base 
+        END as projeto,
+        CONCAT(rota_origem, ' → ', rota_destino) as rota,
+        valor_solicitado as valor
+      FROM solicitacoes_fuel_card WHERE DATE(data_solicitacao) = $1`,
+      [isoDate]
+    );
+    const fuelCardData = fuelCardQuery.rows;
+
+    // NOVA FONTE: Buscar dados do Histórico Geral de Abastecimentos (tabela abastecimentos_supabase)
+    const historicoGeralExportQuery = await pool.query(
+      'SELECT created_at as data, placa, motorista, projeto, litros FROM abastecimentos_supabase WHERE DATE(created_at) = $1',
+      [isoDate]
+    );
+    const historicoGeralExportData = historicoGeralExportQuery.rows;
+
+    // FONTES ADICIONAIS DE EXPORTAÇÃO: Buscar dados das tabelas específicas de postos
+    const postoEspecificoQueriesExport = [
+      { nome: 'sorocaba_v2', tabela: 'abastecimentos_posto_sorocaba_v2' },
+      { nome: 'abc_v2', tabela: 'abastecimentos_posto_abc_v2' },
+      { nome: 'osasco_v2', tabela: 'abastecimentos_posto_osasco_v2' },
+      { nome: 'campinas_v2', tabela: 'abastecimentos_posto_campinas_v2' },
+      { nome: 'guarulhos_v2', tabela: 'abastecimentos_posto_guarulhos_v2' }
+    ];
+
+    let postosEspecificosExportData: any[] = [];
+    
+    for (const posto of postoEspecificoQueriesExport) {
+      try {
+        const query = await pool.query(
+          `SELECT created_at as data, placa, motorista, projeto, litros FROM ${posto.tabela} WHERE DATE(created_at) = $1`,
+          [isoDate]
+        );
+        const dados = query.rows.map(row => ({
+          ...row,
+          fonte: posto.nome
+        }));
+        postosEspecificosExportData = postosEspecificosExportData.concat(dados);
+      } catch (error: any) {
+        console.log(`[EXPORT] Erro na consulta ${posto.tabela}:`, error.message);
+      }
+    }
+
+    console.log('[EXPORT] Registros encontrados:', {
+      rotas: routeData.length,
+      abastecimentos_postos: fuelData.length,
+      fuel_card_requests: requestData.length,
+      solicitacoes_fuel_card: fuelCardData.length,
+      historico_geral_abastecimentos: historicoGeralExportData.length,
+      postos_especificos: postosEspecificosExportData.length
+    });
+
+    // Combinar registros de combustível (incluindo Histórico Geral)
+    const allFuelRecords: FuelRecord[] = [
+      ...fuelData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: mapProjectToBaseName(item.projeto),
+        tipo: 'abastecimento' as const
+      })),
+      ...requestData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: mapProjectToBaseName(item.projeto),
+        tipo: 'solicitacao_cartao' as const
+      })),
+      ...fuelCardData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: mapProjectToBaseName(item.projeto),
+        tipo: 'solicitacao_fuel_card' as const,
+        valor: item.valor,
+        rota: item.rota
+      })),
+      ...historicoGeralExportData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: mapProjectToBaseName(item.projeto),
+        tipo: 'historico_geral' as const,
+        litros: item.litros
+      })),
+      ...postosEspecificosExportData.map((item: any) => ({
+        data: item.data,
+        placa: item.placa.toUpperCase(),
+        motorista: item.motorista,
+        projeto: mapProjectToBaseName(item.projeto),
+        tipo: 'posto_especifico' as const,
+        fonte: item.fonte,
+        litros: item.litros
+      }))
+    ];
+
+    // Normalizar dados das rotas
+    const normalizedRoutes = routeData.map((item: any) => ({
+      ...item,
+      placa: item.placa.toUpperCase()
+    }));
+
+    // Análise comparativa
+    const report: ConferenceReport = {
+      rodaram_e_abasteceram: [],
+      rodaram_nao_abasteceram: [],
+      abasteceram_nao_rodaram: []
+    };
+
+    // Criar mapa de placas que abasteceram
+    const fuelByPlate = new Map<string, FuelRecord[]>();
+    allFuelRecords.forEach(fuel => {
+      const key = fuel.placa;
+      if (!fuelByPlate.has(key)) {
+        fuelByPlate.set(key, []);
+      }
+      fuelByPlate.get(key)!.push(fuel);
+    });
+
+    // Criar mapa de placas que rodaram
+    const routeByPlate = new Map<string, VehicleRouteData>();
+    normalizedRoutes.forEach(route => {
+      routeByPlate.set(route.placa, route);
+    });
+
+    // Análise: Veículos que rodaram
+    normalizedRoutes.forEach((route: any) => {
+      const fuelRecords = fuelByPlate.get(route.placa) || [];
+      
+      if (fuelRecords.length > 0) {
+        // Rodaram e abasteceram
+        report.rodaram_e_abasteceram.push({
+          ...route,
+          fuel_records: fuelRecords
+        });
+      } else {
+        // Rodaram mas não abasteceram
+        report.rodaram_nao_abasteceram.push(route);
+      }
+    });
+
+    // Análise: Veículos que abasteceram mas não rodaram
+    allFuelRecords.forEach(fuel => {
+      if (!routeByPlate.has(fuel.placa)) {
+        report.abasteceram_nao_rodaram.push(fuel);
+      }
+    });
+
+    // Criar planilha Excel
+    const workbook = XLSX.utils.book_new();
+
+    // Planilha 1: Rodaram e Abasteceram (CAIXA ALTA)
+    const sheet1Data = report.rodaram_e_abasteceram.map(item => ({
+      'Data': item.data,
+      'Placa': String(item.placa || '').toUpperCase(),
+      'Motorista': String(item.motorista || '').toUpperCase(),
+      'Operação': String(item.operacao || '').toUpperCase(),
+      'Modelo': String(item.modelo || '').toUpperCase(),
+      'Registros de Combustível': item.fuel_records?.map(f => String(f.tipo || '').toUpperCase()).join(', ') || '',
+      'Projetos Combustível': item.fuel_records?.map(f => String(f.projeto || '').toUpperCase()).join(', ') || ''
+    }));
+
+    const worksheet1 = XLSX.utils.json_to_sheet(sheet1Data);
+    XLSX.utils.book_append_sheet(workbook, worksheet1, 'Rodaram e Abasteceram');
+
+    // Planilha 2: Rodaram mas Não Abasteceram (CAIXA ALTA)
+    const sheet2Data = report.rodaram_nao_abasteceram.map(item => ({
+      'Data': item.data,
+      'Placa': String(item.placa || '').toUpperCase(),
+      'Motorista': String(item.motorista || '').toUpperCase(),
+      'Operação': String(item.operacao || '').toUpperCase(),
+      'Modelo': String(item.modelo || '').toUpperCase()
+    }));
+
+    const worksheet2 = XLSX.utils.json_to_sheet(sheet2Data);
+    XLSX.utils.book_append_sheet(workbook, worksheet2, 'Rodaram Não Abasteceram');
+
+    // Planilha 3: Abasteceram mas Não Rodaram (CAIXA ALTA)
+    const sheet3Data = report.abasteceram_nao_rodaram.map(item => ({
+      'Data': item.data,
+      'Placa': String(item.placa || '').toUpperCase(),
+      'Motorista': String(item.motorista || '').toUpperCase(),
+      'Tipo': String(item.tipo || '').toUpperCase(),
+      'Valor (Cartão)': item.valor ? `R$ ${Number(item.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-',
+      'Litros (Interno)': item.litros ? `${Number(item.litros).toLocaleString('pt-BR', { minimumFractionDigits: 1 })} L` : '-',
+      'Base': String(item.projeto || '').toUpperCase(),
+      'Rota': String(item.rota || '-').toUpperCase()
+    }));
+
+    const worksheet3 = XLSX.utils.json_to_sheet(sheet3Data);
+    XLSX.utils.book_append_sheet(workbook, worksheet3, 'Abasteceram Não Rodaram');
+
+    // Planilha 4: Resumo
+    const resumoData = [
+      {
+        'Categoria': 'Rodaram e Abasteceram',
+        'Quantidade': report.rodaram_e_abasteceram.length,
+        'Percentual': ((report.rodaram_e_abasteceram.length / (normalizedRoutes.length || 1)) * 100).toFixed(2) + '%'
+      },
+      {
+        'Categoria': 'Rodaram mas Não Abasteceram',
+        'Quantidade': report.rodaram_nao_abasteceram.length,
+        'Percentual': ((report.rodaram_nao_abasteceram.length / (normalizedRoutes.length || 1)) * 100).toFixed(2) + '%'
+      },
+      {
+        'Categoria': 'Abasteceram mas Não Rodaram',
+        'Quantidade': report.abasteceram_nao_rodaram.length,
+        'Percentual': ((report.abasteceram_nao_rodaram.length / (allFuelRecords.length || 1)) * 100).toFixed(2) + '%'
+      }
+    ];
+
+    const worksheetResumo = XLSX.utils.json_to_sheet(resumoData);
+    XLSX.utils.book_append_sheet(workbook, worksheetResumo, 'Resumo');
+
+    // Converter workbook para buffer
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    // Definir headers para download
+    const fileName = `Relatorio_Conferencia_${searchDate.replace(/\//g, '-')}.xlsx`;
+    
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Length', buffer.length);
+
+    // Enviar arquivo
+    res.send(buffer);
+
+    console.log('[EXPORT] Arquivo Excel gerado com sucesso:', fileName);
+
+  } catch (error) {
+    console.error('Erro ao exportar relatório:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: (error as Error).message
+    });
+  }
+};
+
+// Mapeamento de bases para telefones de contato
+const basePhoneMap: Record<string, string> = {
+  'VARGEM GRANDE': '',
+  'JACAREÍ': '',
+  'HORTOLÂNDIA': '',
+  'CAJAMAR': '',
+  'EMBU': '',
+  'EXTREMA': '',
+  'BETIM': '',
+  'CONTAGEM': '',
+  'LINE HALL': '',
+  'LINE HAUL': '',
+  // Adicionar mais bases conforme necessário
+};
+
+// Endpoint para enviar solicitação de justificativa via WhatsApp
+export const sendJustificationRequest = async (req: Request, res: Response) => {
+  try {
+    const { baseName, plates, date, phone, customMessage } = req.body;
+
+    if (!baseName || !plates || !Array.isArray(plates) || plates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Base e lista de placas são obrigatórios'
+      });
+    }
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Número de telefone é obrigatório'
+      });
+    }
+
+    // Formatar data
+    const formattedDate = date || new Date().toLocaleDateString('pt-BR');
+
+    // Montar mensagem
+    let message = customMessage || `🚨 *SOLICITAÇÃO DE JUSTIFICATIVA*\n\n`;
+    message += `📍 *Base:* ${baseName}\n`;
+    message += `📅 *Data:* ${formattedDate}\n\n`;
+    message += `Os seguintes veículos registraram abastecimento, porém não constam nas rotas do dia:\n\n`;
+    
+    plates.forEach((plate: string, index: number) => {
+      message += `${index + 1}. 🚗 ${plate}\n`;
+    });
+    
+    message += `\n📝 *Favor justificar os abastecimentos acima.*\n\n`;
+    message += `_Murici Transportes - Conferência de Rotas_`;
+
+    // Enviar via Z-API
+    const result = await sendZAPIWhatsAppMessage(phone, message);
+
+    if (result.success) {
+      console.log(`[JUSTIFICATIVA] Mensagem enviada para ${baseName} - ${phone}`);
+      res.json({
+        success: true,
+        message: 'Solicitação de justificativa enviada com sucesso',
+        messageId: result.messageId
+      });
+    } else {
+      console.error(`[JUSTIFICATIVA] Erro ao enviar para ${baseName}:`, result.error);
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao enviar mensagem',
+        error: result.error
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro ao enviar solicitação de justificativa:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: (error as Error).message
+    });
+  }
+};

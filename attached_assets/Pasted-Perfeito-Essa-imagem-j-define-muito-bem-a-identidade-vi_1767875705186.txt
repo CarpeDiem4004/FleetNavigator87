@@ -1,0 +1,141 @@
+Perfeito. Essa imagem já define muito bem a identidade visual da Murici. Vou te mostrar como aplicar essas cores de forma profissional (marca + sistema + portal /work-safety), sem deixar pesado ou amador.
+
+⸻
+
+🎨 PALETA EXTRAÍDA DA IMAGEM (BASE MURICI)
+
+A imagem trabalha com alto contraste + industrial/logístico. A paleta correta é:
+
+🔴 Vermelho Murici (cor de impacto)
+
+Uso: ações, alertas, ícones importantes
+
+#E10613
+
+⚫ Preto Grafite (fundo principal)
+
+Uso: fundo do sistema, cards escuros
+
+#0E0E0E
+
+⚪ Branco Neve (texto principal)
+
+Uso: textos, títulos, contraste
+
+#F5F5F5
+
+🩶 Cinza Concreto (apoio)
+
+Uso: bordas, textos secundários, divisões
+
+#8C8C8C
+
+🩶 Cinza Industrial Escuro
+
+Uso: cards, inputs, áreas internas
+
+#1C1C1C
+
+
+⸻
+
+🧭 REGRA DE OURO (isso é o mais importante)
+
+Vermelho NÃO é fundo. Vermelho é sinal.
+
+Se usar vermelho demais, o sistema cansa e perde autoridade.
+
+⸻
+
+🧩 COMO APLICAR NO PORTAL /work-safety
+
+🔲 Fundo geral do portal
+
+background: #0E0E0E;
+color: #F5F5F5;
+
+
+⸻
+
+🧾 Cards da tela inicial
+
+background: #1C1C1C;
+border-left: 4px solid #E10613;
+
+✔ Passa força
+✔ Remete à marca
+✔ Fica corporativo
+
+⸻
+
+🔘 Botões principais
+
+background: #E10613;
+color: #FFFFFF;
+
+Hover:
+
+background: #B8050F;
+
+
+⸻
+
+⚠ Alertas importantes (ex: prazo 4 horas)
+
+background: rgba(225, 6, 19, 0.15);
+border-left: 4px solid #E10613;
+color: #FFFFFF;
+
+
+⸻
+
+🧾 Inputs e formulários
+
+background: #1C1C1C;
+border: 1px solid #333;
+color: #F5F5F5;
+
+Focus:
+
+border-color: #E10613;
+
+
+⸻
+
+📊 Status (painel interno)
+
+Status	Cor
+Reportado	#E10613 (vermelho)
+Em Investigação	#F5A623 (amarelo alerta)
+Concluído	#2ECC71 (verde segurança)
+
+
+⸻
+
+🧱 EXEMPLO EM TAILWIND (se estiver usando)
+
+colors: {
+  muriciRed: '#E10613',
+  muriciBlack: '#0E0E0E',
+  muriciDark: '#1C1C1C',
+  muriciGray: '#8C8C8C',
+  muriciWhite: '#F5F5F5',
+}
+
+Uso:
+
+<div className="bg-muriciDark text-muriciWhite border-l-4 border-muriciRed">
+
+
+⸻
+
+🧠 IDENTIDADE VISUAL (mentalidade certa)
+	•	Preto + cinza = estrutura / controle
+	•	Branco = clareza / leitura
+	•	Vermelho = ação / risco / atenção
+
+👉 Isso combina perfeitamente com:
+	•	Segurança do trabalho
+	•	Logística
+	•	Operação crítica
+	•	Ambiente MELI

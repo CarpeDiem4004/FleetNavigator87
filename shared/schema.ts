@@ -1,0 +1,1992 @@
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, date, pgEnum } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+import { relations } from "drizzle-orm";
+
+// Create enums for database
+export const vehicleTypeEnum = pgEnum('vehicle_type', ['fiorino', 'van', 'vuc', 'toco', 'truck', 'cavalo_mecanico', 'carreta']);
+export const vehicleStatusEnum = pgEnum('vehicle_status', ['em_operacao', 'em_manutencao', 'parado']);
+export const maintenanceTypeEnum = pgEnum('maintenance_type', ['preventiva', 'corretiva']);
+export const maintenanceStatusEnum = pgEnum('maintenance_status', ['concluida', 'em_andamento', 'aguardando_pecas', 'pendente', 'aguardando_orcamento', 'orcamento_aprovado', 'em_negociacao', 'cancelada']);
+export const tireStatusEnum = pgEnum('tire_status', ['em_uso', 'estoque', 'descartado']);
+export const fuelTypeEnum = pgEnum('fuel_type', ['arla', 'diesel']);
+export const fineStatusEnum = pgEnum('fine_status', ['pendente', 'paga', 'contestada']);
+export const tripStatusEnum = pgEnum('trip_status', ['programada', 'carregando', 'aguardando_carga', 'em_transito', 'finalizada']);
+export const userRoleEnum = pgEnum('user_role', ['admin', 'ceo', 'gerente_geral', 'gestor', 'operador', 'oficina', 'pneus', 'gestor_frota', 'posto', 'line_hall', 'gestor_equipamentos', 'operador_status_frota', 'operador_frota']);
+
+// Enum para roles de usuários em bases específicas (sistema de segurança de links externos)
+export const baseUserRoleEnum = pgEnum('base_user_role', ['admin_base', 'gestor_base', 'operador_base', 'visualizador']);
+export const operationTypeEnum = pgEnum('operation_type', ['carregamento', 'descarga', 'transferencia', 'inventario', 'manutencao']);
+export const operationStatusEnum = pgEnum('operation_status', ['pendente', 'em_andamento', 'concluida', 'cancelada']);
+export const checklistStatusEnum = pgEnum('checklist_status', ['pendente', 'iniciado', 'concluido']);
+export const maintenanceRequestStatusEnum = pgEnum('maintenance_request_status', ['pendente', 'aprovada', 'rejeitada', 'concluida']);
+export const refuelingCardStatusEnum = pgEnum('refueling_card_status', ['pendente', 'aprovada', 'rejeitada']);
+export const messageAuthorEnum = pgEnum('message_author', ['oficina', 'frota']);
+export const vehicleOwnershipEnum = pgEnum('vehicle_ownership', ['murici', 'locado']);
+export const paymentStatusEnum = pgEnum('payment_status', ['pendente', 'pago', 'em_processamento', 'cancelado']);
+export const carReceptionStatusEnum = pgEnum('car_reception_status', ['recebido', 'em_analise', 'aguardando_pecas', 'em_reparo', 'pronto', 'entregue']);
+export const negotiationStatusEnum = pgEnum('negotiation_status', ['aberta', 'em_negociacao', 'prazo_atualizado', 'concluida']);
+
+// Enums para sistema de abastecimento pós-pago
+export const tipoMotoristaEnum = pgEnum('tipo_motorista', ['frota', 'agregado']);
+export const tipoCombustivelEnum = pgEnum('tipo_combustivel', ['gasolina', 'etanol', 'diesel', 'gnv', 'adblue']);
+export const modalidadePagamentoEnum = pgEnum('modalidade_pagamento', ['pos_pago', 'avista']);
+export const statusFaturamentoEnum = pgEnum('status_faturamento', ['pendente', 'faturado', 'pago']);
+
+// Enums para sistema de estoque
+export const inventoryMovementTypeEnum = pgEnum('inventory_movement_type', [
+  'entrada',         // Entrada no estoque
+  'saida',           // Saída do estoque
+  'transferencia',   // Transferência entre bases/oficinas
+  'ajuste',          // Ajuste de inventário
+  'descarte'         // Descarte de material
+]);
+
+export const inventoryItemCategoryEnum = pgEnum('inventory_item_category', [
+  'motor',            // Peças de motor
+  'freios',           // Sistema de freios
+  'suspensao',        // Suspensão
+  'transmissao',      // Transmissão
+  'eletrica',         // Parte elétrica
+  'carroceria',       // Carroceria
+  'pneus',            // Pneus e rodas
+  'lubrificantes',    // Óleos e lubrificantes
+  'filtros',          // Filtros diversos
+  'acessorios',       // Acessórios
+  'ferramentas',      // Ferramentas
+  'outros'            // Outros itens
+]);
+
+// Enum para os tipos de solicitação que uma base pode fazer
+export const requestTypeEnum = pgEnum('request_type', [
+  'manutencao', // Manutenção
+  'pneus',      // Solicitação de pneus
+  'roubo',      // Registro de roubo
+  'sinistro',   // Registro de sinistro
+  'acidente',   // Registro de acidente
+  'seguranca'   // Segurança do trabalho
+]);
+
+// Enum para o status de solicitações
+export const requestStatusEnum = pgEnum('request_status', [
+  'pendente',             // Aguardando análise inicial
+  'em_analise',           // Em análise pela equipe responsável
+  'em_andamento',         // Em processamento/resolução
+  'aguardando_informacao',// Aguardando informações adicionais
+  'concluido',            // Solicitação atendida/concluída
+  'cancelado'             // Solicitação cancelada
+]);
+
+// Enums para sistema de controle de equipamentos
+export const equipmentTypeEnum = pgEnum('equipment_type', [
+  'notebook',             // Notebook/Laptop
+  'celular',              // Celular/Smartphone
+  'tablet',               // Tablet
+  'desktop',              // Computador desktop
+  'monitor',              // Monitor
+  'impressora',           // Impressora
+  'scanner',              // Scanner
+  'roteador',             // Roteador/Switch
+  'telefone_fixo',        // Telefone fixo
+  'camera',               // Câmera
+  'projetor',             // Projetor
+  'email',                // Conta de email
+  'chip',                 // Chip de celular
+  'outros'                // Outros equipamentos
+]);
+
+export const equipmentStatusEnum = pgEnum('equipment_status', [
+  'disponivel',           // Disponível para uso
+  'em_uso',               // Em uso por funcionário
+  'manutencao',           // Em manutenção
+  'descartado',           // Descartado/Inutilizado
+  'perdido',              // Perdido
+  'roubado'               // Roubado
+]);
+
+export const equipmentConditionEnum = pgEnum('equipment_condition', [
+  'novo',                 // Novo
+  'otimo',                // Ótimo estado
+  'bom',                  // Bom estado
+  'regular',              // Estado regular
+  'ruim',                 // Estado ruim
+  'defeituoso'            // Defeituoso
+]);
+
+export const equipmentOwnershipEnum = pgEnum('equipment_ownership', [
+  'proprio',              // Equipamento próprio
+  'alugado'               // Equipamento alugado
+]);
+
+// Enums para sistema de solicitação de equipamentos
+export const equipmentRequestStatusEnum = pgEnum('equipment_request_status', [
+  'pendente',             // Solicitação aguardando análise
+  'em_analise',           // Em análise pela equipe
+  'aprovado',             // Solicitação aprovada
+  'rejeitado',            // Solicitação rejeitada
+  'em_separacao',         // Equipamento sendo separado
+  'pronto_retirada',      // Pronto para retirada
+  'entregue',             // Entregue ao solicitante
+  'cancelado'             // Solicitação cancelada
+]);
+
+export const equipmentRequestPriorityEnum = pgEnum('equipment_request_priority', [
+  'baixa',                // Prioridade baixa
+  'normal',               // Prioridade normal
+  'alta',                 // Prioridade alta
+  'urgente'               // Prioridade urgente
+]);
+
+// Create the projects table
+export const projects = pgTable("projects", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  client: text("client"),
+  is_active: boolean("is_active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Create the bases table
+export const bases = pgTable("bases", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  location: text("location"),
+  basename: text("basename"),
+  type: text("type"),
+  active: boolean("active").default(true),
+  operation: text("operation"),
+  hasMaintenance: boolean("has_maintenance").default(false),
+  hasTires: boolean("has_tires").default(false),
+  requestsEnabled: boolean("requests_enabled").default(true), // Permite que a base faça solicitações
+  projectId: integer("project_id").references(() => projects.id),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para armazenar solicitações de bases
+export const baseRequests = pgTable("base_requests", {
+  id: serial("id").primaryKey(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  requestType: requestTypeEnum("request_type").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: requestStatusEnum("request_status").notNull().default('pendente'),
+  priority: text("priority").default('normal'), // alta, normal, baixa
+  requesterUserId: integer("requester_user_id").notNull().references(() => users.id),
+  assignedUserId: integer("assigned_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+  vehiclePlate: text("vehicle_plate").references(() => vehicles.plate), // Se for relacionado a veículo
+});
+
+// Tabela para armazenar as atualizações/tratativas de solicitações
+export const baseRequestUpdates = pgTable("base_request_updates", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").notNull().references(() => baseRequests.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  userName: text("user_name").notNull(),
+  userRole: text("user_role").notNull(),
+  message: text("message").notNull(),
+  newStatus: requestStatusEnum("new_status"),
+  createdAt: timestamp("created_at").defaultNow(),
+  attachmentUrl: text("attachment_url"), // URL para anexo (se houver)
+});
+
+// Create the vehicles table
+export const vehicles = pgTable("vehicles", {
+  id: serial("id").primaryKey(),
+  plate: text("plate").notNull().unique(),
+  model: text("model"),
+  make: text("make"),
+  year: integer("year"),
+  vehicleType: vehicleTypeEnum("vehicle_type").notNull(),
+  status: vehicleStatusEnum("status").notNull(),
+  baseId: integer("base_id").references(() => bases.id),
+  fuelType: text("fuel_type"),
+  cartaoAbastecimento: text("cartao_abastecimento"),
+  kmAtual: integer("km_atual"),
+  consumoMedioKmL: decimal("consumo_medio_km_l", { precision: 5, scale: 2 }),
+  ownership: vehicleOwnershipEnum("ownership").notNull().default('murici'),
+  crlvUrl: text("crlv_url"),
+  anttUrl: text("antt_url"),
+  isTemporary: boolean("is_temporary").default(false).notNull(),
+  deactivationDate: date("deactivation_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de auditoria de importações de manutenção
+export const maintenanceImports = pgTable("maintenance_imports", {
+  id: serial("id").primaryKey(),
+  importedBy: text("imported_by").notNull(),
+  importedAt: timestamp("imported_at").defaultNow(),
+  affectedVehiclesCount: integer("affected_vehicles_count").notNull(),
+  filename: text("filename").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Create the workshops table (oficinas)
+export const workshops = pgTable("oficinas", {
+  id: serial("id").primaryKey(),
+  cnpj: text("cnpj").notNull(),
+  razao_social: text("razao_social").notNull(),
+  nome_fantasia: text("nome_fantasia"),
+  endereco: text("endereco"),
+  telefone: text("telefone"),
+  email: text("email"),
+  responsavel: text("responsavel"),
+  status: text("status").default("ativo"),
+  tipo: text("tipo").default("parceira"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Create the users table
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  role: userRoleEnum("role").notNull(),
+  baseId: integer("base_id").references(() => bases.id),
+  basename: text("basename"),
+  oficina_id: integer("oficina_id").references(() => workshops.id),
+  lastLogin: timestamp("last_login", { mode: "date" }),
+  isActive: boolean("is_active").default(true),
+});
+
+// Tabela de cards disponíveis para operador_frota
+export const operatorCards = pgTable("operator_cards", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  icon: text("icon").notNull().default('Wrench'),
+  href: text("href").notNull(),
+  defaultEnabled: boolean("default_enabled").default(false),
+  category: text("category").default('geral'),
+  color: text("color").default('blue'),
+  sortOrder: integer("sort_order").default(0),
+});
+
+// Tabela de permissões por card para cada operador
+export const operatorCardPermissions = pgTable("operator_card_permissions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  cardId: text("card_id").notNull().references(() => operatorCards.id),
+  canView: boolean("can_view").default(true),
+  canAccess: boolean("can_access").default(true),
+});
+
+// Tabela de vínculo usuário-base para controle de acesso a links externos
+// Sistema de segurança: cada usuário pode ter acesso a múltiplas bases com roles específicas
+export const userBases = pgTable("user_bases", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  role: baseUserRoleEnum("role").notNull().default('operador_base'),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Schema e tipos para user_bases
+export const insertUserBaseSchema = createInsertSchema(userBases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertUserBase = z.infer<typeof insertUserBaseSchema>;
+export type UserBase = typeof userBases.$inferSelect;
+
+// Tabela para recebimento de carros na oficina
+export const carReceptions = pgTable("car_receptions", {
+  id: serial("id").primaryKey(),
+  serviceNumber: text("service_number").notNull().unique(), // Número único do serviço gerado automaticamente
+  vehiclePlate: text("vehicle_plate").notNull(),
+  vehicleModel: text("vehicle_model").notNull(),
+  vehicleType: vehicleTypeEnum("vehicle_type").notNull(),
+  currentKm: integer("current_km").notNull(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  projectId: integer("project_id"), // Referência aos projetos existentes no sistema
+  projectName: text("project_name"), // Nome do projeto selecionado
+  serviceDescription: text("service_description").notNull(),
+  replacedParts: text("replaced_parts"), // JSON string das peças trocadas
+  laborCost: decimal("labor_cost", { precision: 10, scale: 2 }),
+  partsCost: decimal("parts_cost", { precision: 10, scale: 2 }),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }),
+  deliveryDeadline: date("delivery_deadline"),
+  status: carReceptionStatusEnum("status").notNull().default('recebido'),
+  workshopId: integer("workshop_id").notNull().references(() => workshops.id),
+  workshopCnpj: text("workshop_cnpj"), // CNPJ da oficina para referência histórica
+  receivedDate: timestamp("received_date").defaultNow(),
+  completedDate: timestamp("completed_date"),
+  deliveredDate: timestamp("delivered_date"),
+  // Dados de quem retira o veículo
+  deliveryPersonName: text("delivery_person_name"), // Nome completo
+  deliveryPersonCpf: text("delivery_person_cpf"), // CPF
+  deliveryPersonPhone: text("delivery_person_phone"), // Telefone
+  notes: text("notes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para orçamentos das oficinas
+export const workshopBudgets = pgTable("workshop_budgets", {
+  id: serial("id").primaryKey(),
+  carReceptionId: integer("car_reception_id").notNull().references(() => carReceptions.id),
+  serviceNumber: text("service_number").notNull().references(() => carReceptions.serviceNumber),
+  budgetNumber: text("budget_number").notNull().unique(), // Número único do orçamento
+  workshopId: integer("workshop_id").notNull().references(() => workshops.id),
+  workshopCnpj: text("workshop_cnpj").notNull(),
+  
+  // Detalhes do orçamento
+  laborDescription: text("labor_description").notNull(),
+  laborCost: decimal("labor_cost", { precision: 10, scale: 2 }).notNull(),
+  laborHours: decimal("labor_hours", { precision: 5, scale: 2 }),
+  
+  partsDescription: text("parts_description"),
+  partsCost: decimal("parts_cost", { precision: 10, scale: 2 }).default('0'),
+  partsJson: text("parts_json"), // JSON das peças detalhadas
+  
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),
+  estimatedDays: integer("estimated_days"),
+  
+  // Status do orçamento
+  status: text("status").notNull().default('pendente'), // pendente, aprovado, rejeitado, revisao
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedDate: timestamp("approved_date"),
+  rejectionReason: text("rejection_reason"),
+  
+  // Observações
+  notes: text("notes"),
+  internalNotes: text("internal_notes"), // Notas internas da oficina
+  
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Create the maintenance table (manutencao)
+export const maintenance = pgTable("manutencao", {
+  id: serial("id").primaryKey(),
+  placa: text("placa").notNull().references(() => vehicles.plate),
+  descricao: text("descricao").notNull(),
+  status: text("status").notNull(),
+  prioridade: text("prioridade"),
+  tipo: text("tipo").notNull(),
+  oficina_id: integer("oficina_id"),
+  base_id: integer("base_id"),
+  data_agendada: timestamp("data_agendada"),
+  data_solicitacao: timestamp("data_solicitacao").notNull(),
+  data_conclusao: timestamp("data_conclusao"),
+  custo: decimal("custo", { precision: 10, scale: 2 }),
+  responsavel: text("responsavel"),
+  km_atual: integer("km_atual"),
+  observacoes: text("observacoes"),
+  veiculo_id: integer("veiculo_id"),
+  solicitante_id: integer("solicitante_id"),
+  delivery_person_name: text("delivery_person_name"), // Nome da pessoa que retirou
+  delivery_person_cpf: text("delivery_person_cpf"), // CPF
+  delivery_person_phone: text("delivery_person_phone"), // Telefone
+  delivered_date: timestamp("delivered_date"), // Data e hora da entrega
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de chats para negociação de orçamentos
+export const maintenanceChat = pgTable("maintenance_chat", {
+  id: serial("id").primaryKey(),
+  maintenanceId: integer("maintenance_id").notNull().references(() => maintenance.id),
+  initialBudget: decimal("initial_budget", { precision: 10, scale: 2 }),
+  finalBudget: decimal("final_budget", { precision: 10, scale: 2 }),
+  kmAtual: text("km_atual"), // Quilometragem atual do veículo
+  prazoEstimado: text("prazo_estimado"), // Prazo estimado em dias
+  descricaoServico: text("descricao_servico"), // Descrição detalhada do serviço
+  vehiclePlate: text("vehicle_plate"), // Placa do veículo informada pela oficina
+  isFinalized: boolean("is_finalized").default(false),
+  finalizedBy: text("finalized_by"),
+  finalizedAt: timestamp("finalized_at"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para mensagens do chat
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  chatId: integer("chat_id").notNull().references(() => maintenanceChat.id),
+  author: messageAuthorEnum("author").notNull(),
+  authorId: integer("author_id").notNull().references(() => users.id),
+  authorName: text("author_name").notNull(),
+  message: text("message").notNull(),
+  proposedBudget: decimal("proposed_budget", { precision: 10, scale: 2 }),
+  sent_at: timestamp("sent_at").defaultNow(),
+});
+
+// Create the tires table (pneus)
+export const tires = pgTable("pneus", {
+  id: serial("id").primaryKey(),
+  tireNumber: text("tire_number").notNull().unique(),
+  changeDate: date("change_date").notNull(),
+  changeKm: integer("change_km").notNull(),
+  status: tireStatusEnum("status").notNull(),
+});
+
+// Create the refueling table (abastecimentos)
+export const refueling = pgTable("abastecimentos", {
+  id: serial("id").primaryKey(),
+  vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
+  fuelType: fuelTypeEnum("fuel_type").notNull(),
+  liters: decimal("liters", { precision: 10, scale: 2 }).notNull(),
+  km: integer("km").notNull(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  driverName: text("driver_name").notNull(),
+});
+
+// Create the fines table (multas)
+export const fines = pgTable("multas", {
+  id: serial("id").primaryKey(),
+  vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
+  infraction: text("infraction").notNull(),
+  driver: text("driver").notNull(),
+  date: date("date").notNull(),
+  status: fineStatusEnum("status").notNull(),
+  value: decimal("value", { precision: 10, scale: 2 }).notNull(),
+});
+
+// Definição da tabela lineHall (linha_corredor) removida conforme solicitação
+
+// Create the operations table (operacoes)
+export const operations = pgTable("operacoes", {
+  id: serial("id").primaryKey(),
+  tipo: operationTypeEnum("tipo").notNull(),
+  data: date("data").notNull(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  operador: text("operador").notNull(),
+  turno: text("turno").notNull(),
+  status: operationStatusEnum("status").notNull().default('pendente'),
+  observacoes: text("observacoes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Criar a tabela painel_principal para exibir KPIs e métricas gerais
+// Tabela para rastrear o ciclo de vida da manutenção (já que a tabela manutencao é uma view)
+export const maintenanceLifecycle = pgTable("maintenance_lifecycle", {
+  id: serial("id").primaryKey(),
+  maintenanceId: integer("maintenance_id").notNull().unique(), // Referência à manutencao
+  // Datas de ciclo de vida
+  entryDate: date("entry_date").notNull(), // Data de entrada do veículo
+  maintenanceStartDate: date("maintenance_start_date"), // Data de início efetivo da manutenção
+  expectedExitDate: date("expected_exit_date"), // Data prevista de saída
+  actualExitDate: date("actual_exit_date"), // Data real de saída
+  // Informações de retirada do veículo
+  vehiclePickupDate: timestamp("vehicle_pickup_date"), // Data e hora da retirada do veículo
+  pickupPersonName: text("pickup_person_name"), // Nome da pessoa que retirou o veículo
+  pickupPersonCPF: text("pickup_person_cpf"), // CPF da pessoa que retirou o veículo
+  pickupComments: text("pickup_comments"), // Observações sobre a retirada
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Relações para o ciclo de vida não podem ser definidas diretamente
+// já que manutencao é uma view, não uma tabela.
+// As relações serão tratadas via código
+
+export const painelPrincipal = pgTable("painel_principal", {
+  id: serial("id").primaryKey(),
+  data_referencia: date("data_referencia").notNull(),
+  manutencoes_pendentes: integer("manutencoes_pendentes").notNull().default(0),
+  tempo_medio_manutencao: text("tempo_medio_manutencao"),
+  veiculos_parados: integer("veiculos_parados").notNull().default(0),
+  dias_parados_total: integer("dias_parados_total").notNull().default(0),
+  linehall_parados: integer("linehall_parados").notNull().default(0),
+  viagens_concluidas: integer("viagens_concluidas").notNull().default(0),
+  viagens_no_show: integer("viagens_no_show").notNull().default(0),
+  viagens_canceladas_cliente: integer("viagens_canceladas_cliente").notNull().default(0),
+  litros_diesel_total: decimal("litros_diesel_total", { precision: 10, scale: 2 }).notNull().default('0'),
+  gasto_total_combustivel: decimal("gasto_total_combustivel", { precision: 10, scale: 2 }).notNull().default('0'),
+  qtd_sinistros: integer("qtd_sinistros").notNull().default(0),
+  qtd_roubos: integer("qtd_roubos").notNull().default(0),
+  incidentes_seguranca_trabalho: integer("incidentes_seguranca_trabalho").notNull().default(0),
+  movimentacoes_pneus: integer("movimentacoes_pneus").notNull().default(0),
+  pneus_substituidos: integer("pneus_substituidos").notNull().default(0),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para checklist de veículos
+export const vehicleChecklist = pgTable("vehicle_checklist", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id").notNull(), // referência ao lineHall removida conforme solicitação
+  driverName: text("driver_name").notNull(),
+  checkDate: timestamp("check_date").notNull().defaultNow(),
+  initialKm: integer("initial_km"),
+  finalKm: integer("final_km"),
+  tireCondition: text("tire_condition"), // bom, regular, ruim
+  lightsCondition: text("lights_condition"), // bom, regular, ruim
+  brakesCondition: text("brakes_condition"), // bom, regular, ruim
+  windshieldCondition: text("windshield_condition"), // bom, regular, ruim
+  oilLevel: text("oil_level"), // bom, regular, ruim
+  waterLevel: text("water_level"), // bom, regular, ruim
+  observations: text("observations"),
+  status: checklistStatusEnum("status").notNull().default('pendente'),
+  isInitialCheck: boolean("is_initial_check").notNull(), // true para checklist inicial, false para final
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para solicitações de manutenção pelo motorista
+export const driverMaintenanceRequest = pgTable("driver_maintenance_request", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id"), // referência ao lineHall removida conforme solicitação
+  vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
+  driverName: text("driver_name").notNull(),
+  requestDate: timestamp("request_date").notNull().defaultNow(),
+  description: text("description").notNull(),
+  urgency: text("urgency").notNull().default('normal'), // baixa, normal, alta, emergencial
+  status: maintenanceRequestStatusEnum("status").notNull().default('pendente'),
+  approvedBy: text("approved_by"),
+  approvalDate: timestamp("approval_date"),
+  maintenanceId: integer("maintenance_id").references(() => maintenance.id), // Referência à manutenção gerada, se aprovada
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela para solicitações de recarga de cartão de abastecimento
+export const refuelingCardRequest = pgTable("refueling_card_request", {
+  id: serial("id").primaryKey(),
+  tripId: integer("trip_id"), // referência ao lineHall removida conforme solicitação
+  vehiclePlate: text("vehicle_plate").notNull().references(() => vehicles.plate),
+  driverName: text("driver_name").notNull(),
+  requestDate: timestamp("request_date").notNull().defaultNow(),
+  cardNumber: text("card_number"),
+  requestedAmount: decimal("requested_amount", { precision: 10, scale: 2 }).notNull(),
+  justification: text("justification").notNull(),
+  status: refuelingCardStatusEnum("status").notNull().default('pendente'),
+  approvedBy: text("approved_by"),
+  approvalDate: timestamp("approval_date"),
+  approvedAmount: decimal("approved_amount", { precision: 10, scale: 2 }),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Relations
+export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
+  base: one(bases, {
+    fields: [vehicles.baseId],
+    references: [bases.id],
+  }),
+  maintenance: many(maintenance),
+  refueling: many(refueling),
+  fines: many(fines),
+}));
+
+export const basesRelations = relations(bases, ({ many }) => ({
+  vehicles: many(vehicles),
+  refueling: many(refueling),
+  users: many(users),
+  maintenance: many(maintenance, { relationName: "requestedMaintenance" }),
+  operations: many(operations),
+}));
+
+export const maintenanceRelations = relations(maintenance, ({ one, many }) => ({
+  vehicle: one(vehicles, {
+    fields: [maintenance.placa],
+    references: [vehicles.plate],
+  }),
+  workshop: one(workshops, {
+    fields: [maintenance.oficina_id],
+    references: [workshops.id],
+  }),
+  requestBase: one(bases, {
+    fields: [maintenance.base_id],
+    references: [bases.id],
+    relationName: "requestedMaintenance"
+  }),
+  chat: many(maintenanceChat),
+}));
+
+export const maintenanceChatRelations = relations(maintenanceChat, ({ one, many }) => ({
+  maintenance: one(maintenance, {
+    fields: [maintenanceChat.maintenanceId],
+    references: [maintenance.id],
+  }),
+  messages: many(chatMessages),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  chat: one(maintenanceChat, {
+    fields: [chatMessages.chatId],
+    references: [maintenanceChat.id],
+  }),
+  author: one(users, {
+    fields: [chatMessages.authorId],
+    references: [users.id],
+  }),
+}));
+
+export const workshopsRelations = relations(workshops, ({ many }) => ({
+  maintenance: many(maintenance),
+}));
+
+export const operationsRelations = relations(operations, ({ one }) => ({
+  base: one(bases, {
+    fields: [operations.baseId],
+    references: [bases.id],
+  }),
+}));
+
+// Relação lineHallRelations removida conforme solicitação
+
+export const vehicleChecklistRelations = relations(vehicleChecklist, ({ }) => ({
+  // referência trip ao lineHall removida conforme solicitação
+}));
+
+export const driverMaintenanceRequestRelations = relations(driverMaintenanceRequest, ({ one }) => ({
+  // referência trip ao lineHall removida conforme solicitação
+  vehicle: one(vehicles, {
+    fields: [driverMaintenanceRequest.vehiclePlate],
+    references: [vehicles.plate],
+  }),
+  maintenance: one(maintenance, {
+    fields: [driverMaintenanceRequest.maintenanceId],
+    references: [maintenance.id],
+  }),
+}));
+
+export const refuelingCardRequestRelations = relations(refuelingCardRequest, ({ one }) => ({
+  // referência trip ao lineHall removida conforme solicitação
+  vehicle: one(vehicles, {
+    fields: [refuelingCardRequest.vehiclePlate],
+    references: [vehicles.plate],
+  }),
+}));
+
+export const carReceptionsRelations = relations(carReceptions, ({ one, many }) => ({
+  base: one(bases, {
+    fields: [carReceptions.baseId],
+    references: [bases.id],
+  }),
+  workshop: one(workshops, {
+    fields: [carReceptions.workshopId],
+    references: [workshops.id],
+  }),
+  budgets: many(workshopBudgets),
+}));
+
+export const workshopBudgetsRelations = relations(workshopBudgets, ({ one }) => ({
+  carReception: one(carReceptions, {
+    fields: [workshopBudgets.carReceptionId],
+    references: [carReceptions.id],
+  }),
+  workshop: one(workshops, {
+    fields: [workshopBudgets.workshopId],
+    references: [workshops.id],
+  }),
+  approvedByUser: one(users, {
+    fields: [workshopBudgets.approvedBy],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas
+export const insertBaseSchema = createInsertSchema(bases);
+export const insertVehicleSchema = createInsertSchema(vehicles);
+export const insertWorkshopSchema = createInsertSchema(workshops);
+export const insertMaintenanceSchema = createInsertSchema(maintenance);
+export const insertTireSchema = createInsertSchema(tires);
+export const insertRefuelingSchema = createInsertSchema(refueling);
+export const insertFineSchema = createInsertSchema(fines);
+// insertLineHallSchema removido conforme solicitação
+export const insertOperationSchema = createInsertSchema(operations);
+export const insertVehicleChecklistSchema = createInsertSchema(vehicleChecklist);
+export const insertDriverMaintenanceRequestSchema = createInsertSchema(driverMaintenanceRequest);
+export const insertRefuelingCardRequestSchema = createInsertSchema(refuelingCardRequest);
+export const insertPainelPrincipalSchema = createInsertSchema(painelPrincipal);
+export const insertMaintenanceChatSchema = createInsertSchema(maintenanceChat);
+export const insertChatMessageSchema = createInsertSchema(chatMessages);
+export const insertMaintenanceLifecycleSchema = createInsertSchema(maintenanceLifecycle);
+export const insertCarReceptionSchema = createInsertSchema(carReceptions);
+export const insertWorkshopBudgetSchema = createInsertSchema(workshopBudgets);
+export const insertMaintenanceImportSchema = createInsertSchema(maintenanceImports).omit({
+  importedAt: true,
+  createdAt: true,
+});
+export const insertUserSchema = createInsertSchema(users).pick({
+  name: true,
+  email: true,
+  password: true,
+  role: true,
+  baseId: true,
+  basename: true,
+  oficina_id: true,
+  isActive: true,
+});
+
+// Types
+export type Base = typeof bases.$inferSelect;
+export type InsertBase = z.infer<typeof insertBaseSchema>;
+
+export type Vehicle = typeof vehicles.$inferSelect;
+export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
+
+export type Workshop = typeof workshops.$inferSelect;
+export type InsertWorkshop = z.infer<typeof insertWorkshopSchema>;
+
+export type Maintenance = typeof maintenance.$inferSelect;
+export type InsertMaintenance = z.infer<typeof insertMaintenanceSchema>;
+
+export type Tire = typeof tires.$inferSelect;
+export type InsertTire = z.infer<typeof insertTireSchema>;
+
+export type Refueling = typeof refueling.$inferSelect;
+export type InsertRefueling = z.infer<typeof insertRefuelingSchema>;
+
+export type Fine = typeof fines.$inferSelect;
+export type InsertFine = z.infer<typeof insertFineSchema>;
+
+// Tipos LineHall removidos conforme solicitação
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type CarReception = typeof carReceptions.$inferSelect;
+export type InsertCarReception = z.infer<typeof insertCarReceptionSchema>;
+
+export type WorkshopBudget = typeof workshopBudgets.$inferSelect;
+export type InsertWorkshopBudget = z.infer<typeof insertWorkshopBudgetSchema>;
+
+export type MaintenanceImport = typeof maintenanceImports.$inferSelect;
+export type InsertMaintenanceImport = z.infer<typeof insertMaintenanceImportSchema>;
+
+export type Operation = typeof operations.$inferSelect;
+export type InsertOperation = z.infer<typeof insertOperationSchema>;
+
+export type VehicleChecklist = typeof vehicleChecklist.$inferSelect;
+export type InsertVehicleChecklist = z.infer<typeof insertVehicleChecklistSchema>;
+
+export type DriverMaintenanceRequest = typeof driverMaintenanceRequest.$inferSelect;
+export type InsertDriverMaintenanceRequest = z.infer<typeof insertDriverMaintenanceRequestSchema>;
+
+export type RefuelingCardRequest = typeof refuelingCardRequest.$inferSelect;
+export type InsertRefuelingCardRequest = z.infer<typeof insertRefuelingCardRequestSchema>;
+
+export type PainelPrincipal = typeof painelPrincipal.$inferSelect;
+export type InsertPainelPrincipal = z.infer<typeof insertPainelPrincipalSchema>;
+
+export type MaintenanceChat = typeof maintenanceChat.$inferSelect;
+export type InsertMaintenanceChat = z.infer<typeof insertMaintenanceChatSchema>;
+
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
+export type MaintenanceLifecycle = typeof maintenanceLifecycle.$inferSelect;
+export type InsertMaintenanceLifecycle = z.infer<typeof insertMaintenanceLifecycleSchema>;
+
+// Esquemas de inserção para as novas tabelas de solicitações da base
+export const insertBaseRequestSchema = createInsertSchema(baseRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  resolvedAt: true,
+});
+
+export const insertBaseRequestUpdateSchema = createInsertSchema(baseRequestUpdates).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Tabela de itens de estoque
+export const inventoryItems = pgTable("inventory_items", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),                                            // Nome da peça/item
+  code: text("code").notNull().unique(),                                   // Código/SKU do item
+  category: inventoryItemCategoryEnum("category").notNull(),               // Categoria do item
+  unit: text("unit").notNull().default('un'),                              // Unidade de medida (un, kg, l, etc)
+  minimumStock: integer("minimum_stock").notNull().default(0),             // Estoque mínimo
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }).notNull(),   // Custo unitário
+  description: text("description"),                                        // Descrição detalhada
+  imageUrl: text("image_url"),                                             // URL da imagem do item (se houver)
+  isActive: boolean("is_active").default(true),                            // Se o item está ativo no catálogo
+  notes: text("notes"),                                                    // Observações gerais
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de estoque por local (bases e oficinas)
+export const inventoryStock = pgTable("inventory_stock", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").notNull().references(() => inventoryItems.id),        // Referência ao item
+  baseId: integer("base_id").references(() => bases.id),                           // Referência à base (se estoque em base)
+  workshopId: integer("workshop_id").references(() => workshops.id),               // Referência à oficina (se estoque em oficina)
+  quantity: integer("quantity").notNull().default(0),                              // Quantidade disponível
+  location: text("location"),                                                      // Localização física dentro do estoque (prateleira, armário, etc)
+  lastUpdated: timestamp("last_updated").defaultNow(),                             // Última atualização do estoque
+  notes: text("notes"),                                                            // Observações específicas deste estoque
+});
+
+// Tabela de movimentações de estoque
+export const inventoryMovements = pgTable("inventory_movements", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").notNull().references(() => inventoryItems.id),        // Item movimentado
+  sourceBaseId: integer("source_base_id").references(() => bases.id),              // Base de origem (se aplicável)
+  sourceWorkshopId: integer("source_workshop_id").references(() => workshops.id),  // Oficina de origem (se aplicável)
+  destinationBaseId: integer("destination_base_id").references(() => bases.id),    // Base de destino (se aplicável)
+  destinationWorkshopId: integer("destination_workshop_id").references(() => workshops.id), // Oficina de destino (se aplicável)
+  vehiclePlate: text("vehicle_plate").references(() => vehicles.plate),            // Veículo relacionado (se aplicável)
+  maintenanceId: integer("maintenance_id").references(() => maintenance.id),       // Manutenção relacionada (se aplicável)
+  quantity: integer("quantity").notNull(),                                         // Quantidade movimentada
+  movementType: inventoryMovementTypeEnum("movement_type").notNull(),              // Tipo de movimentação
+  unitCost: decimal("unit_cost", { precision: 10, scale: 2 }).notNull(),           // Custo unitário no momento da movimentação
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),         // Custo total da movimentação
+  requestedBy: integer("requested_by").notNull().references(() => users.id),       // Usuário que solicitou
+  approvedBy: integer("approved_by").references(() => users.id),                   // Usuário que aprovou (se aplicável)
+  documentNumber: text("document_number"),                                         // Número do documento relacionado (NF, ordem de serviço, etc)
+  reasonForMovement: text("reason_for_movement").notNull(),                        // Motivo da movimentação
+  notes: text("notes"),                                                            // Observações
+  createdAt: timestamp("created_at").defaultNow(),                                 // Data de criação do registro
+});
+
+// Relações para o sistema de estoque
+export const inventoryItemsRelations = relations(inventoryItems, ({ many }) => ({
+  stocks: many(inventoryStock),
+  movements: many(inventoryMovements)
+}));
+
+export const inventoryStockRelations = relations(inventoryStock, ({ one }) => ({
+  item: one(inventoryItems, {
+    fields: [inventoryStock.itemId],
+    references: [inventoryItems.id]
+  }),
+  base: one(bases, {
+    fields: [inventoryStock.baseId],
+    references: [bases.id]
+  }),
+  workshop: one(workshops, {
+    fields: [inventoryStock.workshopId],
+    references: [workshops.id]
+  })
+}));
+
+export const inventoryMovementsRelations = relations(inventoryMovements, ({ one }) => ({
+  item: one(inventoryItems, {
+    fields: [inventoryMovements.itemId],
+    references: [inventoryItems.id]
+  }),
+  sourceBase: one(bases, {
+    fields: [inventoryMovements.sourceBaseId],
+    references: [bases.id]
+  }),
+  sourceWorkshop: one(workshops, {
+    fields: [inventoryMovements.sourceWorkshopId],
+    references: [workshops.id]
+  }),
+  destinationBase: one(bases, {
+    fields: [inventoryMovements.destinationBaseId],
+    references: [bases.id]
+  }),
+  destinationWorkshop: one(workshops, {
+    fields: [inventoryMovements.destinationWorkshopId],
+    references: [workshops.id]
+  }),
+  vehicle: one(vehicles, {
+    fields: [inventoryMovements.vehiclePlate],
+    references: [vehicles.plate]
+  }),
+  maintenance: one(maintenance, {
+    fields: [inventoryMovements.maintenanceId],
+    references: [maintenance.id]
+  }),
+  requestedByUser: one(users, {
+    fields: [inventoryMovements.requestedBy],
+    references: [users.id]
+  }),
+  approvedByUser: one(users, {
+    fields: [inventoryMovements.approvedBy],
+    references: [users.id]
+  })
+}));
+
+// Tabela para tratativas da gestão de frota com oficinas
+export const maintenanceNegotiations = pgTable("maintenance_negotiations", {
+  id: serial("id").primaryKey(),
+  vehiclePlate: text("vehicle_plate").notNull(),                                  // Placa do veículo
+  maintenanceId: integer("maintenance_id").references(() => maintenance.id),      // Referência à ordem de serviço (se aplicável)
+  carReceptionId: integer("car_reception_id").references(() => carReceptions.id), // Referência ao recebimento (se aplicável)
+  workshopId: integer("workshop_id").notNull().references(() => workshops.id),    // Oficina responsável
+  fleetManagerId: integer("fleet_manager_id").notNull().references(() => users.id), // Gestor de frota responsável
+  originalDeadline: date("original_deadline"),                                    // Prazo original
+  newDeadline: date("new_deadline"),                                               // Novo prazo negociado
+  negotiationReason: text("negotiation_reason").notNull(),                        // Motivo da negociação
+  fleetComments: text("fleet_comments"),                                           // Comentários da gestão de frota
+  workshopResponse: text("workshop_response"),                                     // Resposta da oficina
+  status: negotiationStatusEnum("status").notNull().default('aberta'),            // Status da negociação
+  priority: text("priority").notNull().default('media'),                          // Prioridade (baixa, media, alta, urgente)
+  contactMethod: text("contact_method"),                                           // Método de contato usado (telefone, email, whatsapp)
+  contactDate: timestamp("contact_date").defaultNow(),                            // Data do contato
+  followUpDate: date("follow_up_date"),                                            // Data para próximo acompanhamento
+  resolved: boolean("resolved").default(false),                                   // Se foi resolvida
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Relações para as tratativas
+export const maintenanceNegotiationsRelations = relations(maintenanceNegotiations, ({ one }) => ({
+  maintenance: one(maintenance, {
+    fields: [maintenanceNegotiations.maintenanceId],
+    references: [maintenance.id]
+  }),
+  carReception: one(carReceptions, {
+    fields: [maintenanceNegotiations.carReceptionId],
+    references: [carReceptions.id]
+  }),
+  workshop: one(workshops, {
+    fields: [maintenanceNegotiations.workshopId],
+    references: [workshops.id]
+  }),
+  fleetManager: one(users, {
+    fields: [maintenanceNegotiations.fleetManagerId],
+    references: [users.id]
+  })
+}));
+
+// Schemas de inserção para o sistema de estoque
+export const insertInventoryItemSchema = createInsertSchema(inventoryItems);
+export const insertInventoryStockSchema = createInsertSchema(inventoryStock);
+export const insertInventoryMovementSchema = createInsertSchema(inventoryMovements);
+
+// Tipos para as novas tabelas
+export type InventoryItem = typeof inventoryItems.$inferSelect;
+export type InventoryStock = typeof inventoryStock.$inferSelect;
+export type InventoryMovement = typeof inventoryMovements.$inferSelect;
+export type BaseRequest = typeof baseRequests.$inferSelect;
+export type BaseRequestUpdate = typeof baseRequestUpdates.$inferSelect;
+
+// Tabela para controle financeiro dos serviços de guincho
+export const towingServicePayments = pgTable("towing_service_payments", {
+  id: serial("id").primaryKey(),
+  serviceId: integer("service_id").notNull(),
+  partnerId: integer("partner_id").notNull(),
+  vehiclePlate: text("vehicle_plate").notNull(),
+  serviceValue: decimal("service_value", { precision: 10, scale: 2 }).notNull(),
+  paymentStatus: paymentStatusEnum("payment_status").notNull().default('pendente'),
+  paymentDate: timestamp("payment_date"),
+  paymentMethod: text("payment_method"), // PIX, transferência, etc.
+  paymentReference: text("payment_reference"), // referência do pagamento
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Relações para pagamentos (será definida após criar towingPartners)
+export const towingServicePaymentsRelations = relations(towingServicePayments, ({ one }) => ({
+  // Relação será adicionada quando towingPartners estiver definido
+}));
+
+// Schemas de inserção para pagamentos
+export const insertTowingServicePaymentSchema = createInsertSchema(towingServicePayments);
+
+// Schema de inserção para tratativas
+export const insertMaintenanceNegotiationSchema = createInsertSchema(maintenanceNegotiations).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+// Tipos para inserção
+export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
+export type MaintenanceNegotiation = typeof maintenanceNegotiations.$inferSelect;
+export type InsertMaintenanceNegotiation = z.infer<typeof insertMaintenanceNegotiationSchema>;
+export type InsertInventoryStock = z.infer<typeof insertInventoryStockSchema>;
+export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSchema>;
+export type InsertBaseRequest = z.infer<typeof insertBaseRequestSchema>;
+export type InsertBaseRequestUpdate = z.infer<typeof insertBaseRequestUpdateSchema>;
+export type TowingServicePayment = typeof towingServicePayments.$inferSelect;
+export type InsertTowingServicePayment = z.infer<typeof insertTowingServicePaymentSchema>;
+
+// Enum para status dos cartões de combustível
+export const fuelCardStatusEnum = pgEnum('fuel_card_status', [
+  'ativo',      // Cartão ativo e em uso
+  'inativo',    // Cartão inativo
+  'bloqueado',  // Cartão bloqueado
+  'perdido',    // Cartão perdido
+  'cancelado'   // Cartão cancelado
+]);
+
+// Tabela de cartões de combustível ativos
+export const fuelCards = pgTable("fuel_cards", {
+  id: serial("id").primaryKey(),
+  card_number: text("card_number").notNull().unique(),
+  card_type: text("card_type").notNull(), // 'vinculado' ou 'especifico'
+  provider: text("provider").notNull(), // 'Ticket', 'Alelo', 'VR'
+  vehicle_plate: text("vehicle_plate"), // Para cartões vinculados
+  project_id: integer("project_id").references(() => projects.id),
+  base_id: integer("base_id").references(() => bases.id),
+  status: fuelCardStatusEnum("status").notNull().default('ativo'),
+  current_balance: decimal("current_balance", { precision: 10, scale: 2 }).default('0.00'),
+  monthly_limit: decimal("monthly_limit", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  created_by: integer("created_by").references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de equipamentos
+export const equipments = pgTable("equipments", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: equipmentTypeEnum("type").notNull(),
+  ownership_type: equipmentOwnershipEnum("ownership_type").notNull().default('proprio'),
+  brand: text("brand"),
+  model: text("model"),
+  serial_number: text("serial_number").unique(),
+  patrimony_number: text("patrimony_number").unique(),
+  purchase_date: date("purchase_date"),
+  purchase_value: decimal("purchase_value", { precision: 10, scale: 2 }),
+  supplier: text("supplier"),
+  warranty_expires: date("warranty_expires"),
+  condition: equipmentConditionEnum("condition").notNull().default('novo'),
+  status: equipmentStatusEnum("status").notNull().default('disponivel'),
+  location: text("location"),
+  notes: text("notes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de solicitações de equipamentos
+export const equipmentRequests = pgTable("equipment_requests", {
+  id: serial("id").primaryKey(),
+  requester_name: text("requester_name").notNull(),
+  requester_cpf: text("requester_cpf").notNull(),
+  requester_email: text("requester_email").notNull(),
+  requester_phone: text("requester_phone").notNull(),
+  requester_base_address: text("requester_base_address").notNull(),
+  requester_department: text("requester_department").notNull(),
+  requester_function: text("requester_function").notNull(),
+  project_name: text("project_name").notNull(),
+  base_name: text("base_name").notNull(),
+  equipment_type: equipmentTypeEnum("equipment_type").notNull(),
+  justification: text("justification").notNull(),
+  urgency_level: equipmentRequestPriorityEnum("urgency_level").notNull().default('normal'),
+  status: equipmentRequestStatusEnum("status").notNull().default('pendente'),
+  requested_delivery_date: date("requested_delivery_date"),
+  manager_approval: text("manager_approval"), // Nome do gestor que aprova
+  manager_phone: text("manager_phone"), // Telefone do gestor que aprova
+  manager_comments: text("manager_comments"),
+  approved_at: timestamp("approved_at"),
+  approved_by: integer("approved_by").references(() => users.id),
+  rejected_at: timestamp("rejected_at"),
+  rejected_by: integer("rejected_by").references(() => users.id),
+  rejection_reason: text("rejection_reason"),
+  assigned_equipment_id: integer("assigned_equipment_id").references(() => equipments.id),
+  delivered_at: timestamp("delivered_at"),
+  delivered_by: integer("delivered_by").references(() => users.id),
+  whatsapp_notification_sent: boolean("whatsapp_notification_sent").default(false),
+  whatsapp_phone: text("whatsapp_phone"), // Telefone para notificação WhatsApp
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de termos de responsabilidade
+export const equipmentResponsibilityTerms = pgTable("equipment_responsibility_terms", {
+  id: serial("id").primaryKey(),
+  equipment_id: integer("equipment_id").references(() => equipments.id).notNull(),
+  user_id: integer("user_id").references(() => users.id), // Opcional para usuários do sistema
+  full_name: text("full_name").notNull(), // Nome completo da pessoa responsável
+  cpf: text("cpf").notNull(), // CPF da pessoa responsável
+  phone: text("phone").notNull(), // Telefone da pessoa responsável
+  department: text("department").notNull(), // Departamento da pessoa responsável
+  address: text("address").notNull(), // Endereço da pessoa responsável
+  assigned_at: timestamp("assigned_at").defaultNow(),
+  returned_at: timestamp("returned_at"),
+  assigned_by: integer("assigned_by").references(() => users.id),
+  returned_by: integer("returned_by").references(() => users.id),
+  term_content: text("term_content").notNull(),
+  user_signature: text("user_signature"),
+  manager_signature: text("manager_signature"),
+  signed_document_url: text("signed_document_url"), // URL do documento assinado
+  condition_at_assignment: equipmentConditionEnum("condition_at_assignment").notNull(),
+  condition_at_return: equipmentConditionEnum("condition_at_return"),
+  notes: text("notes"),
+  is_active: boolean("is_active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de manutenção de equipamentos
+export const equipmentMaintenance = pgTable("equipment_maintenance", {
+  id: serial("id").primaryKey(),
+  equipment_id: integer("equipment_id").references(() => equipments.id).notNull(),
+  maintenance_type: text("maintenance_type").notNull(), // 'preventiva', 'corretiva', 'upgrade'
+  description: text("description").notNull(),
+  performed_by: text("performed_by"),
+  performed_at: timestamp("performed_at").defaultNow(),
+  cost: decimal("cost", { precision: 10, scale: 2 }),
+  supplier: text("supplier"),
+  notes: text("notes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Tabela de movimentação de equipamentos
+export const equipmentMovements = pgTable("equipment_movements", {
+  id: serial("id").primaryKey(),
+  equipment_id: integer("equipment_id").references(() => equipments.id).notNull(),
+  from_user_id: integer("from_user_id").references(() => users.id),
+  to_user_id: integer("to_user_id").references(() => users.id),
+  from_location: text("from_location"),
+  to_location: text("to_location"),
+  movement_type: text("movement_type").notNull(), // 'assignment', 'return', 'transfer', 'maintenance'
+  moved_by: integer("moved_by").references(() => users.id).notNull(),
+  moved_at: timestamp("moved_at").defaultNow(),
+  notes: text("notes"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Relações para equipamentos
+export const equipmentsRelations = relations(equipments, ({ many }) => ({
+  responsibilityTerms: many(equipmentResponsibilityTerms),
+  maintenanceRecords: many(equipmentMaintenance),
+  movements: many(equipmentMovements),
+  requests: many(equipmentRequests),
+}));
+
+export const equipmentResponsibilityTermsRelations = relations(equipmentResponsibilityTerms, ({ one }) => ({
+  equipment: one(equipments, {
+    fields: [equipmentResponsibilityTerms.equipment_id],
+    references: [equipments.id],
+  }),
+  user: one(users, {
+    fields: [equipmentResponsibilityTerms.user_id],
+    references: [users.id],
+  }),
+  assignedBy: one(users, {
+    fields: [equipmentResponsibilityTerms.assigned_by],
+    references: [users.id],
+  }),
+  returnedBy: one(users, {
+    fields: [equipmentResponsibilityTerms.returned_by],
+    references: [users.id],
+  }),
+}));
+
+export const equipmentMaintenanceRelations = relations(equipmentMaintenance, ({ one }) => ({
+  equipment: one(equipments, {
+    fields: [equipmentMaintenance.equipment_id],
+    references: [equipments.id],
+  }),
+}));
+
+export const equipmentMovementsRelations = relations(equipmentMovements, ({ one }) => ({
+  equipment: one(equipments, {
+    fields: [equipmentMovements.equipment_id],
+    references: [equipments.id],
+  }),
+  fromUser: one(users, {
+    fields: [equipmentMovements.from_user_id],
+    references: [users.id],
+  }),
+  toUser: one(users, {
+    fields: [equipmentMovements.to_user_id],
+    references: [users.id],
+  }),
+  movedBy: one(users, {
+    fields: [equipmentMovements.moved_by],
+    references: [users.id],
+  }),
+}));
+
+export const equipmentRequestsRelations = relations(equipmentRequests, ({ one }) => ({
+  assignedEquipment: one(equipments, {
+    fields: [equipmentRequests.assigned_equipment_id],
+    references: [equipments.id],
+  }),
+  approvedBy: one(users, {
+    fields: [equipmentRequests.approved_by],
+    references: [users.id],
+  }),
+  rejectedBy: one(users, {
+    fields: [equipmentRequests.rejected_by],
+    references: [users.id],
+  }),
+  deliveredBy: one(users, {
+    fields: [equipmentRequests.delivered_by],
+    references: [users.id],
+  }),
+}));
+
+// Tabelas para sistema de abastecimento pós-pago
+export const postosExternal = pgTable("postos_external", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  cnpj: text("cnpj"),
+  ativo: boolean("ativo").notNull().default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const formTokens = pgTable("form_tokens", {
+  id: serial("id").primaryKey(),
+  token: text("token").notNull().unique(),
+  base_id: integer("base_id").notNull().references(() => bases.id),
+  projeto_id: integer("projeto_id").notNull().references(() => projects.id),
+  ativo: boolean("ativo").notNull().default(true),
+  expires_at: timestamp("expires_at"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const abastecimentosPosPago = pgTable("abastecimentos_pos_pago", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  cpf: text("cpf").notNull(),
+  placa: text("placa").notNull(),
+  km: integer("km").notNull(),
+  tipo_motorista: tipoMotoristaEnum("tipo_motorista").notNull(),
+  projeto_id: integer("projeto_id").notNull().references(() => projects.id),
+  base_id: integer("base_id").notNull().references(() => bases.id),
+  tipo_combustivel: tipoCombustivelEnum("tipo_combustivel").notNull(),
+  valor_unit: decimal("valor_unit", { precision: 12, scale: 4 }).notNull(),
+  valor_total: decimal("valor_total", { precision: 14, scale: 2 }).notNull(),
+  litros: decimal("litros", { precision: 12, scale: 3 }),
+  posto_id: integer("posto_id").references(() => postosExternal.id),
+  modalidade: modalidadePagamentoEnum("modalidade").notNull().default('pos_pago'),
+  status: statusFaturamentoEnum("status").notNull().default('pendente'),
+  form_token: text("form_token"),
+  observacoes: text("observacoes"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Relações para cartões de combustível
+export const fuelCardsRelations = relations(fuelCards, ({ one }) => ({
+  project: one(projects, {
+    fields: [fuelCards.project_id],
+    references: [projects.id],
+  }),
+  base: one(bases, {
+    fields: [fuelCards.base_id],
+    references: [bases.id],
+  }),
+  createdBy: one(users, {
+    fields: [fuelCards.created_by],
+    references: [users.id],
+  }),
+}));
+
+// Schemas para inserção e validação
+export const insertFuelCardSchema = createInsertSchema(fuelCards).extend({
+  current_balance: z.string().transform(val => val === '' ? null : val).optional(),
+  monthly_limit: z.string().transform(val => val === '' ? null : val).optional(),
+});
+
+export const insertEquipmentSchema = createInsertSchema(equipments).extend({
+  purchase_date: z.string().transform(val => val === '' ? null : val).optional(),
+  warranty_expires: z.string().transform(val => val === '' ? null : val).optional(),
+  purchase_value: z.string().transform(val => val === '' ? null : val).optional(),
+});
+export const insertEquipmentResponsibilityTermSchema = createInsertSchema(equipmentResponsibilityTerms);
+export const insertEquipmentMaintenanceSchema = createInsertSchema(equipmentMaintenance);
+export const insertEquipmentMovementSchema = createInsertSchema(equipmentMovements);
+export const insertEquipmentRequestSchema = createInsertSchema(equipmentRequests).extend({
+  requested_delivery_date: z.string().transform(val => val === '' ? null : val).optional(),
+});
+
+// Tipos TypeScript
+export type FuelCard = typeof fuelCards.$inferSelect;
+export type InsertFuelCard = z.infer<typeof insertFuelCardSchema>;
+export type Equipment = typeof equipments.$inferSelect;
+export type InsertEquipment = z.infer<typeof insertEquipmentSchema>;
+export type EquipmentResponsibilityTerm = typeof equipmentResponsibilityTerms.$inferSelect;
+export type InsertEquipmentResponsibilityTerm = z.infer<typeof insertEquipmentResponsibilityTermSchema>;
+export type EquipmentMaintenance = typeof equipmentMaintenance.$inferSelect;
+export type InsertEquipmentMaintenance = z.infer<typeof insertEquipmentMaintenanceSchema>;
+export type EquipmentMovement = typeof equipmentMovements.$inferSelect;
+export type InsertEquipmentMovement = z.infer<typeof insertEquipmentMovementSchema>;
+export type EquipmentRequest = typeof equipmentRequests.$inferSelect;
+export type InsertEquipmentRequest = z.infer<typeof insertEquipmentRequestSchema>;
+
+// Schemas e tipos para abastecimento pós-pago
+export const insertPostoExternalSchema = createInsertSchema(postosExternal);
+export const insertFormTokenSchema = createInsertSchema(formTokens);
+export const insertAbastecimentoPosPagoSchema = createInsertSchema(abastecimentosPosPago).extend({
+  litros: z.string().transform(val => val === '' ? null : val).optional(),
+});
+
+export type PostoExternal = typeof postosExternal.$inferSelect;
+export type InsertPostoExternal = z.infer<typeof insertPostoExternalSchema>;
+export type FormToken = typeof formTokens.$inferSelect;
+export type InsertFormToken = z.infer<typeof insertFormTokenSchema>;
+export type AbastecimentoPosPago = typeof abastecimentosPosPago.$inferSelect;
+export type InsertAbastecimentoPosPago = z.infer<typeof insertAbastecimentoPosPagoSchema>;
+
+// ==================== SISTEMA DE INDICADORES DE MANUTENÇÃO ====================
+
+// Tabela para controle de uploads de indicadores de manutenção
+export const indicadoresUploads = pgTable("indicadores_uploads", {
+  id: serial("id").primaryKey(),
+  filename: text("filename").notNull(),
+  upload_date: date("upload_date").notNull(),
+  total_records: integer("total_records").notNull().default(0),
+  user_id: integer("user_id").references(() => users.id),
+  processed_at: timestamp("processed_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para controle de estoque de peças
+export const indicadoresPecas = pgTable("indicadores_pecas", {
+  id: serial("id").primaryKey(),
+  upload_id: integer("upload_id").references(() => indicadoresUploads.id).notNull(),
+  data: date("data").notNull(),
+  filtro_combustivel: integer("filtro_combustivel"),
+  filtro_ar: integer("filtro_ar"),
+  filtro_oleo: integer("filtro_oleo"),
+  oleo_motor_5w30: integer("oleo_motor_5w30"),
+  pastilha_freio_dianteira: integer("pastilha_freio_dianteira"),
+  filtro_combustivel_master_2023: integer("filtro_combustivel_master_2023"),
+  pastilha_freio_traseira: integer("pastilha_freio_traseira"),
+  disco_freio_dianteiro: integer("disco_freio_dianteiro"),
+  disco_freio_traseiro: integer("disco_freio_traseiro"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para veículos em manutenção
+export const indicadoresDados = pgTable("indicadores_dados", {
+  id: serial("id").primaryKey(),
+  upload_id: integer("upload_id").references(() => indicadoresUploads.id).notNull(),
+  oficina_debito: text("oficina_debito"),
+  atendimento: text("atendimento"),
+  placa: text("placa").notNull(),
+  modelo: text("modelo"),
+  km: integer("km"),
+  relato: text("relato"),
+  data_agenda: date("data_agenda"),
+  focal: text("focal"),
+  status: text("status").default("Em Manutenção"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Tabela para histórico de manutenções liberadas/concluídas
+export const indicadoresLiberado = pgTable("indicadores_liberado", {
+  id: serial("id").primaryKey(),
+  upload_id: integer("upload_id").references(() => indicadoresUploads.id).notNull(),
+  data_forms: date("data_forms"),
+  atendimento: text("atendimento"),
+  placa: text("placa").notNull(),
+  modelo: text("modelo"),
+  km: decimal("km", { precision: 12, scale: 3 }),
+  relato: text("relato"),
+  data_agenda: date("data_agenda"),
+  focal: text("focal"),
+  reparo: text("reparo"),
+  tipo_manutencao: text("tipo_manutencao"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Schemas para inserção
+export const insertIndicadoresUploadSchema = createInsertSchema(indicadoresUploads);
+export const insertIndicadoresPecasSchema = createInsertSchema(indicadoresPecas);
+export const insertIndicadoresDadosSchema = createInsertSchema(indicadoresDados);
+export const insertIndicadoresLiberadoSchema = createInsertSchema(indicadoresLiberado);
+
+// Tipos TypeScript
+export type IndicadoresUpload = typeof indicadoresUploads.$inferSelect;
+export type InsertIndicadoresUpload = z.infer<typeof insertIndicadoresUploadSchema>;
+export type IndicadoresPecas = typeof indicadoresPecas.$inferSelect;
+export type InsertIndicadoresPecas = z.infer<typeof insertIndicadoresPecasSchema>;
+export type IndicadoresDados = typeof indicadoresDados.$inferSelect;
+export type InsertIndicadoresDados = z.infer<typeof insertIndicadoresDadosSchema>;
+export type IndicadoresLiberado = typeof indicadoresLiberado.$inferSelect;
+export type InsertIndicadoresLiberado = z.infer<typeof insertIndicadoresLiberadoSchema>;
+
+// ==================== MANUTENÇÕES FINALIZADAS ====================
+
+// Tabela para manutenções finalizadas (histórico completo)
+export const manutencoesFinalizadas = pgTable("manutencoes_finalizadas", {
+  id: serial("id").primaryKey(),
+  placa: text("placa").notNull(),
+  validacao: text("validacao"),
+  modelo: text("modelo"),
+  km: decimal("km", { precision: 12, scale: 3 }),
+  relato: text("relato"),
+  data_agenda: date("data_agenda"),
+  focal: text("focal"),
+  reparo: text("reparo"),
+  tipo_manutencao: text("tipo_manutencao"),
+  aprovacao: text("aprovacao"),
+  valor_orcamento: decimal("valor_orcamento", { precision: 12, scale: 2 }),
+  valor_negociado: decimal("valor_negociado", { precision: 12, scale: 2 }),
+  centro_custo: text("centro_custo"),
+  operacao: text("operacao"),
+  status: text("status"),
+  previsao_entrega: date("previsao_entrega"),
+  data_liberado: date("data_liberado"),
+  dias_manutencao: integer("dias_manutencao"),
+  status2: text("status2"),
+  oficina: text("oficina"),
+  lider_base: text("lider_base"),
+  mes_referencia: text("mes_referencia"),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const insertManutencoesFinalizadasSchema = createInsertSchema(manutencoesFinalizadas);
+export type ManutencoesFinalizadas = typeof manutencoesFinalizadas.$inferSelect;
+export type InsertManutencoesFinalizadas = z.infer<typeof insertManutencoesFinalizadasSchema>;
+
+// ==================== SISTEMA DE FORNECEDORES ====================
+
+// Enum para categoria de fornecedor
+export const fornecedorCategoriaEnum = pgEnum('fornecedor_categoria', [
+  'oficina_mecanica',
+  'funilaria',
+  'eletrica',
+  'pneus',
+  'pecas',
+  'combustivel',
+  'lubrificantes',
+  'acessorios',
+  'outros'
+]);
+
+// Tabela de fornecedores
+export const fornecedores = pgTable("fornecedores", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  cnpj: text("cnpj"),
+  categoria: text("categoria").default('oficina_mecanica'),
+  tipo_servico: text("tipo_servico"),
+  contato_nome: text("contato_nome"),
+  contato_telefone: text("contato_telefone"),
+  contato_email: text("contato_email"),
+  endereco: text("endereco"),
+  cidade: text("cidade"),
+  estado: text("estado"),
+  cep: text("cep"),
+  observacoes: text("observacoes"),
+  is_parceiro: boolean("is_parceiro").default(false),
+  ativo: boolean("ativo").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFornecedorSchema = createInsertSchema(fornecedores, {
+  nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  cnpj: z.string().optional().nullable(),
+  categoria: z.string().optional().nullable(),
+  tipo_servico: z.string().optional().nullable(),
+  contato_nome: z.string().optional().nullable(),
+  contato_telefone: z.string().optional().nullable(),
+  contato_email: z.string().email("Email inválido").optional().nullable().or(z.literal("")),
+  endereco: z.string().optional().nullable(),
+  cidade: z.string().optional().nullable(),
+  estado: z.string().optional().nullable(),
+  cep: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+  is_parceiro: z.boolean().optional(),
+  ativo: z.boolean().optional(),
+}).omit({ id: true, created_at: true, updated_at: true });
+
+export type Fornecedor = typeof fornecedores.$inferSelect;
+export type InsertFornecedor = z.infer<typeof insertFornecedorSchema>;
+
+// ==================== SISTEMA LINE HALL - ORDENS DE SERVIÇO ====================
+
+// Tabela para ordens de serviço detalhadas de manutenções Line Hall
+export const linehallMaintenanceWorkorders = pgTable("linehall_maintenance_workorders", {
+  id: serial("id").primaryKey(),
+  maintenanceRequestId: integer("maintenance_request_id").notNull(),
+  workshopId: integer("workshop_id").references(() => workshops.id),
+  workshopName: text("workshop_name"),
+  serviceDescription: text("service_description"),
+  laborCost: decimal("labor_cost", { precision: 10, scale: 2 }).default('0'),
+  partsCost: decimal("parts_cost", { precision: 10, scale: 2 }).default('0'),
+  otherCosts: decimal("other_costs", { precision: 10, scale: 2 }).default('0'),
+  invoiceNumber: text("invoice_number"),
+  technicianName: text("technician_name"),
+  partsUsed: text("parts_used"),
+  startedAt: timestamp("started_at").defaultNow(),
+  expectedCompletionAt: timestamp("expected_completion_at"),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: text("created_by"),
+});
+
+// Schema de inserção para ordens de serviço
+export const insertLinehallMaintenanceWorkorderSchema = createInsertSchema(linehallMaintenanceWorkorders, {
+  maintenanceRequestId: z.number().int().positive(),
+  workshopId: z.number().int().positive().optional().nullable(),
+  workshopName: z.string().min(1, "Nome da oficina é obrigatório"),
+  serviceDescription: z.string().optional().nullable(),
+  laborCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+  partsCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+  otherCosts: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+  invoiceNumber: z.string().optional().nullable(),
+  technicianName: z.string().optional().nullable(),
+  partsUsed: z.string().optional().nullable(),
+  expectedCompletionAt: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Tipos TypeScript
+export type LinehallMaintenanceWorkorder = typeof linehallMaintenanceWorkorders.$inferSelect;
+export type InsertLinehallMaintenanceWorkorder = z.infer<typeof insertLinehallMaintenanceWorkorderSchema>;
+
+// ==================== SEGURANÇA DO TRABALHO - CADASTRO DE MOTORISTAS ====================
+
+// Tabela de motoristas para Segurança do Trabalho
+export const workSafetyDrivers = pgTable("work_safety_drivers", {
+  id: serial("id").primaryKey(),
+  nomeCompleto: text("nome_completo").notNull(),
+  cpf: text("cpf").notNull().unique(),
+  baseAtuacao: text("base_atuacao").notNull(),
+  telefoneMotorista: text("telefone_motorista").notNull(),
+  email: text("email").notNull(),
+  possuiEar: boolean("possui_ear").notNull().default(false),
+  numeroCnh: text("numero_cnh").notNull(),
+  pgrAprovado: boolean("pgr_aprovado").notNull().default(false),
+  nomeResponsavel: text("nome_responsavel").notNull(),
+  telefoneResponsavel: text("telefone_responsavel").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  ativo: boolean("ativo").notNull().default(true),
+});
+
+// Schema de inserção com validações
+export const insertWorkSafetyDriverSchema = createInsertSchema(workSafetyDrivers, {
+  nomeCompleto: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  cpf: z.string().min(11, "CPF inválido").max(14, "CPF inválido"),
+  baseAtuacao: z.string().min(1, "Base de atuação é obrigatória"),
+  telefoneMotorista: z.string().min(10, "Telefone inválido"),
+  email: z.string().email("E-mail inválido"),
+  possuiEar: z.boolean(),
+  numeroCnh: z.string().min(1, "Número da CNH é obrigatório"),
+  pgrAprovado: z.boolean(),
+  nomeResponsavel: z.string().min(3, "Nome do responsável é obrigatório"),
+  telefoneResponsavel: z.string().min(10, "Telefone do responsável inválido"),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Tipos TypeScript para Segurança do Trabalho
+export type WorkSafetyDriver = typeof workSafetyDrivers.$inferSelect;
+export type InsertWorkSafetyDriver = z.infer<typeof insertWorkSafetyDriverSchema>;
+
+// ==================== SEGURANÇA DO TRABALHO - ACIDENTES/INCIDENTES ====================
+
+// Enum para tipo de ocorrência
+export const workSafetyOccurrenceTypeEnum = pgEnum('work_safety_occurrence_type', ['acidente', 'incidente', 'quase_acidente']);
+
+// Tabela de acidentes/incidentes
+export const workSafetyAccidents = pgTable("work_safety_accidents", {
+  id: serial("id").primaryKey(),
+  base: text("base").notNull(),
+  motoristaId: integer("motorista_id").references(() => workSafetyDrivers.id),
+  motoristaNome: text("motorista_nome"),
+  tipoOcorrencia: text("tipo_ocorrencia").notNull(), // acidente, incidente, quase_acidente
+  dataHora: timestamp("data_hora").notNull(),
+  local: text("local").notNull(),
+  descricao: text("descricao").notNull(),
+  houveVitima: boolean("houve_vitima").notNull().default(false),
+  anexoUrl: text("anexo_url"),
+  nomeReportante: text("nome_reportante").notNull(),
+  telefoneReportante: text("telefone_reportante").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Schema de inserção para acidentes
+export const insertWorkSafetyAccidentSchema = createInsertSchema(workSafetyAccidents, {
+  base: z.string().min(1, "Base é obrigatória"),
+  tipoOcorrencia: z.enum(['acidente', 'incidente', 'quase_acidente']),
+  local: z.string().min(1, "Local é obrigatório"),
+  descricao: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
+  houveVitima: z.boolean(),
+  nomeReportante: z.string().min(3, "Nome do reportante é obrigatório"),
+  telefoneReportante: z.string().min(10, "Telefone inválido"),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type WorkSafetyAccident = typeof workSafetyAccidents.$inferSelect;
+export type InsertWorkSafetyAccident = z.infer<typeof insertWorkSafetyAccidentSchema>;
+
+// ==================== SEGURANÇA DO TRABALHO - TREINAMENTOS ====================
+
+// Tabela de treinamentos disponíveis
+export const workSafetyTrainings = pgTable("work_safety_trainings", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  descricao: text("descricao"),
+  cargaHoraria: integer("carga_horaria"), // em horas
+  validade: integer("validade"), // em meses
+  ativo: boolean("ativo").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Schema de inserção para treinamentos
+export const insertWorkSafetyTrainingSchema = createInsertSchema(workSafetyTrainings, {
+  nome: z.string().min(3, "Nome do treinamento é obrigatório"),
+  descricao: z.string().optional(),
+  cargaHoraria: z.number().int().positive().optional(),
+  validade: z.number().int().positive().optional(),
+}).omit({ id: true, createdAt: true });
+
+export type WorkSafetyTraining = typeof workSafetyTrainings.$inferSelect;
+export type InsertWorkSafetyTraining = z.infer<typeof insertWorkSafetyTrainingSchema>;
+
+// Tabela de participações em treinamentos
+export const workSafetyTrainingParticipations = pgTable("work_safety_training_participations", {
+  id: serial("id").primaryKey(),
+  treinamentoId: integer("treinamento_id").references(() => workSafetyTrainings.id).notNull(),
+  motoristaId: integer("motorista_id").references(() => workSafetyDrivers.id),
+  motoristaNome: text("motorista_nome").notNull(),
+  motoristaCpf: text("motorista_cpf"),
+  base: text("base").notNull(),
+  status: text("status").notNull().default('inscrito'), // inscrito, confirmado, concluido, ausente
+  dataInscricao: timestamp("data_inscricao").defaultNow(),
+  dataConclusao: timestamp("data_conclusao"),
+  certificadoUrl: text("certificado_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Schema de inserção para participações
+export const insertWorkSafetyTrainingParticipationSchema = createInsertSchema(workSafetyTrainingParticipations, {
+  treinamentoId: z.number().int().positive(),
+  motoristaNome: z.string().min(3, "Nome é obrigatório"),
+  base: z.string().min(1, "Base é obrigatória"),
+  status: z.enum(['inscrito', 'confirmado', 'concluido', 'ausente']).default('inscrito'),
+}).omit({ id: true, createdAt: true, updatedAt: true, dataInscricao: true });
+
+export type WorkSafetyTrainingParticipation = typeof workSafetyTrainingParticipations.$inferSelect;
+export type InsertWorkSafetyTrainingParticipation = z.infer<typeof insertWorkSafetyTrainingParticipationSchema>;
+
+// ==================== SEGURANÇA DO TRABALHO - REGISTRO DE DESVIOS ====================
+
+export const workSafetyDeviationTypeEnum = pgEnum('work_safety_deviation_type', [
+  'excesso_velocidade',
+  'jornada_acima_permitido', 
+  'falha_checklist',
+  'nao_uso_epi',
+  'uso_indevido_veiculo',
+  'avaria_conducao_inadequada',
+  'descumprimento_procedimento',
+  'outro'
+]);
+
+export const workSafetyDeviationStatusEnum = pgEnum('work_safety_deviation_status', [
+  'registrado',
+  'em_acompanhamento',
+  'tratado',
+  'recorrente'
+]);
+
+export const workSafetyDeviations = pgTable("work_safety_deviations", {
+  id: serial("id").primaryKey(),
+  placa: text("placa").notNull(),
+  motoristaNome: text("motorista_nome").notNull(),
+  motoristaCpf: text("motorista_cpf"),
+  motoristaId: integer("motorista_id").references(() => workSafetyDrivers.id),
+  dataDesvio: timestamp("data_desvio").notNull(),
+  tipoDesvio: text("tipo_desvio").notNull(),
+  observacoes: text("observacoes"),
+  anexoUrl: text("anexo_url"),
+  responsavelRegistro: text("responsavel_registro").notNull(),
+  baseOperacao: text("base_operacao").notNull(),
+  status: text("status").notNull().default('registrado'),
+  reincidente: boolean("reincidente").notNull().default(false),
+  quantidadeDesvios: integer("quantidade_desvios").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWorkSafetyDeviationSchema = createInsertSchema(workSafetyDeviations, {
+  placa: z.string().min(1, "Placa é obrigatória"),
+  motoristaNome: z.string().min(1, "Nome do motorista é obrigatório"),
+  motoristaCpf: z.string().optional(),
+  dataDesvio: z.string().or(z.date()),
+  tipoDesvio: z.enum([
+    'excesso_velocidade',
+    'jornada_acima_permitido',
+    'falha_checklist',
+    'nao_uso_epi',
+    'uso_indevido_veiculo',
+    'avaria_conducao_inadequada',
+    'descumprimento_procedimento',
+    'outro'
+  ]),
+  observacoes: z.string().optional(),
+  responsavelRegistro: z.string().min(1, "Responsável é obrigatório"),
+  baseOperacao: z.string().min(1, "Base é obrigatória"),
+  status: z.enum(['registrado', 'em_acompanhamento', 'tratado', 'recorrente']).default('registrado'),
+}).omit({ id: true, createdAt: true, updatedAt: true, reincidente: true, quantidadeDesvios: true });
+
+export type WorkSafetyDeviation = typeof workSafetyDeviations.$inferSelect;
+export type InsertWorkSafetyDeviation = z.infer<typeof insertWorkSafetyDeviationSchema>;
+
+// ==================== LINE HAUL - CONTROLE DE JORNADA DE MOTORISTAS ====================
+
+// Enum para status da jornada
+export const journeyStatusEnum = pgEnum('journey_status', ['em_andamento', 'dentro_limite', 'proximo_limite', 'excedido', 'encerrada']);
+
+// Tabela de jornadas de motoristas
+export const jornadaMotorista = pgTable("jornada_motorista", {
+  id: serial("id").primaryKey(),
+  motoristaId: integer("motorista_id"),
+  motoristaNome: text("motorista_nome").notNull(),
+  veiculoId: integer("veiculo_id"),
+  placaCavalo: text("placa_cavalo").notNull(),
+  placaCarreta1: text("placa_carreta_1"),
+  placaCarreta2: text("placa_carreta_2"),
+  rotaId: integer("rota_id"),
+  rotaNome: text("rota_nome"),
+  baseId: integer("base_id"),
+  baseNome: text("base_nome"),
+  inicioJornada: timestamp("inicio_jornada").notNull(),
+  fimJornada: timestamp("fim_jornada"),
+  interjornadaFim: timestamp("interjornada_fim"),
+  horasTrabalhadas: decimal("horas_trabalhadas", { precision: 5, scale: 2 }),
+  statusJornada: text("status_jornada").notNull().default('em_andamento'), // em_andamento, dentro_limite, proximo_limite, excedido, encerrada
+  observacoes: text("observacoes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: text("created_by"),
+});
+
+// Schema de inserção para jornadas
+export const insertJornadaMotoristaSchema = createInsertSchema(jornadaMotorista, {
+  motoristaNome: z.string().min(1, "Nome do motorista é obrigatório"),
+  placaCavalo: z.string().min(1, "Placa do veículo é obrigatória"),
+  rotaNome: z.string().optional().nullable(),
+  baseNome: z.string().optional().nullable(),
+}).omit({ id: true, createdAt: true, updatedAt: true, horasTrabalhadas: true });
+
+export type JornadaMotorista = typeof jornadaMotorista.$inferSelect;
+export type InsertJornadaMotorista = z.infer<typeof insertJornadaMotoristaSchema>;
+
+// ==================== SEGURANÇA DO TRABALHO - PLANOS DE AÇÃO ====================
+
+export const workSafetyActionPlanOriginEnum = pgEnum('work_safety_action_plan_origin', [
+  'investigacao',
+  'telemetria',
+  'gestao_relatos',
+  'preventiva',
+  'campanhas'
+]);
+
+export const workSafetyActionPlanStatusEnum = pgEnum('work_safety_action_plan_status', [
+  'em_andamento',
+  'concluido',
+  'atrasado'
+]);
+
+export const workSafetyActionPlans = pgTable("work_safety_action_plans", {
+  id: serial("id").primaryKey(),
+  status: text("status").notNull().default('em_andamento'),
+  dataAbertura: timestamp("data_abertura").notNull().defaultNow(),
+  prazoFinal: timestamp("prazo_final").notNull(),
+  origemAcao: text("origem_acao").notNull(),
+  placa: text("placa"),
+  dataOcorrencia: timestamp("data_ocorrencia"),
+  operacao: text("operacao").notNull(),
+  baseOperacao: text("base_operacao"),
+  acaoProposta: text("acao_proposta").notNull(),
+  responsavelNome: text("responsavel_nome").notNull(),
+  responsavelTelefone: text("responsavel_telefone"),
+  responsavelEmail: text("responsavel_email"),
+  observacoes: text("observacoes"),
+  dataConclusao: timestamp("data_conclusao"),
+  criadoPor: text("criado_por").notNull(),
+  notificadoWhatsapp: boolean("notificado_whatsapp").default(false),
+  dataNotificacao: timestamp("data_notificacao"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWorkSafetyActionPlanSchema = createInsertSchema(workSafetyActionPlans, {
+  status: z.enum(['em_andamento', 'concluido', 'atrasado']).default('em_andamento'),
+  prazoFinal: z.string().or(z.date()),
+  origemAcao: z.enum(['investigacao', 'telemetria', 'gestao_relatos', 'preventiva', 'campanhas']),
+  placa: z.string().optional().nullable(),
+  dataOcorrencia: z.string().or(z.date()).optional().nullable(),
+  operacao: z.string().min(1, "Operação é obrigatória"),
+  baseOperacao: z.string().optional().nullable(),
+  acaoProposta: z.string().min(1, "Ação proposta é obrigatória"),
+  responsavelNome: z.string().min(1, "Responsável é obrigatório"),
+  responsavelTelefone: z.string().optional().nullable(),
+  responsavelEmail: z.string().email().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+  criadoPor: z.string().min(1, "Criado por é obrigatório"),
+}).omit({ id: true, createdAt: true, updatedAt: true, notificadoWhatsapp: true, dataNotificacao: true, dataConclusao: true });
+
+export type WorkSafetyActionPlan = typeof workSafetyActionPlans.$inferSelect;
+export type InsertWorkSafetyActionPlan = z.infer<typeof insertWorkSafetyActionPlanSchema>;
+
+// ========== Vehicle Daily Status (Status Diário de Veículos) ==========
+// Sistema para rastrear status diário dos veículos com histórico
+export const vehicleDailyStatusEnum = pgEnum('vehicle_daily_status_type', [
+  'em_rota',
+  'em_manutencao',
+  'parado',
+  'emprestado',
+  'baixa_venda',
+  'sem_equipe',
+  'nao_informado'
+]);
+
+export const vehicleDailyStatus = pgTable("vehicle_daily_status", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicle_id").notNull(),
+  baseId: integer("base_id"),
+  data: date("data").notNull(),
+  status: text("status").notNull().default('nao_informado'),
+  observacao: text("observacao"),
+  updatedBy: integer("updated_by"),
+  updatedByName: text("updated_by_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertVehicleDailyStatusSchema = createInsertSchema(vehicleDailyStatus, {
+  status: z.enum(['em_rota', 'em_manutencao', 'parado', 'emprestado', 'baixa_venda', 'sem_equipe', 'nao_informado']).default('nao_informado'),
+  observacao: z.string().optional().nullable(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type VehicleDailyStatus = typeof vehicleDailyStatus.$inferSelect;
+export type InsertVehicleDailyStatus = z.infer<typeof insertVehicleDailyStatusSchema>;
+
+// ========== Fleet Status History (Histórico de Status da Frota) ==========
+// Tabela para armazenar histórico de todas as alterações de status
+export const fleetStatusHistory = pgTable("fleet_status_history", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id),
+  vehiclePlate: text("vehicle_plate").notNull(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  baseName: text("base_name").notNull(),
+  statusAnterior: text("status_anterior"),
+  statusNovo: text("status_novo").notNull(),
+  observacao: text("observacao"),
+  localManutencao: text("local_manutencao"),
+  prazoManutencao: date("prazo_manutencao"),
+  baseEmprestadaId: integer("base_emprestada_id").references(() => bases.id),
+  baseEmprestadaNome: text("base_emprestada_nome"),
+  dataDevolucao: date("data_devolucao"),
+  updatedBy: integer("updated_by").notNull().references(() => users.id),
+  updatedByName: text("updated_by_name").notNull(),
+  dataAlteracao: timestamp("data_alteracao").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertFleetStatusHistorySchema = createInsertSchema(fleetStatusHistory).omit({ 
+  id: true, 
+  createdAt: true 
+});
+
+export type FleetStatusHistory = typeof fleetStatusHistory.$inferSelect;
+export type InsertFleetStatusHistory = z.infer<typeof insertFleetStatusHistorySchema>;
+
+// ========== Fleet Update Alerts (Alertas de Atualização de Frota) ==========
+// Tabela para rastrear bases que não fizeram atualizações diárias
+export const fleetUpdateAlerts = pgTable("fleet_update_alerts", {
+  id: serial("id").primaryKey(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  baseName: text("base_name").notNull(),
+  dataReferencia: date("data_referencia").notNull(),
+  totalVeiculos: integer("total_veiculos").notNull(),
+  veiculosAtualizados: integer("veiculos_atualizados").notNull().default(0),
+  veiculosPendentes: integer("veiculos_pendentes").notNull().default(0),
+  percentualAtualizado: decimal("percentual_atualizado", { precision: 5, scale: 2 }).default("0"),
+  status: text("status").notNull().default('pendente'), // 'pendente', 'parcial', 'completo'
+  notificado: boolean("notificado").default(false),
+  dataNotificacao: timestamp("data_notificacao"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFleetUpdateAlertSchema = createInsertSchema(fleetUpdateAlerts).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
+
+export type FleetUpdateAlert = typeof fleetUpdateAlerts.$inferSelect;
+export type InsertFleetUpdateAlert = z.infer<typeof insertFleetUpdateAlertSchema>;
+
+// ========== Fleet Status Daily Extended (Status Diário Estendido) ==========
+// Versão estendida da tabela de status diário com mais campos
+export const fleetStatusDaily = pgTable("fleet_status_daily", {
+  id: serial("id").primaryKey(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id),
+  vehiclePlate: text("vehicle_plate").notNull(),
+  baseId: integer("base_id").notNull().references(() => bases.id),
+  baseName: text("base_name").notNull(),
+  dataAtualizacao: date("data_atualizacao").notNull(),
+  status: text("status").notNull().default('nao_informado'), // 'em_rota', 'sem_equipe', 'manutencao', 'emprestado', 'devolvido', 'nao_informado'
+  motivo: text("motivo"),
+  localManutencao: text("local_manutencao"),
+  prazoManutencao: date("prazo_manutencao"),
+  baseEmprestadaId: integer("base_emprestada_id").references(() => bases.id),
+  baseEmprestadaNome: text("base_emprestada_nome"),
+  dataDevolucao: date("data_devolucao"),
+  updatedBy: integer("updated_by").notNull().references(() => users.id),
+  updatedByName: text("updated_by_name").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFleetStatusDailySchema = createInsertSchema(fleetStatusDaily, {
+  status: z.enum(['em_rota', 'sem_equipe', 'manutencao', 'emprestado', 'devolvido', 'nao_informado']).default('nao_informado'),
+  motivo: z.string().optional().nullable(),
+  localManutencao: z.string().optional().nullable(),
+  prazoManutencao: z.string().optional().nullable(),
+  baseEmprestadaNome: z.string().optional().nullable(),
+  dataDevolucao: z.string().optional().nullable(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type FleetStatusDaily = typeof fleetStatusDaily.$inferSelect;
+export type InsertFleetStatusDaily = z.infer<typeof insertFleetStatusDailySchema>;
+
+// Relations para Fleet Status
+export const fleetStatusHistoryRelations = relations(fleetStatusHistory, ({ one }) => ({
+  vehicle: one(vehicles, {
+    fields: [fleetStatusHistory.vehicleId],
+    references: [vehicles.id],
+  }),
+  base: one(bases, {
+    fields: [fleetStatusHistory.baseId],
+    references: [bases.id],
+  }),
+  baseEmprestada: one(bases, {
+    fields: [fleetStatusHistory.baseEmprestadaId],
+    references: [bases.id],
+  }),
+  updatedByUser: one(users, {
+    fields: [fleetStatusHistory.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const fleetStatusDailyRelations = relations(fleetStatusDaily, ({ one }) => ({
+  vehicle: one(vehicles, {
+    fields: [fleetStatusDaily.vehicleId],
+    references: [vehicles.id],
+  }),
+  base: one(bases, {
+    fields: [fleetStatusDaily.baseId],
+    references: [bases.id],
+  }),
+  baseEmprestada: one(bases, {
+    fields: [fleetStatusDaily.baseEmprestadaId],
+    references: [bases.id],
+  }),
+  updatedByUser: one(users, {
+    fields: [fleetStatusDaily.updatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const fleetUpdateAlertsRelations = relations(fleetUpdateAlerts, ({ one }) => ({
+  base: one(bases, {
+    fields: [fleetUpdateAlerts.baseId],
+    references: [bases.id],
+  }),
+}));

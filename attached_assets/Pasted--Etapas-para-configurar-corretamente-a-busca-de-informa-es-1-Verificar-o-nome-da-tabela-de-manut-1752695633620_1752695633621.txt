@@ -1,0 +1,83 @@
+✅ Etapas para configurar corretamente a busca de informações:
+1. Verificar o nome da tabela de manutenções no Supabase
+Confirme se a tabela que guarda as manutenções se chama algo como manutencoes, oficina_manutencao, registro_manutencao etc.
+
+2. Certifique-se de que os campos principais existem
+A tabela precisa ter, no mínimo:
+
+Campo	Tipo	Observação
+status	texto	Ex: "Em andamento", "Finalizada"
+valor_total	número	Valor da manutenção
+oficina	texto ou FK	Nome da oficina (Murici, etc.)
+data_inicio e data_fim	timestamp	(opcional, mas útil para análise)
+
+3. Exemplo de query SQL para Supabase (RPC ou view)
+Você pode criar uma view no Supabase para facilitar o trabalho da IA ou painel, algo como:
+
+sql
+Copiar
+Editar
+CREATE VIEW painel_manutencao_resumo AS
+SELECT 
+  oficina,
+  status,
+  COUNT(*) AS total_manutencoes,
+  SUM(valor_total) AS valor_total
+FROM manutencoes
+GROUP BY oficina, status;
+Isso gerará algo assim:
+
+oficina	status	total_manutencoes	valor_total
+Murici	Finalizada	10	12000
+Murici	Em andamento	2	4500
+AutoCenter XYZ	Finalizada	5	8000
+
+4. Configurar a chamada no painel
+Se estiver usando React com Supabase client, o código para buscar pode ser:
+
+ts
+Copiar
+Editar
+const { data, error } = await supabase
+  .from('painel_manutencao_resumo')
+  .select('*')
+Ou se estiver puxando direto da manutencoes, use:
+
+ts
+Copiar
+Editar
+const { data: manutencoes, error } = await supabase
+  .from('manutencoes')
+  .select('status, valor_total, oficina')
+5. Separar visualmente no painel
+Monte a exibição em cards ou KPIs separados:
+
+🔧 Em manutenção (Murici): Filtra status = 'Em andamento' e oficina = 'Murici'
+
+✅ Finalizadas (Murici): status = 'Finalizada' e oficina = 'Murici'
+
+💰 Valor Total: Soma todos os valor_total
+
+🧠 Dica para “Ajudar a IA” a entender melhor
+Se você estiver usando IA (tipo GPT) dentro do painel para responder ou gerar análises automáticas, forneça os dados estruturados já filtrados e nomeados, exemplo:
+
+json
+Copiar
+Editar
+{
+  "manutencoes": {
+    "Murici": {
+      "finalizadas": 10,
+      "em_andamento": 2,
+      "valor_total": 16500
+    },
+    "AutoCenter XYZ": {
+      "finalizadas": 5,
+      "valor_total": 8000
+    }
+  }
+}
+Assim a IA pode descrever automaticamente:
+
+“A oficina Murici tem 2 manutenções em andamento e 10 finalizadas, totalizando R$ 16.500 em serviços. A oficina AutoCenter XYZ já concluiu 5 manutenções com custo total de R$ 8.000.”
+

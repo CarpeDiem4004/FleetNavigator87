@@ -1,0 +1,161 @@
+Boa, dá pra automatizar isso bem tranquilo 👍
+Pelo print você está no **gestaonfleet → Veículos**, e quer **importar a planilha (placa x base)** pra atualizar o banco de dados em massa, certo?
+
+Vou te passar o caminho mais prático (padrão web + backend/API). Se você me disser qual stack usa (Python, Node, PHP, etc.), eu já te mando o código pronto.
+
+---
+
+## ✅ Ideia geral
+
+Você precisa:
+
+1. Ler a planilha (.xlsx)
+2. Para cada linha:
+
+   * pegar **placa**
+   * pegar **base**
+3. Rodar um **UPDATE no banco**
+
+Tipo:
+
+```sql
+UPDATE veiculos
+SET base = 'LH01 LINE HALL'
+WHERE placa = 'ABC1234';
+```
+
+---
+
+## 🔹 Opção 1 — Importação direto no banco (mais simples)
+
+Se você só quer atualizar rápido, sem mexer no sistema:
+
+### 1️⃣ Salvar planilha como CSV
+
+No Excel:
+👉 Salvar como → CSV
+
+Formato:
+
+```
+placa,base
+GAX9F44,GP02 JACAREI
+GGD5G63,GP02 JACAREI
+...
+```
+
+---
+
+### 2️⃣ MySQL
+
+Se usa MySQL:
+
+```sql
+LOAD DATA INFILE '/caminho/placas.csv'
+INTO TABLE veiculos_temp
+FIELDS TERMINATED BY ','
+IGNORE 1 ROWS
+(placa, base);
+```
+
+Depois:
+
+```sql
+UPDATE veiculos v
+JOIN veiculos_temp t ON t.placa = v.placa
+SET v.base = t.base;
+```
+
+Pronto. Atualiza tudo de uma vez 🚀
+
+---
+
+## 🔹 Opção 2 — Pelo sistema (backend/API)
+
+Se quer botão **"Importar Planilha"** no site:
+
+Fluxo:
+
+```
+Upload Excel → Backend lê → atualiza banco
+```
+
+### Exemplo Python (muito usado)
+
+Se seu backend for Flask/Django:
+
+```python
+import pandas as pd
+import mysql.connector
+
+df = pd.read_excel("placas e bases.xlsx")
+
+conn = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="123",
+    database="fleet"
+)
+
+cursor = conn.cursor()
+
+for _, row in df.iterrows():
+    cursor.execute("""
+        UPDATE veiculos
+        SET base = %s
+        WHERE placa = %s
+    """, (row["base"], row["placa"]))
+
+conn.commit()
+```
+
+---
+
+## 🔹 Opção 3 — Node.js
+
+Se for Node:
+
+```javascript
+const xlsx = require("xlsx");
+const mysql = require("mysql2/promise");
+
+const wb = xlsx.readFile("placas e bases.xlsx");
+const ws = wb.Sheets[wb.SheetNames[0]];
+const data = xlsx.utils.sheet_to_json(ws);
+
+const conn = await mysql.createConnection({...});
+
+for (let row of data) {
+  await conn.execute(
+    "UPDATE veiculos SET base=? WHERE placa=?",
+    [row.base, row.placa]
+  );
+}
+```
+
+---
+
+## 🔥 Dica profissional (importante)
+
+Pra ficar rápido mesmo:
+
+👉 não faça update linha por linha
+👉 use UPDATE com JOIN (muito mais rápido)
+
+Se forem 2.000+ veículos, isso faz muita diferença.
+
+---
+
+## Se quiser
+
+Posso:
+✅ adaptar pro seu banco (MySQL/Postgres/SQL Server)
+✅ gerar script pronto
+✅ ler sua planilha e montar SQL
+✅ ou te ajudar criar botão “Importar Manutenção” igual ao da tela
+
+Só me falar:
+👉 qual linguagem do backend?
+👉 qual banco de dados?
+
+Aí eu já te devolvo mastigado 😄

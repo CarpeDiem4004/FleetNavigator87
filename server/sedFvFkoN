@@ -1,0 +1,2509 @@
+import type { Express, Request, Response, NextFunction } from "express";
+
+// Extend Request interface to include oficina property
+declare module 'express-serve-static-core' {
+  interface Request {
+    oficina?: any;
+  }
+}
+import express from "express";
+import { createServer, type Server } from "http";
+import multer from "multer";
+import path from "path";
+import { promises as fs } from "fs";
+import fsSync from "fs";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+
+// Função utilitária para obter data/hora no fuso horário de Brasília (UTC-3)
+function getCurrentDateBrasilia() {
+  // Obter data atual em Brasília usando o timezone correto
+  const now = new Date();
+  const brasiliaTime = new Date(now.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+  
+  return brasiliaTime;
+}
+
+function formatDateForDB(date?: Date) {
+  const targetDate = date || getCurrentDateBrasilia();
+  return targetDate.toISOString();
+}
+
+function formatDateBrasilia(date?: Date) {
+  const targetDate = date || getCurrentDateBrasilia();
+  return targetDate.toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+import { storage } from "./storage";
+import { 
+  insertBaseSchema, insertVehicleSchema, insertMaintenanceSchema,
+  insertWorkshopSchema, insertTireSchema, insertRefuelingSchema, 
+  insertFineSchema, insertUserSchema,
+  insertMaintenanceChatSchema, insertChatMessageSchema,
+  insertBaseRequestSchema, insertBaseRequestUpdateSchema, 
+  type InsertWorkshop, type InsertUser, type InsertMaintenance,
+  type InsertMaintenanceChat, type InsertChatMessage,
+  type InsertBaseRequest, type InsertBaseRequestUpdate
+} from "@shared/schema";
+import { setupAuth } from "./auth";
+import { initResyncRoutes } from "./routes/sessionResyncRoute";
+
+// Função para envio de WhatsApp - Mockada para exemplo, integre com API real
+async function sendWhatsAppNotification(phone: string, message: string) {
+  try {
+    console.log(`[WhatsApp] Enviando mensagem para ${phone}: ${message}`);
+    
+    // AQUI: Integrar com API real do WhatsApp (Twilio, WhatsApp Business API, etc.)
+    // Exemplo com Twilio:
+    // const twilioClient = require('twilio')(ACCOUNT_SID, AUTH_TOKEN);
+    // await twilioClient.messages.create({
+    //   from: 'whatsapp:+5511999999999',
+    //   to: `whatsapp:${phone}`,
+    //   body: message
+    // });
+    
+    // Por enquanto, apenas simular o envio
+    return { success: true, message: 'Mensagem enviada com sucesso (simulado)' };
+  } catch (error) {
+    console.error('[WhatsApp] Erro ao enviar mensagem:', error);
+    throw error;
+  }
+}
+import { getDashboardKPIs, getPainelPrincipal, getRealFuelConsumption } from "./dashboardApi";
+import { getExecutiveDashboard } from "./executiveDashboard";
+// middleware de autenticação híbrida já importado abaixo como alias
+import { registerDashboardKpiRoutes } from "./dashboardKpiApi";
+import { getPostosResumo, getPostoDetalhes, registrarEntradaCombustivel, excluirPostoSaoPaulo } from "./postosApi";
+import { 
+  getFuelCardSolicitations, 
+  getFuelCardSolicitationById, 
+  createFuelCardSolicitation, 
+  updateFuelCardSolicitationStatus,
+  deleteFuelCardSolicitation,
+  setupFuelCardTable,
+  createLineHallFuelCardRequest,
+  exportFuelCardSolicitationsToExcel,
+  exportFuelCardSolicitationsByDate,
+  exportFuelCardSolicitationsByFuelDate,
+  createFuelCardRequest,
+  getFuelCardSolicitationsCounts,
+  validateSheetForRequest,
+  validatePendingSolicitations,
+  calcularDataConsulta
+} from "./fuelCardSolicitationsApi";
+import { getFuelCardAnalytics } from "./fuelCardAnalyticsApi";
+import { getFuelConsumptionReport, getBasesForFilter } from "./routes/fuelConsumptionReportApi";
+import { exportFuelCardSolicitationsToCSV, exportVeloeToExcel, exportTicketCards } from "./fuelCardExportAlternative";
+import { getBaseDisplayName } from "@shared/baseNormalization";
+import { 
+  getProjects, 
+  getProjectBases, 
+  getProjectsWithBases, 
+  createProject, 
+  createProjectBase 
+} from "./projectsApi";
+import { runSupabaseDiagnostic } from "./supabaseDiagnostic";
+import { registerPneusRoutes } from "./pneusApi";
+import { registerTireMoveRoutes } from "./tireMoveApi";
+import { unifiedAuthMiddleware } from "./utils/auth-utils.js";
+import consumoDiarioPostosRoute from "./routes/consumoDiarioPostosRoute";
+import { compareSchemas } from "./compareSchemas";
+import diagnosticoRoutes from './routes/diagnosticoRoutes';
+import { synchronizeSupabaseTables } from "./supabaseSchemaSync";
+import { sendFuelCardRechargeNotification, isTwilioConfigured } from "./services/twilioWhatsAppService";
+import { sendFuelCardRechargeNotificationZAPI, isZAPIConfigured } from "./services/zapiWhatsAppService";
+// Removida importação redundante, pois está sendo importada via supabaseInsertRoute
+import { registerPrecosCombustivelRoutes } from "./routes/precosCombustivelRoutes";
+import { registerPostosMapeamentoRoutes } from "./routes/postosMapeamentoRoutes";
+import { registerUsuariosSupabaseRoutes } from "./routes/usuariosSupabaseRoutes";
+import { upload as uploadConferencia, uploadRouteData, generateReport, listUploads, getUploadData, deleteUpload, exportReportToExcel } from "./conferenciaRotasApi";
+import { getRelatorioConsumo } from "./relatorioConsumoApi";
+import indicadoresApi from "./indicadoresApi";
+import manutencaoHistoricoApi from "./manutencaoHistoricoApi";
+import veiculosApi from "./veiculosApi";
+import viagensApi from "./routes/viagensApi";
+// import { supabaseInsertHandler } from "./routes/supabaseInsertRoute"; // Desabilitado - usando versão PostgreSQL direta
+import postoSupabaseRoutes from "./routes/postoSupabaseRoutes";
+import postoRoutes from "./routes/postoRoutes.js";
+import frotaEstoqueRoutes from "./routes/frotaEstoqueRoutes";
+import parceirosGuinchoRoutes from "./routes/parceirosGuinchoRoutes";
+import towingPartnersRoutes from "./routes/towingPartnersRoutes";
+import { getTowingFinancialSummary, getTowingFinancialServices, processPayment, getPartnerReport, deleteFinancialService } from "./routes/towingFinancialRoutes";
+// Arquivo com problemas de sintaxe, desativado temporariamente
+// import simpleExternalAccess from './routes/simpleExternalAccess';
+// import simpleExternalAccessRepair from './routes/simpleExternalAccess_repair';
+import towingServiceEmergency from './routes/towingServiceEmergency';
+import historicoConsolidadoRoutes from "./routes/historicoConsolidadoRoutes";
+import patioRoutes from "./routes/patioRoutes";
+import pneusRoutes from "./routes/pneusRoutes";
+import guarulhosV2Routes from "./routes/guarulhosV2Routes.js";
+import osascoV2Routes from "./routes/osascoV2Routes.js";
+import abastecimentoUnificadoRoutes from "./routes/abastecimentoUnificado.js";
+import recebimentosRoutes from "./routes/recebimentosRoutes.js";
+import debugOsascoRoutes from "./routes/debugOsascoRoutes.js";
+import fixOsascoRecebimentos from "./routes/fixOsascoRecebimentos.js";
+import recebimentosOsascoHandler, { getRecebimentosOsascoV2, registrarRecebimentoOsascoV2 } from "./routes/recebimentosOsascoHandler.js";
+import testeOsascoRecebimentos from "./routes/testeOsascoRecebimentos.js";
+import osascoV2Direto from "./routes/osascoV2Direto.js";
+import osascoDiretoRoutes from "./routes/osascoDiretoRoutes.js";
+import { 
+  createWorkSafetyDriver, 
+  getWorkSafetyDrivers, 
+  getWorkSafetyDriverById,
+  updateWorkSafetyDriver,
+  deleteWorkSafetyDriver,
+  getWorkSafetyBases,
+  getWorkSafetyStats
+} from "./routes/workSafetyDriversApi";
+import { 
+  createAccident, 
+  getAccidents, 
+  getAccidentStats 
+} from "./routes/workSafetyAccidentsApi";
+import { 
+  getTrainings, 
+  createParticipation, 
+  getParticipations, 
+  getTrainingStats,
+  seedDefaultTrainings
+} from "./routes/workSafetyTrainingsApi";
+import {
+  createDeviation,
+  getDeviations,
+  getDeviationById,
+  updateDeviationStatus,
+  getDeviationStats,
+  deleteDeviation,
+  cleanupTestData
+} from "./routes/workSafetyDeviationsApi";
+import {
+  createActionPlan,
+  getActionPlans,
+  getActionPlanById,
+  getActionPlanStats,
+  updateActionPlan,
+  deleteActionPlan,
+  notifyResponsible
+} from "./routes/workSafetyActionPlansApi";
+import fleetStatusApi from "./routes/fleetStatusApi";
+import recebimentosOsascoV2Routes from "./routes/recebimentosOsascoV2.js";
+import osascoV2RecebimentosDirecto from "./routes/osascoV2RecebimentosDirecto.js";
+import { db, pool } from "./db.js";
+import authHybridRoutes from "./routes/authHybridRoutes.js";
+import * as userHandler from "./handlers/userHandler.js";
+import { atualizarTabelaPneus } from "./updatePneus.js";
+import { randomBytes, scrypt } from "crypto";
+import { promisify } from "util";
+import { setupTireActivityRoutes, setupTireActivityTable } from "./tireActivityApi.js";
+import { consultarUsuarios, consultarUsuarioPorId } from "./handlers/userHandler.js";
+// Importação das rotas de teste de autenticação híbrida
+import authTestRoutes from './routes/authTest.js';
+// Importação da rota de ressincronização de sessão
+import { resyncSession } from './routes/sessionResyncRoute.js';
+// Importação das rotas de autenticação dos parceiros
+import partnerAuthRouter from './routes/partnerAuth';
+// Importação das novas rotas de JWT
+import jwtAuthRoutes from './jwtAuthRoutes.js';
+// Importação das rotas do Line Hall (motoristas)
+import lineHallRoutes from './routes/lineHallRoutes';
+import lineHaulAnalyticsApi from './lineHaulAnalyticsApi';
+// Importação das rotas de equipamentos
+import equipmentRoutes from './routes/equipmentRoutes';
+// Importação das rotas de storage
+import storageRoutes from './routes/storageRoutes';
+// Importação das rotas de recebimento de combustível
+import fuelReceiptRoutes from './routes/fuelReceiptRoutes.js';
+// Importação das rotas de autenticação de bases (links externos)
+import baseAuthRoutes from './routes/baseAuthRoutes';
+// Importação das rotas pós-pago (isoladas em arquivo separado)
+import { setupPostPaidRoutes } from './routes/postpaid.js';
+// Importação do cliente Supabase para armazenamento de arquivos
+import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from './services/supabaseAdmin';
+// Importação das rotas de diagnóstico já feita acima
+// Importação dos middlewares antigos para compatibilidade com código existente
+import { 
+  isAuthenticated as authMiddleware, 
+  isAdmin as adminMiddleware, 
+  hasMaintenanceAccessV2 as maintenanceAccessMiddleware, 
+  hasTiresAccess as tiresAccessMiddleware, 
+  isWorkshop as workshopMiddleware, 
+  hasBaseAccess as baseAccessMiddleware,
+  blockFuelCardForOperador1LineHaul
+} from "./middleware/auth";
+
+// Importação dos novos middlewares de autenticação híbrida
+import {
+  isAuthenticated as isAuthenticatedHybrid,
+  isAuthenticatedWithMapping,
+  isSessionAuthenticated,
+  isJwtAuthenticated,
+  hybridAuth as hybridAuthMiddleware
+} from "./middleware/auth/index";
+
+// Importação do middleware de autenticação de oficinas
+import { workshopAuth } from "./middleware/workshopAuth";
+
+// Função auxiliar para hash de senha (usada na criação de usuários de oficinas)
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
+// Função para gerar senhas aleatórias
+function generateRandomPassword(length: number): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&*';
+  const numbers = '0123456789';
+  const specialChars = '@#$%&*';
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  
+  // Garantir que temos pelo menos um de cada tipo
+  let password = '';
+  password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+  password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+  password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  password += specialChars.charAt(Math.floor(Math.random() * specialChars.length));
+  
+  // Preencher o resto da senha com caracteres aleatórios
+  for (let i = password.length; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  // Embaralhar a senha para que os caracteres obrigatórios não fiquem sempre nas mesmas posições
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
+}
+
+// Middlewares de autenticação e autorização movidos para o arquivo de middleware
+// Agora importados de server/middleware/auth.ts através de alias para evitar conflitos
+// Middleware de autenticação que suporta tanto sessão quanto token JWT
+import { isAuthenticatedBySessionOrJwt } from './middleware/isAuthenticated';
+const isAuthenticated = isAuthenticatedBySessionOrJwt;
+
+// Configuração do multer para upload de arquivos
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de arquivo não permitido'), false);
+    }
+  }
+});
+
+// Configuração específica do multer para planilhas Excel
+const uploadExcel = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB para planilhas
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+    if (allowedTypes.includes(file.mimetype) || file.originalname.endsWith('.xlsx') || file.originalname.endsWith('.xls')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos Excel (.xlsx, .xls) são permitidos'), false);
+    }
+  }
+});
+
+// Configuração específica para importação de manutenção (10MB)
+const uploadMaintenanceImport = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limite para importação
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+    if (allowedMimes.includes(file.mimetype) || /\.(xlsx|xls)$/i.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos Excel (.xlsx, .xls) são permitidos'), false);
+    }
+  }
+});
+
+// Configuração específica para upload de fotos Line Haul - usando memoryStorage para upload no Supabase
+const uploadLineHaulPhotos = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB por foto
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens (JPEG, PNG, WebP) são permitidas'), false);
+    }
+  }
+});
+
+// Função auxiliar para fazer upload de foto no Supabase Storage
+async function uploadPhotoToSupabase(buffer: Buffer, filename: string, mimetype: string): Promise<string | null> {
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    const bucketName = 'linehaul-photos';
+    const timestamp = Date.now();
+    const uniqueSuffix = Math.round(Math.random() * 1E9);
+    const ext = filename.split('.').pop() || 'jpg';
+    const safePath = `uploads/${timestamp}-${uniqueSuffix}.${ext}`;
+
+    // Tentar criar o bucket se não existir
+    const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+    const bucketExists = buckets?.some(b => b.name === bucketName);
+    
+    if (!bucketExists) {
+      await supabaseAdmin.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: 10485760, // 10MB
+      });
+    }
+
+    // Fazer upload do arquivo
+    const { data, error: uploadError } = await supabaseAdmin.storage
+      .from(bucketName)
+      .upload(safePath, buffer, {
+        contentType: mimetype,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('[LINEHAUL-UPLOAD] Erro ao fazer upload:', uploadError);
+      return null;
+    }
+
+    // Obter URL pública do arquivo
+    const { data: publicUrlData } = supabaseAdmin.storage
+      .from(bucketName)
+      .getPublicUrl(safePath);
+
+    console.log('[LINEHAUL-UPLOAD] Upload concluído:', publicUrlData.publicUrl);
+    return publicUrlData.publicUrl;
+  } catch (error) {
+    console.error('[LINEHAUL-UPLOAD] Erro:', error);
+    return null;
+  }
+}
+
+// Definindo funções middleware para compatibilidade com o código existente
+const isAdmin = adminMiddleware;  
+const hasMaintenanceAccess = maintenanceAccessMiddleware;
+const hasTiresAccess = tiresAccessMiddleware;
+const isWorkshop = workshopMiddleware;
+const hasBaseAccess = baseAccessMiddleware;
+
+// Importar hasMaintenanceAccessV2 diretamente
+import { hasMaintenanceAccessV2 } from "./middleware/auth";
+
+// Função para criar tabela de abastecimentos do modelo Supabase
+async function criarTabelaAbastecimentosSupabase() {
+  try {
+    console.log("Verificando se a tabela abastecimentos (modelo Supabase) existe...");
+    
+    // Verificar o tipo de objeto chamado 'abastecimentos'
+    const checkTypeQuery = `
+      SELECT table_type 
+      FROM information_schema.tables 
+      WHERE table_name = 'abastecimentos'
+    `;
+    
+    const typeResult = await pool.query(checkTypeQuery);
+    
+    // Se o objeto existir mas não for uma tabela, removê-lo para recriar como tabela
+    if (typeResult.rows.length > 0 && typeResult.rows[0].table_type !== 'BASE TABLE') {
+      console.log(`Objeto 'abastecimentos' encontrado mas é um ${typeResult.rows[0].table_type}, tentando remover...`);
+      try {
+        // Remover o objeto existente (pode ser uma view ou outro tipo)
+        await pool.query(`DROP ${typeResult.rows[0].table_type} IF EXISTS abastecimentos CASCADE`);
+        console.log("Objeto removido com sucesso.");
+      } catch (dropError) {
+        console.error("Erro ao remover objeto existente:", dropError);
+        throw new Error("Não foi possível remover objeto existente para criar tabela.");
+      }
+    } else if (typeResult.rows.length > 0) {
+      console.log("Tabela abastecimentos já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela abastecimentos (modelo Supabase)...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE abastecimentos (
+        id SERIAL PRIMARY KEY,
+        data TIMESTAMP DEFAULT NOW(),
+        valor NUMERIC(10,2),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela abastecimentos criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela abastecimentos (modelo Supabase):", error);
+  }
+}
+
+// Função para criar tabela de abastecimentos_supabase_alt
+async function criarTabelaAbastecimentosSupabaseAlt() {
+  try {
+    console.log("Verificando se a tabela abastecimentos_supabase existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'abastecimentos_supabase'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela abastecimentos_supabase já existe, pulando criação.");
+      return;
+    }
+    
+    // Verificar se a tabela abastecimentos existe e é uma tabela base
+    const checkAbastecimentosQuery = `
+      SELECT table_type 
+      FROM information_schema.tables 
+      WHERE table_name = 'abastecimentos'
+      AND table_type = 'BASE TABLE'
+    `;
+    
+    const abastecimentosResult = await pool.query(checkAbastecimentosQuery);
+    
+    if (abastecimentosResult.rows.length === 0) {
+      // Se a tabela abastecimentos não existir ou não for uma tabela base, criar primeiro
+      console.log("Tabela abastecimentos não encontrada como tabela base. Criando primeiro...");
+      await criarTabelaAbastecimentosSupabase();
+    }
+    
+    console.log("Criando tabela abastecimentos_supabase...");
+    
+    // Criar tabela sem a restrição de chave estrangeira para evitar problemas
+    const createTableQuery = `
+      CREATE TABLE abastecimentos_supabase (
+        id SERIAL PRIMARY KEY,
+        abastecimento_id INTEGER NOT NULL,
+        posto_id TEXT NOT NULL,
+        quantidade_litros NUMERIC(10,2) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    
+    // Adicionar a restrição de chave estrangeira separadamente
+    try {
+      const addForeignKeyQuery = `
+        ALTER TABLE abastecimentos_supabase
+        ADD CONSTRAINT fk_abastecimento
+        FOREIGN KEY (abastecimento_id) REFERENCES abastecimentos(id);
+      `;
+      
+      await pool.query(addForeignKeyQuery);
+      console.log("Restrição de chave estrangeira adicionada com sucesso!");
+    } catch (fkError) {
+      console.warn("Aviso: Não foi possível adicionar a restrição de chave estrangeira:", fkError);
+      console.log("A tabela foi criada sem a restrição de chave estrangeira.");
+    }
+    
+    console.log("Tabela abastecimentos_supabase criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela abastecimentos_supabase:", error);
+  }
+}
+
+// Função para criar tabela de abastecimentos se não existir
+async function criarTabelaAbastecimentos() {
+  try {
+    console.log("Verificando se a tabela abastecimentos_postos existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'abastecimentos_postos'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela abastecimentos_postos já existe, verificando campo quantity_litros...");
+      
+      // Verificar se a coluna quantity_litros existe
+      const checkColumnQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'abastecimentos_postos' AND column_name = 'quantity_litros'
+        );
+      `;
+      
+      const columnCheckResult = await pool.query(checkColumnQuery);
+      
+      if (!columnCheckResult.rows[0].exists) {
+        console.log("Adicionando coluna quantity_litros à tabela abastecimentos_postos...");
+        
+        // Adicionar a coluna quantity_litros com o mesmo valor de litros
+        await pool.query(`
+          ALTER TABLE abastecimentos_postos
+          ADD COLUMN quantity_litros NUMERIC(10,2);
+          
+          UPDATE abastecimentos_postos
+          SET quantity_litros = litros;
+        `);
+        
+        console.log("Coluna quantity_litros adicionada com sucesso!");
+      } else {
+        console.log("Coluna quantity_litros já existe, não é necessário adicionar.");
+      }
+      
+      return;
+    }
+    
+    console.log("Criando tabela abastecimentos_postos...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE abastecimentos_postos (
+        id SERIAL PRIMARY KEY,
+        placa TEXT NOT NULL,
+        km_atual INTEGER NOT NULL,
+        tipo_combustivel TEXT NOT NULL,
+        litros NUMERIC(10,2) NOT NULL,
+        quantity_litros NUMERIC(10,2),
+        nome_motorista TEXT NOT NULL,
+        nome_operador TEXT NOT NULL,
+        posto TEXT NOT NULL,
+        project TEXT,
+        preco_litro NUMERIC(10,2),
+        valor_total NUMERIC(10,2),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela abastecimentos_postos criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela abastecimentos_postos:", error);
+  }
+}
+
+// Função para criar tabela de movimentações de pátio se não existir
+async function criarTabelaMovimentacoesPatio() {
+  try {
+    console.log("Verificando se a tabela movimentacoes_patio existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'movimentacoes_patio'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela movimentacoes_patio já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela movimentacoes_patio...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE movimentacoes_patio (
+        id SERIAL PRIMARY KEY,
+        placa TEXT NOT NULL,
+        tipo_veiculo TEXT,
+        motorista TEXT NOT NULL,
+        data_entrada TIMESTAMP NOT NULL,
+        data_saida TIMESTAMP,
+        motivo TEXT,
+        observacoes TEXT,
+        posto TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela movimentacoes_patio criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela movimentacoes_patio:", error);
+  }
+}
+
+// Função para criar tabela configuracao_tanques se não existir
+async function criarTabelaConfiguracaoTanques() {
+  try {
+    console.log("Verificando se a tabela configuracao_tanques existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'configuracao_tanques'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela configuracao_tanques já existe, verificando colunas...");
+      
+      // Verificar se as colunas de valor do litro existem
+      const checkDieselValorQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'configuracao_tanques' AND column_name = 'diesel_valor_litro'
+        );
+      `;
+      
+      const checkArlaValorQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_name = 'configuracao_tanques' AND column_name = 'arla_valor_litro'
+        );
+      `;
+      
+      const dieselValorResult = await pool.query(checkDieselValorQuery);
+      const arlaValorResult = await pool.query(checkArlaValorQuery);
+      
+      const dieselValorExists = dieselValorResult.rows[0].exists;
+      const arlaValorExists = arlaValorResult.rows[0].exists;
+      
+      // Adicionar colunas se não existirem
+      if (!dieselValorExists) {
+        console.log("Adicionando coluna diesel_valor_litro à tabela configuracao_tanques...");
+        await pool.query(`
+          ALTER TABLE configuracao_tanques
+          ADD COLUMN diesel_valor_litro DECIMAL(10, 2) DEFAULT 5.00
+        `);
+      }
+      
+      if (!arlaValorExists) {
+        console.log("Adicionando coluna arla_valor_litro à tabela configuracao_tanques...");
+        await pool.query(`
+          ALTER TABLE configuracao_tanques
+          ADD COLUMN arla_valor_litro DECIMAL(10, 2) DEFAULT 3.00
+        `);
+      }
+      
+      return;
+    }
+    
+    console.log("Criando tabela configuracao_tanques...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE configuracao_tanques (
+        id SERIAL PRIMARY KEY,
+        posto TEXT NOT NULL UNIQUE,
+        diesel_capacidade NUMERIC NOT NULL DEFAULT 20000,
+        diesel_nivel NUMERIC NOT NULL DEFAULT 15000,
+        arla_capacidade NUMERIC NOT NULL DEFAULT 1000,
+        arla_nivel NUMERIC NOT NULL DEFAULT 750,
+        diesel_valor_litro DECIMAL(10, 2) DEFAULT 5.00,
+        arla_valor_litro DECIMAL(10, 2) DEFAULT 3.00,
+        diesel_consumo_total NUMERIC(12, 2) DEFAULT 0,
+        diesel_valor_total NUMERIC(12, 2) DEFAULT 0,
+        arla_consumo_total NUMERIC(12, 2) DEFAULT 0,
+        arla_valor_total NUMERIC(12, 2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    
+    // Inserir valores padrão para postos conhecidos
+    const postos = ['Osasco', 'Campinas', 'Contagem', 'Goiania'];
+    for (const posto of postos) {
+      const insertQuery = `
+        INSERT INTO configuracao_tanques (posto, diesel_capacidade, diesel_nivel, arla_capacidade, arla_nivel)
+        VALUES ($1, 20000, 15000, 1000, 750)
+        ON CONFLICT (posto) DO NOTHING;
+      `;
+      await pool.query(insertQuery, [posto]);
+    }
+    
+    console.log("Tabela configuracao_tanques criada com sucesso e postos padrão inseridos!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela configuracao_tanques:", error);
+  }
+}
+
+async function criarTabelaMontagemPneus() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'montagem_pneus')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela montagem_pneus já existe, pulando criação.");
+    return;
+  }
+
+  console.log("Criando tabela montagem_pneus...");
+  
+  // Ler o arquivo SQL
+  const fs = await import('fs');
+  const path = await import('path');
+  const url = await import('url');
+  const __filename = url.fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const sqlFilePath = path.join(__dirname, 'scripts', 'createTireMountingTable.sql');
+  
+  if (!fs.existsSync(sqlFilePath)) {
+    console.error(`Arquivo SQL não encontrado: ${sqlFilePath}`);
+    return;
+  }
+  
+  const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+  
+  try {
+    // Executar o script SQL
+    await pool.query(sqlContent);
+    console.log("Tabela montagem_pneus criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela montagem_pneus:", error);
+  }
+}
+
+async function criarTabelaSolicitacoesPneus() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'solicitacoes_pneus')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela solicitacoes_pneus já existe, pulando criação.");
+    return;
+  }
+
+  console.log("Criando tabela solicitacoes_pneus...");
+  
+  // Ler o arquivo SQL
+  const fs = await import('fs');
+  const path = await import('path');
+  const url = await import('url');
+  const __filename = url.fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const sqlFilePath = path.join(__dirname, 'scripts', 'createTireRequestsTable.sql');
+  
+  if (!fs.existsSync(sqlFilePath)) {
+    console.error(`Arquivo SQL não encontrado: ${sqlFilePath}`);
+    return;
+  }
+  
+  const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+  
+  try {
+    // Executar o script SQL
+    await pool.query(sqlContent);
+    console.log("Tabela solicitacoes_pneus criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela solicitacoes_pneus:", error);
+  }
+}
+
+async function criarTabelaLineHallShopee() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'line_hall_shopee')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela line_hall_shopee já existe, pulando criação.");
+    return;
+  }
+
+  console.log("Criando tabela line_hall_shopee...");
+  
+  // Ler o arquivo SQL
+  const fs = await import('fs');
+  const path = await import('path');
+  const url = await import('url');
+  const __filename = url.fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const sqlFilePath = path.join(__dirname, 'scripts', 'createLineHallShopeeTable.sql');
+  
+  if (!fs.existsSync(sqlFilePath)) {
+    console.error(`Arquivo SQL não encontrado: ${sqlFilePath}`);
+    return;
+  }
+  
+  const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+  
+  try {
+    // Executar o script SQL
+    await pool.query(sqlContent);
+    console.log("Tabela line_hall_shopee criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela line_hall_shopee:", error);
+  }
+}
+
+/**
+ * Cria a tabela posto_remedios_abastecimentos se não existir
+ */
+async function criarTabelaPostoRemediosAbastecimentos() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'posto_remedios_abastecimentos')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela posto_remedios_abastecimentos já existe, verificando estrutura...");
+    
+    // Verificar se a coluna valor_litro existe
+    const checkColumnQuery = "SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'posto_remedios_abastecimentos' AND column_name = 'valor_litro')";
+    const columnExistsResult = await pool.query(checkColumnQuery);
+    
+    if (!columnExistsResult.rows[0].exists) {
+      // Adicionar a coluna valor_litro se não existir
+      console.log("Adicionando coluna valor_litro à tabela posto_remedios_abastecimentos...");
+      try {
+        await pool.query(`
+          ALTER TABLE posto_remedios_abastecimentos
+          ADD COLUMN valor_litro DECIMAL(10, 2)
+        `);
+        console.log("Coluna valor_litro adicionada com sucesso!");
+      } catch (columnError) {
+        console.error("Erro ao adicionar coluna valor_litro:", columnError);
+      }
+    } else {
+      console.log("Coluna valor_litro já existe na tabela posto_remedios_abastecimentos.");
+    }
+    
+    return;
+  }
+
+  console.log("Criando tabela posto_remedios_abastecimentos...");
+  
+  try {
+    await pool.query(`
+      CREATE TABLE posto_remedios_abastecimentos (
+        id SERIAL PRIMARY KEY,
+        placa VARCHAR(10) NOT NULL,
+        km INTEGER NOT NULL,
+        projeto VARCHAR(100) NOT NULL,
+        motorista_nome VARCHAR(200) NOT NULL,
+        motorista_rg VARCHAR(20) NOT NULL,
+        tipo_combustivel VARCHAR(20) CHECK (tipo_combustivel IN ('diesel', 'gasolina', 'alcool')),
+        quantidade_litros DECIMAL(10, 2),
+        valor_litro DECIMAL(10, 2),
+        valor_total DECIMAL(10, 2),
+        lavagem BOOLEAN DEFAULT FALSE,
+        tipo_lavagem VARCHAR(50),
+        observacoes TEXT,
+        data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("Tabela posto_remedios_abastecimentos criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela posto_remedios_abastecimentos:", error);
+  }
+}
+
+/**
+ * Cria a tabela fuel_card_requests se não existir
+ */
+async function criarTabelaFuelCardRequests() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'fuel_card_requests')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela fuel_card_requests já existe, pulando criação.");
+    return;
+  }
+
+  console.log("Criando tabela fuel_card_requests...");
+  
+  // Ler o arquivo SQL
+  const fs = await import('fs');
+  const path = await import('path');
+  const url = await import('url');
+  const __filename = url.fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const sqlFilePath = path.join(__dirname, 'scripts', 'createFuelCardTable.sql');
+  
+  if (!fs.existsSync(sqlFilePath)) {
+    console.error(`Arquivo SQL não encontrado: ${sqlFilePath}`);
+    return;
+  }
+  
+  const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+  
+  try {
+    // Executar o script SQL
+    await pool.query(sqlContent);
+    console.log("Tabela fuel_card_requests criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela fuel_card_requests:", error);
+  }
+}
+
+/**
+ * Cria a tabela driver_checklists se não existir
+ */
+async function criarTabelaDriverChecklists() {
+  // Verificar se a tabela já existe
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'driver_checklists')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela driver_checklists já existe, pulando criação.");
+    return;
+  }
+
+  console.log("Criando tabela driver_checklists...");
+  
+  try {
+    // Criar a tabela
+    const createTableQuery = `
+      CREATE TABLE driver_checklists (
+        id SERIAL PRIMARY KEY,
+        driver_id INTEGER,
+        driver_name VARCHAR(255) NOT NULL,
+        vehicle_plate VARCHAR(20) NOT NULL,
+        km_atual INTEGER,
+        km_final INTEGER,
+        condicao_pneus VARCHAR(50),
+        condicao_luzes VARCHAR(50),
+        condicao_freios VARCHAR(50),
+        condicao_parabrisa VARCHAR(50),
+        nivel_oleo VARCHAR(50),
+        nivel_agua VARCHAR(50),
+        estrutura_cavalo VARCHAR(50),
+        estrutura_carreta VARCHAR(50),
+        avarias TEXT[],
+        fotos TEXT[],
+        observacoes TEXT,
+        status VARCHAR(50) DEFAULT 'pendente',
+        viagem_id INTEGER,
+        source VARCHAR(50) DEFAULT 'line_hall',
+        driver_type VARCHAR(50) DEFAULT 'line_hall',
+        checklist_date DATE DEFAULT CURRENT_DATE,
+        data_inicio TIMESTAMP WITH TIME ZONE,
+        data_fim TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela driver_checklists criada com sucesso!");
+    
+    // Adicionar colunas caso a tabela já exista sem elas
+  } catch (error) {
+    console.error("Erro ao criar tabela driver_checklists:", error);
+  }
+}
+
+// Função para adicionar colunas faltantes na tabela driver_checklists
+async function adicionarColunasDriverChecklists() {
+  try {
+    // Adicionar colunas que podem estar faltando
+    const alterQueries = [
+      "ALTER TABLE driver_checklists ADD COLUMN IF NOT EXISTS km_final INTEGER",
+      "ALTER TABLE driver_checklists ADD COLUMN IF NOT EXISTS checklist_date DATE DEFAULT CURRENT_DATE",
+      "ALTER TABLE driver_checklists ADD COLUMN IF NOT EXISTS data_inicio TIMESTAMP WITH TIME ZONE",
+      "ALTER TABLE driver_checklists ADD COLUMN IF NOT EXISTS data_fim TIMESTAMP WITH TIME ZONE"
+    ];
+    
+    for (const query of alterQueries) {
+      try {
+        await pool.query(query);
+      } catch (err) {
+        // Ignora erro se coluna já existir
+      }
+    }
+    console.log("Colunas de driver_checklists verificadas/adicionadas com sucesso!");
+  } catch (error) {
+    console.error("Erro ao adicionar colunas em driver_checklists:", error);
+  }
+}
+
+/**
+ * Cria a tabela movimentacao_pneu se não existir
+ */
+async function criarTabelaMovimentacaoPneu() {
+  try {
+    console.log("Verificando se a tabela movimentacao_pneu existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'movimentacao_pneu'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela movimentacao_pneu já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela movimentacao_pneu...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE movimentacao_pneu (
+        id SERIAL PRIMARY KEY,
+        id_pneu INTEGER NOT NULL,
+        id_veiculo TEXT,
+        tipo_movimentacao TEXT NOT NULL,
+        km INTEGER NOT NULL,
+        data TIMESTAMP NOT NULL DEFAULT NOW(),
+        local TEXT,
+        responsavel TEXT,
+        possui_estepe BOOLEAN DEFAULT FALSE,
+        motivo TEXT,
+        distancia_percorrida INTEGER,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_movimentacao_pneu_id_pneu ON movimentacao_pneu(id_pneu);
+      CREATE INDEX IF NOT EXISTS idx_movimentacao_pneu_veiculo ON movimentacao_pneu(id_veiculo);
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela movimentacao_pneu criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela movimentacao_pneu:", error);
+  }
+}
+
+/**
+ * Cria a tabela solicitacoes_fuel_card se não existir
+ */
+async function criarTabelaSolicitacoesFuelCard() {
+  try {
+    console.log("Verificando se a tabela solicitacoes_fuel_card existe...");
+    
+    // Verificar se a tabela já existe
+    const checkQuery = `
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'solicitacoes_fuel_card'
+      );
+    `;
+    
+    const checkResult = await pool.query(checkQuery);
+    const tabelaExiste = checkResult.rows[0].exists;
+    
+    if (tabelaExiste) {
+      console.log("Tabela solicitacoes_fuel_card já existe, pulando criação.");
+      return;
+    }
+    
+    console.log("Criando tabela solicitacoes_fuel_card...");
+    
+    // Criar tabela
+    const createTableQuery = `
+      CREATE TABLE solicitacoes_fuel_card (
+        id SERIAL PRIMARY KEY,
+        placa VARCHAR(20) NOT NULL,
+        motorista VARCHAR(100) NOT NULL,
+        valor_solicitado NUMERIC(10, 2) NOT NULL,
+        km_veiculo INTEGER,
+        tipo_cartao VARCHAR(50),
+        observacoes TEXT,
+        status VARCHAR(20) DEFAULT 'Pendente',
+        data_solicitacao TIMESTAMP DEFAULT NOW(),
+        atendido_por VARCHAR(100),
+        data_atendimento TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela solicitacoes_fuel_card criada com sucesso!");
+    
+  } catch (error) {
+    console.error("Erro ao criar tabela solicitacoes_fuel_card:", error);
+  }
+}
+
+/**
+ * Cria a tabela linehall_maintenance se não existir
+ */
+async function criarTabelaLineHallMaintenance() {
+  const checkTableQuery = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'linehall_maintenance')";
+  const tableExistsResult = await pool.query(checkTableQuery);
+  
+  if (tableExistsResult.rows[0].exists) {
+    console.log("Tabela linehall_maintenance já existe, verificando colunas...");
+    
+    // Verificar se as colunas necessárias existem
+    const columnsToAdd = [
+      { name: 'tipo_problema', type: 'VARCHAR(100)' },
+      { name: 'local_ocorrencia', type: 'VARCHAR(255)' },
+      { name: 'pode_continuar_viagem', type: 'BOOLEAN' },
+      { name: 'observacoes', type: 'TEXT' },
+      { name: 'protocolo', type: 'VARCHAR(50)' }
+    ];
+    
+    for (const column of columnsToAdd) {
+      try {
+        const checkColumnQuery = `
+          SELECT EXISTS (
+            SELECT FROM information_schema.columns 
+            WHERE table_name = 'linehall_maintenance' AND column_name = $1
+          )
+        `;
+        const columnExists = await pool.query(checkColumnQuery, [column.name]);
+        
+        if (!columnExists.rows[0].exists) {
+          const addColumnQuery = `ALTER TABLE linehall_maintenance ADD COLUMN ${column.name} ${column.type}`;
+          await pool.query(addColumnQuery);
+          console.log(`Coluna ${column.name} adicionada à tabela linehall_maintenance`);
+        }
+      } catch (error) {
+        console.error(`Erro ao adicionar coluna ${column.name}:`, error);
+      }
+    }
+    return;
+  }
+
+  console.log("Criando tabela linehall_maintenance...");
+  
+  try {
+    const createTableQuery = `
+      CREATE TABLE linehall_maintenance (
+        id SERIAL PRIMARY KEY,
+        motorista_id INTEGER,
+        motorista_nome VARCHAR(255) NOT NULL,
+        vehicle_plate VARCHAR(20) NOT NULL,
+        description TEXT NOT NULL,
+        urgency VARCHAR(20) DEFAULT 'normal',
+        status VARCHAR(20) DEFAULT 'pendente',
+        tipo_problema VARCHAR(100),
+        local_ocorrencia VARCHAR(255),
+        pode_continuar_viagem BOOLEAN,
+        observacoes TEXT,
+        protocolo VARCHAR(50),
+        approved_by VARCHAR(255),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+    
+    await pool.query(createTableQuery);
+    console.log("Tabela linehall_maintenance criada com sucesso!");
+  } catch (error) {
+    console.error("Erro ao criar tabela linehall_maintenance:", error);
+  }
+}
+
+/**
+ * Cria a tabela demo_forms para testes e exemplos se não existir
+ */
+async function criarTabelaDemoForms() {
+  try {
+    // Verificar se a tabela já existe
+    const checkResult = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'demo_forms'
+      ) as exists;
+    `);
+
+    if (!checkResult.rows[0].exists) {
+      console.log("Criando tabela demo_forms para uso em exemplos...");
+      
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS demo_forms (
+          id SERIAL PRIMARY KEY,
+          form_title VARCHAR(255) NOT NULL,
+          form_data JSONB,
+          status VARCHAR(50) DEFAULT 'rascunho',
+          created_by VARCHAR(255),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+      `);
+      
+      console.log("Tabela demo_forms criada com sucesso!");
+    } else {
+      console.log("Tabela demo_forms já existe.");
+    }
+  } catch (error) {
+    console.error("Erro ao criar tabela demo_forms:", error);
+  }
+}
+
+// Importar a rota SQL segura
+import sqlSeguroRouter from './routes/sql-seguro';
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // ===========================
+  // INICIALIZAÇÃO DE AUTENTICAÇÃO - ALTA PRIORIDADE
+  // ===========================
+  
+  // Configuração do passport para autenticação ANTES de qualquer rota protegida
+  setupAuth(app);
+  
+  // ===========================
+  // ROTAS SEGURANÇA DO TRABALHO - ALTA PRIORIDADE (públicas)
+  // Registradas no início para garantir que não sejam interceptadas
+  // ===========================
+  
+  // Rota pública para relatar acidentes/incidentes
+  app.post('/api/work-safety/accidents', createAccident);
+  
+  // Rotas para listar e estatísticas de acidentes (registradas cedo para evitar interceptação Vite)
+  app.get('/api/work-safety/accidents', getAccidents);
+  app.get('/api/work-safety/accidents/stats', getAccidentStats);
+  
+  // Rota pública para cadastro de motoristas
+  app.post('/api/work-safety/drivers', createWorkSafetyDriver);
+  
+  // Rota pública para buscar bases disponíveis
+  app.get('/api/work-safety/bases', getWorkSafetyBases);
+  
+  // Rotas de estatísticas de motoristas
+  app.get('/api/work-safety/stats', getWorkSafetyStats);
+  
+  // Rota pública para listar motoristas (com paginação)
+  app.get('/api/work-safety/drivers', getWorkSafetyDrivers);
+  
+  // Rotas públicas para treinamentos
+  app.get('/api/work-safety/trainings', getTrainings);
+  app.post('/api/work-safety/trainings/participations', createParticipation);
+  
+  // Rota pública para criar desvio de motorista (mantido público para acesso externo)
+  app.post('/api/work-safety/deviations', createDeviation);
+  
+  // Rotas autenticadas para desvios - REGISTRADAS CEDO para evitar interceptação pelo Vite
+  app.get('/api/work-safety/deviations', isAuthenticated, getDeviations);
+  app.get('/api/work-safety/deviations/stats', isAuthenticated, getDeviationStats);
+  app.get('/api/work-safety/deviations/:id', isAuthenticated, getDeviationById);
+  app.put('/api/work-safety/deviations/:id/status', isAuthenticated, updateDeviationStatus);
+  app.delete('/api/work-safety/deviations/:id', isAuthenticated, deleteDeviation);
+  app.post('/api/work-safety/deviations/cleanup-test-data', isAuthenticated, cleanupTestData);
+  
+  // Rotas de Planos de Ação - Segurança do Trabalho
+  app.post('/api/work-safety/action-plans', isAuthenticated, createActionPlan);
+  app.get('/api/work-safety/action-plans', isAuthenticated, getActionPlans);
+  app.get('/api/work-safety/action-plans/stats', isAuthenticated, getActionPlanStats);
+  app.get('/api/work-safety/action-plans/:id', isAuthenticated, getActionPlanById);
+  app.put('/api/work-safety/action-plans/:id', isAuthenticated, updateActionPlan);
+  app.delete('/api/work-safety/action-plans/:id', isAuthenticated, deleteActionPlan);
+  app.post('/api/work-safety/action-plans/:id/notify', isAuthenticated, notifyResponsible);
+
+  // ===========================
+  // ROTAS OPERAÇÃO COCA-COLA - ALTA PRIORIDADE
+  // Registradas no início para garantir que não sejam interceptadas pelo Vite
+  // ===========================
+
+  // Middleware de autenticação específico para Coca-Cola (valida JWT ou sessão principal)
+  const cocaColaAuth = async (req: any, res: any, next: any) => {
+    try {
+      const authHeader = req.headers.authorization;
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        
+        try {
+          const secret = process.env.JWT_SECRET || 'coca-cola-secret-key';
+          const decoded: any = jwt.verify(token, secret);
+          
+          if (decoded.email && decoded.role) {
+            const allowedRoles = ['admin', 'gestor', 'gestor_frota', 'gestor_equipamentos', 'ceo', 'gerente_geral', 'coordenador'];
+            if (allowedRoles.includes(decoded.role)) {
+              req.cocaColaUser = { userId: decoded.id, tipo: 'admin', baseId: null, email: decoded.email };
+              return next();
+            }
+          }
+          
+          req.cocaColaUser = decoded;
+          return next();
+        } catch (jwtError) {
+          // Token inválido
+        }
+      }
+      
+      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+        req.cocaColaUser = { userId: req.user.id, tipo: 'admin', baseId: null };
+        return next();
+      }
+      
+      return res.status(401).json({ message: 'Não autenticado' });
+    } catch (error) {
+      console.error('[COCA-COLA AUTH] Erro no middleware:', error);
+      return res.status(500).json({ message: 'Erro de autenticação' });
+    }
+  };
+
+  // Login para bases Coca-Cola (autenticação independente)
+  app.post('/api/coca-cola/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: 'E-mail e senha são obrigatórios' });
+      }
+
+      // Buscar usuário pelo email
+      const result = await pool.query(
+        `SELECT u.*, b.nome as base_nome, b.cidade, b.estado 
+         FROM coca_cola_base_users u
+         LEFT JOIN coca_cola_bases b ON u.base_id = b.id
+         WHERE u.email = $1 AND u.ativo = true`,
+        [email.toLowerCase()]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({ message: 'Credenciais inválidas' });
+      }
+
+      const user = result.rows[0];
+      
+      // Verificar senha (bcrypt comparison) - já importado no topo do arquivo
+      const validPassword = await bcrypt.compare(password, user.password_hash);
+      
+      if (!validPassword) {
+        return res.status(401).json({ message: 'Credenciais inválidas' });
+      }
+
+      // Atualizar último login
+      await pool.query('UPDATE coca_cola_base_users SET last_login = NOW() WHERE id = $1', [user.id]);
+
+      // Gerar token JWT - já importado no topo do arquivo
+      const token = jwt.sign(
+        { userId: user.id, baseId: user.base_id, tipo: user.tipo },
+        process.env.JWT_SECRET || 'coca-cola-secret-key',
+        { expiresIn: '24h' }
+      );
+
+      console.log('[COCA-COLA AUTH] Login bem-sucedido:', user.email, '- Base:', user.base_nome || 'Admin');
+
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          nome: user.nome,
+          email: user.email,
+          base_id: user.base_id,
+          base_nome: user.base_nome,
+          tipo: user.tipo
+        }
+      });
+    } catch (error) {
+      console.error('[COCA-COLA AUTH] Erro no login:', error);
+      res.status(500).json({ message: 'Erro interno no servidor' });
+    }
+  });
+
+  // Criar usuário para base Coca-Cola (admin only)
+  app.post('/api/coca-cola/auth/register', isAuthenticated, async (req, res) => {
+    try {
+      const { email, password, nome, base_id, tipo } = req.body;
+      
+      if (!email || !password || !nome) {
+        return res.status(400).json({ message: 'Dados obrigatórios não informados' });
+      }
+
+      // Verificar se email já existe
+      const existing = await pool.query('SELECT id FROM coca_cola_base_users WHERE email = $1', [email.toLowerCase()]);
+      if (existing.rows.length > 0) {
+        return res.status(400).json({ message: 'E-mail já cadastrado' });
+      }
+
+      // Hash da senha
+      const bcrypt = require('bcrypt');
+      const password_hash = await bcrypt.hash(password, 10);
+
+      const result = await pool.query(
+        `INSERT INTO coca_cola_base_users (email, password_hash, nome, base_id, tipo) 
+         VALUES ($1, $2, $3, $4, $5) RETURNING id, email, nome, base_id, tipo`,
+        [email.toLowerCase(), password_hash, nome, base_id || null, tipo || 'base']
+      );
+
+      console.log('[COCA-COLA AUTH] Usuário criado:', result.rows[0].email);
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA AUTH] Erro ao criar usuário:', error);
+      res.status(500).json({ message: 'Erro ao criar usuário' });
+    }
+  });
+
+  // Listar todos os usuários Coca-Cola
+  app.get('/api/coca-cola/users', isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT u.id, u.email, u.nome, u.base_id, u.tipo, u.ativo, u.created_at, u.last_login,
+                b.nome as base_nome, b.cidade, b.estado
+         FROM coca_cola_base_users u
+         LEFT JOIN coca_cola_bases b ON u.base_id = b.id
+         ORDER BY u.nome`
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA USERS] Erro ao listar usuários:', error);
+      res.status(500).json({ message: 'Erro ao listar usuários' });
+    }
+  });
+
+  // Atualizar usuário Coca-Cola
+  app.put('/api/coca-cola/users/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { email, password, nome, base_id, tipo, ativo } = req.body;
+
+      // Verificar se email já existe (exceto para o próprio usuário)
+      if (email) {
+        const existing = await pool.query(
+          'SELECT id FROM coca_cola_base_users WHERE email = $1 AND id != $2',
+          [email.toLowerCase(), id]
+        );
+        if (existing.rows.length > 0) {
+          return res.status(400).json({ message: 'E-mail já cadastrado para outro usuário' });
+        }
+      }
+
+      // Construir query dinamicamente
+      const updates: string[] = [];
+      const values: any[] = [];
+      let paramIndex = 1;
+
+      if (email) {
+        updates.push(`email = $${paramIndex++}`);
+        values.push(email.toLowerCase());
+      }
+      if (nome) {
+        updates.push(`nome = $${paramIndex++}`);
+        values.push(nome);
+      }
+      if (base_id !== undefined) {
+        updates.push(`base_id = $${paramIndex++}`);
+        values.push(base_id || null);
+      }
+      if (tipo) {
+        updates.push(`tipo = $${paramIndex++}`);
+        values.push(tipo);
+      }
+      if (ativo !== undefined) {
+        updates.push(`ativo = $${paramIndex++}`);
+        values.push(ativo);
+      }
+      if (password) {
+        const password_hash = await bcrypt.hash(password, 10);
+        updates.push(`password_hash = $${paramIndex++}`);
+        values.push(password_hash);
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ message: 'Nenhum dado para atualizar' });
+      }
+
+      values.push(id);
+      const result = await pool.query(
+        `UPDATE coca_cola_base_users SET ${updates.join(', ')} WHERE id = $${paramIndex} 
+         RETURNING id, email, nome, base_id, tipo, ativo`,
+        values
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      console.log('[COCA-COLA USERS] Usuário atualizado:', result.rows[0].email);
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA USERS] Erro ao atualizar usuário:', error);
+      res.status(500).json({ message: 'Erro ao atualizar usuário' });
+    }
+  });
+
+  // Deletar usuário Coca-Cola
+  app.delete('/api/coca-cola/users/:id', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const result = await pool.query(
+        'DELETE FROM coca_cola_base_users WHERE id = $1 RETURNING id, email',
+        [id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Usuário não encontrado' });
+      }
+
+      console.log('[COCA-COLA USERS] Usuário deletado:', result.rows[0].email);
+      res.json({ message: 'Usuário deletado com sucesso' });
+    } catch (error) {
+      console.error('[COCA-COLA USERS] Erro ao deletar usuário:', error);
+      res.status(500).json({ message: 'Erro ao deletar usuário' });
+    }
+  });
+
+  // Buscar base Coca-Cola por ID
+  app.get('/api/coca-cola/bases/:id', cocaColaAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const cocaColaUser = req.cocaColaUser;
+      
+      // Verificar se usuário tem acesso à base (se não for admin)
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId !== parseInt(id)) {
+        return res.status(403).json({ error: 'Acesso negado a esta base' });
+      }
+      
+      const result = await pool.query('SELECT * FROM coca_cola_bases WHERE id = $1', [id]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Base não encontrada' });
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar base:', error);
+      res.status(500).json({ error: 'Erro ao buscar base' });
+    }
+  });
+
+  // Listar bases Coca-Cola
+  app.get('/api/coca-cola/bases', cocaColaAuth, async (req: any, res) => {
+    try {
+      const cocaColaUser = req.cocaColaUser;
+      
+      // Se usuário é de base específica, retorna apenas sua base
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        const result = await pool.query('SELECT * FROM coca_cola_bases WHERE id = $1', [cocaColaUser.baseId]);
+        return res.json(result.rows);
+      }
+      
+      // Admin vê todas as bases
+      const result = await pool.query('SELECT * FROM coca_cola_bases ORDER BY nome');
+      console.log('[COCA-COLA] Bases encontradas:', result.rows.length);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao listar bases:', error);
+      res.status(500).json({ error: 'Erro ao listar bases' });
+    }
+  });
+
+  // Listar TODAS as bases Coca-Cola (para empréstimo de veículos)
+  app.get('/api/coca-cola/all-bases', cocaColaAuth, async (req: any, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM coca_cola_bases ORDER BY nome');
+      console.log('[COCA-COLA] Todas as bases encontradas:', result.rows.length);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao listar todas as bases:', error);
+      res.status(500).json({ error: 'Erro ao listar bases' });
+    }
+  });
+
+  // Criar base Coca-Cola (apenas admin)
+  app.post('/api/coca-cola/bases', cocaColaAuth, async (req: any, res) => {
+    try {
+      const cocaColaUser = req.cocaColaUser;
+      if (cocaColaUser.tipo !== 'admin') {
+        return res.status(403).json({ error: 'Apenas admins podem criar bases' });
+      }
+      
+      const { nome, cidade, estado } = req.body;
+      const result = await pool.query(
+        'INSERT INTO coca_cola_bases (nome, cidade, estado) VALUES ($1, $2, $3) RETURNING *',
+        [nome, cidade, estado]
+      );
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao criar base:', error);
+      res.status(500).json({ error: 'Erro ao criar base' });
+    }
+  });
+
+  // Listar veículos Coca-Cola (filtrado por base se não for admin)
+  app.get('/api/coca-cola/vehicles', cocaColaAuth, async (req: any, res) => {
+    try {
+      const cocaColaUser = req.cocaColaUser;
+      const { base_id } = req.query;
+      const todayDate = new Date().toISOString().split('T')[0];
+      
+      let query = `
+        SELECT v.*, b.nome as base_nome,
+               vds.status as status_diario,
+               vds.observacao as observacao_diaria,
+               vds.updated_by_name as atualizado_por,
+               vds.base_emprestimo_id
+        FROM coca_cola_vehicles v 
+        LEFT JOIN coca_cola_bases b ON v.base_id = b.id
+        LEFT JOIN vehicle_daily_status vds ON vds.vehicle_id = v.id AND vds.data = $1
+      `;
+      let params: any[] = [todayDate];
+      
+      // Se usuário é de base específica, filtra pela sua base
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        query += ' WHERE v.base_id = $2';
+        params.push(cocaColaUser.baseId);
+      } else if (base_id) {
+        // Admin pode filtrar por base específica
+        query += ' WHERE v.base_id = $2';
+        params.push(base_id);
+      }
+      
+      query += ' ORDER BY v.placa';
+      
+      const result = await pool.query(query, params);
+      const rows = result.rows.map((v: any) => ({
+        ...v,
+        status_efetivo: v.status_diario || v.status,
+        atualizado_hoje: !!v.status_diario,
+      }));
+      res.json(rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao listar veículos:', error);
+      res.status(500).json({ error: 'Erro ao listar veículos' });
+    }
+  });
+
+  // Criar veículo Coca-Cola
+  app.post('/api/coca-cola/vehicles', cocaColaAuth, async (req: any, res) => {
+    try {
+      const cocaColaUser = req.cocaColaUser;
+      let { placa, modelo, base_id, status } = req.body;
+      
+      // Se usuário é de base, usa sua base
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        base_id = cocaColaUser.baseId;
+      }
+      
+      const result = await pool.query(
+        'INSERT INTO coca_cola_vehicles (placa, modelo, base_id, status) VALUES ($1, $2, $3, $4) RETURNING *',
+        [placa.toUpperCase(), modelo, base_id, status || 'disponivel']
+      );
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao criar veículo:', error);
+      res.status(500).json({ error: 'Erro ao criar veículo' });
+    }
+  });
+
+  // Importar/atualizar veículos Coca-Cola via planilha Excel
+  app.post('/api/coca-cola/vehicles/import', cocaColaAuth, uploadExcel.single('file'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+      }
+
+      const XLSX = await import('xlsx');
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rawData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      if (rawData.length === 0) {
+        return res.status(400).json({ error: 'Planilha vazia' });
+      }
+
+      const headerMap: Record<string, string> = {};
+      const firstRow = rawData[0];
+      for (const key of Object.keys(firstRow)) {
+        const normalized = key.toLowerCase().trim()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (normalized.includes('cartao') || normalized.includes('abastecimento') || normalized.includes('card') || (normalized.includes('placa') && normalized.includes('cart'))) headerMap[key] = 'cartao_abastecimento';
+        else if (normalized === 'placa' || (normalized.includes('placa') && !normalized.includes('cart'))) headerMap[key] = 'placa';
+        else if (normalized.includes('modelo')) headerMap[key] = 'modelo';
+        else if (normalized.includes('modal')) headerMap[key] = 'modal';
+        else if (normalized.includes('base')) headerMap[key] = 'base';
+      }
+
+      console.log('[COCA-COLA IMPORT] Headers detectados:', JSON.stringify(headerMap));
+      console.log('[COCA-COLA IMPORT] Primeira linha dados:', JSON.stringify(rawData[0]));
+
+      if (!headerMap || !Object.values(headerMap).includes('placa')) {
+        return res.status(400).json({ error: 'Coluna "Placa" não encontrada na planilha' });
+      }
+
+      const basesResult = await pool.query('SELECT id, nome FROM coca_cola_bases');
+      const basesMap: Record<string, number> = {};
+      for (const b of basesResult.rows) {
+        basesMap[b.nome.toUpperCase().trim()] = b.id;
+      }
+
+      let inserted = 0;
+      let updated = 0;
+      let errors: string[] = [];
+
+      for (let i = 0; i < rawData.length; i++) {
+        const row = rawData[i];
+        const mapped: any = {};
+        for (const [origKey, mappedKey] of Object.entries(headerMap)) {
+          mapped[mappedKey] = row[origKey] !== undefined && row[origKey] !== null ? String(row[origKey]).trim() : '';
+        }
+
+        if (!mapped.placa) {
+          continue;
+        }
+
+        const placa = mapped.placa.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (placa.length < 5) {
+          errors.push(`Linha ${i + 2}: Placa "${mapped.placa}" inválida`);
+          continue;
+        }
+
+        const modelo = mapped.modelo || '';
+        const modal = mapped.modal || '';
+        const cartao = mapped.cartao_abastecimento || '';
+
+        let baseId: number | null = null;
+        if (mapped.base) {
+          const baseKey = mapped.base.toUpperCase().trim();
+          if (basesMap[baseKey]) {
+            baseId = basesMap[baseKey];
+          } else {
+            const partialMatch = Object.entries(basesMap).find(([name]) => 
+              name.includes(baseKey) || baseKey.includes(name)
+            );
+            if (partialMatch) {
+              baseId = partialMatch[1];
+            }
+          }
+        }
+
+        const existing = await pool.query(
+          'SELECT id FROM coca_cola_vehicles WHERE UPPER(REPLACE(placa, \'-\', \'\')) = $1',
+          [placa]
+        );
+
+        if (existing.rows.length > 0) {
+          const sets: string[] = [];
+          const params: any[] = [];
+          let paramIdx = 1;
+          const hasModalCol = Object.values(headerMap).includes('modal');
+          const hasCartaoCol = Object.values(headerMap).includes('cartao_abastecimento');
+
+          if (modelo) { sets.push(`modelo = $${paramIdx++}`); params.push(modelo); }
+          if (hasModalCol) { sets.push(`modal = $${paramIdx++}`); params.push(modal || null); }
+          if (hasCartaoCol) { sets.push(`cartao_abastecimento = $${paramIdx++}`); params.push(cartao || null); }
+          if (baseId) { sets.push(`base_id = $${paramIdx++}`); params.push(baseId); }
+          sets.push(`updated_at = NOW()`);
+
+          if (sets.length > 0) {
+            params.push(existing.rows[0].id);
+            await pool.query(
+              `UPDATE coca_cola_vehicles SET ${sets.join(', ')} WHERE id = $${paramIdx}`,
+              params
+            );
+            updated++;
+          }
+        } else {
+          await pool.query(
+            `INSERT INTO coca_cola_vehicles (placa, modelo, modal, cartao_abastecimento, base_id, status, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, 'disponivel', NOW(), NOW())`,
+            [placa, modelo || null, modal || null, cartao || null, baseId]
+          );
+          inserted++;
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Importação concluída: ${inserted} veículos inseridos, ${updated} atualizados`,
+        inserted,
+        updated,
+        total: inserted + updated,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error: any) {
+      console.error('[COCA-COLA] Erro na importação:', error);
+      res.status(500).json({ error: 'Erro ao processar planilha: ' + error.message });
+    }
+  });
+
+  // Atualizar veículo Coca-Cola (rota PATCH genérica)
+  app.patch('/api/coca-cola/vehicles/:id', cocaColaAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const cocaColaUser = req.cocaColaUser;
+      const { status, oficina, prazo_estimado, motivo_parado, base_emprestimo } = req.body;
+      
+      // Buscar status anterior para histórico
+      const vehicleCheck = await pool.query('SELECT * FROM coca_cola_vehicles WHERE id = $1', [id]);
+      if (vehicleCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Veículo não encontrado' });
+      }
+      
+      const vehicleAtual = vehicleCheck.rows[0];
+      
+      // Verificar se veículo pertence à base do usuário
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        if (vehicleAtual.base_id !== cocaColaUser.baseId) {
+          return res.status(403).json({ error: 'Acesso negado a este veículo' });
+        }
+      }
+      
+      // Converter strings vazias para null (PostgreSQL não aceita "" para tipo date)
+      const safeOficina = oficina === '' ? null : oficina;
+      const safePrazoEstimado = prazo_estimado === '' ? null : prazo_estimado;
+      const safeMotivoParado = motivo_parado === '' ? null : motivo_parado;
+      const safeBaseEmprestimo = base_emprestimo === '' ? null : base_emprestimo;
+      
+      const result = await pool.query(
+        `UPDATE coca_cola_vehicles 
+         SET status = COALESCE($1, status),
+             oficina = COALESCE($2, oficina),
+             prazo_estimado = COALESCE($3, prazo_estimado),
+             motivo_parado = COALESCE($4, motivo_parado),
+             base_emprestimo = COALESCE($5, base_emprestimo),
+             updated_at = NOW()
+         WHERE id = $6 RETURNING *`,
+        [status, safeOficina, safePrazoEstimado, safeMotivoParado, safeBaseEmprestimo, id]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Veículo não encontrado' });
+      }
+      
+      // Registrar histórico se o status mudou
+      if (status && status !== vehicleAtual.status) {
+        const motivoHistorico = status === 'emprestado' ? `Emprestado para: ${base_emprestimo || 'N/A'}` : safeMotivoParado;
+        await pool.query(
+          `INSERT INTO coca_cola_vehicle_status_history 
+           (vehicle_id, placa, base_id, status_anterior, status_novo, motivo, tipo_alteracao, usuario_responsavel)
+           VALUES ($1, $2, $3, $4, $5, $6, 'manual', $7)`,
+          [id, vehicleAtual.placa, vehicleAtual.base_id, vehicleAtual.status, status, motivoHistorico, cocaColaUser.email || 'base']
+        );
+        console.log(`[COCA-COLA HISTORY] Veículo ${vehicleAtual.placa}: ${vehicleAtual.status} -> ${status}`);
+      }
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao atualizar veículo:', error);
+      res.status(500).json({ error: 'Erro ao atualizar veículo' });
+    }
+  });
+
+  // Atualizar status do veículo Coca-Cola
+  app.patch('/api/coca-cola/vehicles/:id/status', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, oficina, prazo_estimado, motivo_parado } = req.body;
+      const result = await pool.query(
+        `UPDATE coca_cola_vehicles 
+         SET status = $1, oficina = $2, prazo_estimado = $3, motivo_parado = $4, updated_at = NOW() 
+         WHERE id = $5 RETURNING *`,
+        [status, oficina || null, prazo_estimado || null, motivo_parado || null, id]
+      );
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Veículo não encontrado' });
+      }
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao atualizar veículo:', error);
+      res.status(500).json({ error: 'Erro ao atualizar veículo' });
+    }
+  });
+
+  // Atualizar base do veículo Coca-Cola
+  app.patch('/api/coca-cola/vehicles/:id/base', isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { base_id } = req.body;
+      
+      if (!base_id) {
+        return res.status(400).json({ error: 'Base ID é obrigatório' });
+      }
+      
+      const result = await pool.query(
+        `UPDATE coca_cola_vehicles 
+         SET base_id = $1, updated_at = NOW() 
+         WHERE id = $2 RETURNING *`,
+        [base_id, id]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Veículo não encontrado' });
+      }
+      
+      console.log(`[COCA-COLA] Base do veículo ${id} atualizada para ${base_id}`);
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao atualizar base do veículo:', error);
+      res.status(500).json({ error: 'Erro ao atualizar base do veículo' });
+    }
+  });
+
+  // Sincronizar veículos Coca-Cola com tabela principal de veículos
+  app.post('/api/coca-cola/vehicles/sync-to-main', isAuthenticated, async (req, res) => {
+    const client = await pool.connect();
+    try {
+      console.log('[COCA-COLA SYNC] Iniciando sincronização de veículos para tabela principal...');
+      
+      // Buscar veículos das bases Coca-Cola que NÃO existem na tabela principal
+      const missingVehicles = await client.query(`
+        SELECT ccv.placa, ccv.modelo, ccv.base_id, ccv.status, b.nome as base_nome
+        FROM coca_cola_vehicles ccv
+        LEFT JOIN coca_cola_bases b ON ccv.base_id = b.id
+        WHERE NOT EXISTS (
+          SELECT 1 FROM vehicles v WHERE UPPER(v.plate) = UPPER(ccv.placa)
+        )
+        ORDER BY b.nome, ccv.placa
+      `);
+      
+      const veiculosFaltantes = missingVehicles.rows;
+      console.log(`[COCA-COLA SYNC] Encontrados ${veiculosFaltantes.length} veículos para adicionar`);
+      
+      if (veiculosFaltantes.length === 0) {
+        client.release();
+        return res.json({
+          success: true,
+          message: 'Todos os veículos já estão sincronizados',
+          adicionados: 0,
+          erros: 0,
+          detalhes: []
+        });
+      }
+      
+      // Mapeamento de coca_cola_bases.id para bases.id
+      const baseMapping: Record<number, number> = {
+        1: 48,   // Aparecida - BH → COCA COLA (APARECIDA)
+        2: 47,   // CD ABC → COCA COLA (ABC)
+        3: 49,   // Criciuma → COCA COLA (CRICIUMA)
+        4: 68,   // Embu → MM05 (OSASCO) - aproximação
+        5: 50,   // Ipatinga → COCA COLA (IPATINGA)
+        6: 53,   // Ipiranga → COCA COLA (PINHEIROS) - aproximação
+        7: 52,   // Mariana → COCA COLA (MARIANA)
+        8: 48,   // MD MINI BODEGA BH → COCA COLA (APARECIDA) - aproximação
+        9: 68,   // Osasco → MM05 (OSASCO)
+        10: 53,  // Pinheiros → COCA COLA (PINHEIROS)
+        11: 54,  // PonteNova → COCA COLA (PONTE NOVA)
+        12: 118, // PQ Novo Mundo → SC (PQ NOVO MUNDO) SSP40
+        13: 55,  // Santos → COCA COLA SANTOS
+        14: 51   // Jurubatuba → COCA COLA (JURUBATUBA)
+      };
+      
+      // Função para obter o base_id correto da tabela principal
+      const getMainBaseId = (cocaColaBaseId: number): number => {
+        return baseMapping[cocaColaBaseId] || 47; // Default para COCA COLA (ABC)
+      };
+      
+      // Mapear status do Coca-Cola para status da tabela principal
+      const mapStatus = (cocaColaStatus: string): string => {
+        const statusMap: Record<string, string> = {
+          'disponivel': 'ativo',
+          'rota': 'ativo',
+          'em_rota': 'ativo',
+          'manutencao': 'manutenção',
+          'em_manutencao': 'manutenção',
+          'aguardando_peca': 'manutenção',
+          'falta_equipe': 'ativo',
+          'sem_equipe': 'ativo',
+          'baixa_venda': 'inativo',
+          'inativo': 'inativo',
+          'outro': 'ativo'
+        };
+        return statusMap[cocaColaStatus] || 'ativo';
+      };
+      
+      // Usar transação para garantir consistência
+      await client.query('BEGIN');
+      
+      let adicionados = 0;
+      let erros = 0;
+      const detalhes: any[] = [];
+      
+      for (const veiculo of veiculosFaltantes) {
+        try {
+          const statusPrincipal = mapStatus(veiculo.status);
+          const mainBaseId = getMainBaseId(veiculo.base_id);
+          
+          await client.query(`
+            INSERT INTO vehicles (plate, model, make, status, base_id, vehicle_type, fuel_type, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, 'caminhão', 'diesel', NOW(), NOW())
+          `, [
+            veiculo.placa.toUpperCase(),
+            veiculo.modelo || 'Não informado',
+            veiculo.modelo || 'Não informado',
+            statusPrincipal,
+            mainBaseId
+          ]);
+          
+          adicionados++;
+          detalhes.push({
+            placa: veiculo.placa,
+            base: veiculo.base_nome,
+            status: 'adicionado'
+          });
+          console.log(`[COCA-COLA SYNC] Veículo ${veiculo.placa} adicionado à tabela principal`);
+        } catch (insertError: any) {
+          erros++;
+          detalhes.push({
+            placa: veiculo.placa,
+            base: veiculo.base_nome,
+            status: 'erro',
+            mensagem: insertError.message
+          });
+          console.error(`[COCA-COLA SYNC] Erro ao adicionar ${veiculo.placa}:`, insertError.message);
+        }
+      }
+      
+      // Commit da transação apenas se houve pelo menos um sucesso
+      if (adicionados > 0) {
+        await client.query('COMMIT');
+      } else {
+        await client.query('ROLLBACK');
+      }
+      
+      console.log(`[COCA-COLA SYNC] Sincronização concluída: ${adicionados} adicionados, ${erros} erros`);
+      
+      res.json({
+        success: true,
+        message: `Sincronização concluída: ${adicionados} veículos adicionados`,
+        adicionados,
+        erros,
+        detalhes
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('[COCA-COLA SYNC] Erro na sincronização:', error);
+      res.status(500).json({ error: 'Erro ao sincronizar veículos' });
+    } finally {
+      client.release();
+    }
+  });
+
+  // SINCRONIZAÇÃO REVERSA: Da frota principal para Coca-Cola
+  // Quando veículos são cadastrados na tabela 'vehicles' com base Coca-Cola,
+  // sincroniza para a tabela 'coca_cola_vehicles'
+  app.post('/api/coca-cola/vehicles/sync-from-main', isAuthenticated, async (req, res) => {
+    const client = await pool.connect();
+    try {
+      console.log('[COCA-COLA SYNC REVERSA] Iniciando sincronização da frota principal para Coca-Cola...');
+      
+      // Mapeamento entre bases da tabela principal e coca_cola_bases
+      const baseMapping: Record<number, number> = {
+        47: 2,   // COCA COLA (ABC) -> CD ABC
+        48: 1,   // COCA COLA (APARECIDA) -> Aparecida - BH
+        49: 3,   // COCA COLA (CRICIUMA) -> Criciuma
+        50: 5,   // COCA COLA (IPATINGA) -> Ipatinga
+        51: 14,  // COCA COLA (JURUBATUBA) -> Jurubatuba
+        52: 7,   // COCA COLA (MARIANA) -> Mariana
+        53: 10,  // COCA COLA (PINHEIROS) -> Pinheiros
+        54: 11,  // COCA COLA (PONTE NOVA) -> PonteNova
+        55: 13   // COCA COLA SANTOS -> Santos
+      };
+      
+      const cocaColaBaseIds = Object.keys(baseMapping).map(Number);
+      
+      // Buscar veículos da frota principal com bases Coca-Cola que NÃO existem em coca_cola_vehicles
+      const missingVehicles = await client.query(`
+        SELECT v.plate, v.model, v.base_id, v.status, b.name as base_nome
+        FROM vehicles v
+        LEFT JOIN bases b ON v.base_id = b.id
+        WHERE v.base_id = ANY($1)
+        AND NOT EXISTS (
+          SELECT 1 FROM coca_cola_vehicles ccv WHERE UPPER(ccv.placa) = UPPER(v.plate)
+        )
+        ORDER BY b.name, v.plate
+      `, [cocaColaBaseIds]);
+      
+      const veiculosFaltantes = missingVehicles.rows;
+      console.log(`[COCA-COLA SYNC REVERSA] Encontrados ${veiculosFaltantes.length} veículos para adicionar ao Coca-Cola`);
+      
+      if (veiculosFaltantes.length === 0) {
+        client.release();
+        return res.json({
+          success: true,
+          message: 'Todos os veículos já estão sincronizados com Coca-Cola',
+          adicionados: 0,
+          erros: 0,
+          detalhes: []
+        });
+      }
+      
+      // Mapear status da tabela principal para Coca-Cola
+      const mapStatus = (mainStatus: string): string => {
+        const statusMap: Record<string, string> = {
+          'ativo': 'disponivel',
+          'em_operacao': 'disponivel',
+          'em_rota': 'rota',
+          'manutenção': 'manutencao',
+          'em_manutencao': 'manutencao',
+          'parado': 'manutencao',
+          'inativo': 'inativo'
+        };
+        return statusMap[mainStatus] || 'disponivel';
+      };
+      
+      await client.query('BEGIN');
+      
+      let adicionados = 0;
+      let erros = 0;
+      const detalhes: any[] = [];
+      
+      for (const veiculo of veiculosFaltantes) {
+        try {
+          const cocaColaBaseId = baseMapping[veiculo.base_id];
+          if (!cocaColaBaseId) {
+            console.log(`[COCA-COLA SYNC REVERSA] Base ${veiculo.base_id} não mapeada, pulando veículo ${veiculo.plate}`);
+            continue;
+          }
+          
+          const statusCocaCola = mapStatus(veiculo.status);
+          
+          await client.query(`
+            INSERT INTO coca_cola_vehicles (placa, modelo, base_id, status, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, NOW(), NOW())
+          `, [
+            veiculo.plate.toUpperCase(),
+            veiculo.model || 'Não informado',
+            cocaColaBaseId,
+            statusCocaCola
+          ]);
+          
+          adicionados++;
+          detalhes.push({
+            placa: veiculo.plate,
+            base_origem: veiculo.base_nome,
+            base_destino_id: cocaColaBaseId,
+            status: 'adicionado'
+          });
+          console.log(`[COCA-COLA SYNC REVERSA] Veículo ${veiculo.plate} adicionado ao Coca-Cola (base_id: ${cocaColaBaseId})`);
+        } catch (insertError: any) {
+          erros++;
+          detalhes.push({
+            placa: veiculo.plate,
+            status: 'erro',
+            mensagem: insertError.message
+          });
+          console.error(`[COCA-COLA SYNC REVERSA] Erro ao adicionar ${veiculo.plate}:`, insertError.message);
+        }
+      }
+      
+      if (adicionados > 0) {
+        await client.query('COMMIT');
+      } else {
+        await client.query('ROLLBACK');
+      }
+      
+      console.log(`[COCA-COLA SYNC REVERSA] Sincronização concluída: ${adicionados} adicionados, ${erros} erros`);
+      
+      res.json({
+        success: true,
+        message: `Sincronização concluída: ${adicionados} veículos adicionados ao Coca-Cola`,
+        adicionados,
+        erros,
+        detalhes
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('[COCA-COLA SYNC REVERSA] Erro na sincronização:', error);
+      res.status(500).json({ error: 'Erro ao sincronizar veículos para Coca-Cola' });
+    } finally {
+      client.release();
+    }
+  });
+
+  // Verificar veículos Coca-Cola faltantes (preview sem adicionar)
+  app.get('/api/coca-cola/vehicles/missing', isAuthenticated, async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT ccv.placa, ccv.modelo, ccv.status, b.nome as base_nome, b.cidade, b.estado
+        FROM coca_cola_vehicles ccv
+        LEFT JOIN coca_cola_bases b ON ccv.base_id = b.id
+        WHERE NOT EXISTS (
+          SELECT 1 FROM vehicles v WHERE UPPER(v.plate) = UPPER(ccv.placa)
+        )
+        ORDER BY b.nome, ccv.placa
+      `);
+      
+      res.json({
+        total: result.rows.length,
+        veiculos: result.rows
+      });
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar veículos faltantes:', error);
+      res.status(500).json({ error: 'Erro ao buscar veículos faltantes' });
+    }
+  });
+
+  // Listar atualizações diárias Coca-Cola
+  app.get('/api/coca-cola/daily-updates', cocaColaAuth, async (req: any, res) => {
+    try {
+      const { data } = req.query;
+      const cocaColaUser = req.cocaColaUser;
+      
+      let query = `
+        SELECT u.*, b.nome as base_nome 
+        FROM coca_cola_daily_updates u 
+        LEFT JOIN coca_cola_bases b ON u.base_id = b.id 
+      `;
+      const params: any[] = [];
+      let paramIndex = 1;
+      
+      // Filtrar por base se não for admin
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        query += ` WHERE u.base_id = $${paramIndex}`;
+        params.push(cocaColaUser.baseId);
+        paramIndex++;
+        if (data && typeof data === 'string') {
+          query += ` AND u.data_atualizacao = $${paramIndex}`;
+          params.push(data);
+        }
+      } else if (data && typeof data === 'string') {
+        query += ` WHERE u.data_atualizacao = $${paramIndex}`;
+        params.push(data);
+      }
+      
+      query += ' ORDER BY u.data_atualizacao DESC, b.nome LIMIT 100';
+      const result = await pool.query(query, params);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao listar atualizações:', error);
+      res.status(500).json({ error: 'Erro ao listar atualizações' });
+    }
+  });
+
+  // Criar/Atualizar registro diário Coca-Cola
+  app.post('/api/coca-cola/daily-updates', cocaColaAuth, async (req: any, res) => {
+    try {
+      const cocaColaUser = req.cocaColaUser;
+      let { base_id, data_atualizacao, total_veiculos, veiculos_rota, veiculos_manutencao, veiculos_disponiveis, veiculos_parados } = req.body;
+      
+      // Se usuário é de base, usa sua base
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        base_id = cocaColaUser.baseId;
+      }
+      
+      const atualizado_por = (req as any).user?.name || 'Sistema';
+      
+      const result = await pool.query(
+        `INSERT INTO coca_cola_daily_updates 
+         (base_id, data_atualizacao, total_veiculos, veiculos_rota, veiculos_manutencao, veiculos_disponiveis, veiculos_parados, atualizado_por)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (base_id, data_atualizacao) 
+         DO UPDATE SET 
+           total_veiculos = EXCLUDED.total_veiculos,
+           veiculos_rota = EXCLUDED.veiculos_rota,
+           veiculos_manutencao = EXCLUDED.veiculos_manutencao,
+           veiculos_disponiveis = EXCLUDED.veiculos_disponiveis,
+           veiculos_parados = EXCLUDED.veiculos_parados,
+           atualizado_por = EXCLUDED.atualizado_por
+         RETURNING *`,
+        [base_id, data_atualizacao, total_veiculos, veiculos_rota, veiculos_manutencao, veiculos_disponiveis, veiculos_parados, atualizado_por]
+      );
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao criar atualização diária:', error);
+      res.status(500).json({ error: 'Erro ao criar atualização' });
+    }
+  });
+
+  // =====================================================
+  // ROTAS DE HISTÓRICO E ESTATÍSTICAS COCA-COLA
+  // =====================================================
+
+  // Buscar histórico de status de veículos
+  app.get('/api/coca-cola/vehicle-history', cocaColaAuth, async (req: any, res) => {
+    try {
+      const cocaColaUser = req.cocaColaUser;
+      const { vehicle_id, placa, days = 30 } = req.query;
+      
+      let query = `
+        SELECT h.*, b.nome as base_nome
+        FROM coca_cola_vehicle_status_history h
+        LEFT JOIN coca_cola_bases b ON h.base_id = b.id
+        WHERE h.created_at >= NOW() - INTERVAL '${parseInt(days) || 30} days'
+      `;
+      const params: any[] = [];
+      let paramIndex = 1;
+      
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        query += ` AND h.base_id = $${paramIndex}`;
+        params.push(cocaColaUser.baseId);
+        paramIndex++;
+      }
+      
+      if (vehicle_id) {
+        query += ` AND h.vehicle_id = $${paramIndex}`;
+        params.push(vehicle_id);
+        paramIndex++;
+      }
+      
+      if (placa) {
+        query += ` AND h.placa ILIKE $${paramIndex}`;
+        params.push(`%${placa}%`);
+        paramIndex++;
+      }
+      
+      query += ' ORDER BY h.created_at DESC LIMIT 500';
+      
+      const result = await pool.query(query, params);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar histórico:', error);
+      res.status(500).json({ error: 'Erro ao buscar histórico' });
+    }
+  });
+
+  // Estatísticas de utilização da frota
+  app.get('/api/coca-cola/fleet-statistics', cocaColaAuth, async (req: any, res) => {
+    try {
+      const cocaColaUser = req.cocaColaUser;
+      const { days = 30 } = req.query;
+      const daysInt = parseInt(days as string) || 30;
+      
+      let baseFilter = '';
+      const vehicleParams: any[] = [];
+      
+      if (cocaColaUser.tipo === 'base' && cocaColaUser.baseId) {
+        baseFilter = 'AND v.base_id = $1';
+        vehicleParams.push(cocaColaUser.baseId);
+      }
+      
+      // Estatísticas atuais
+      const currentStats = await pool.query(`
+        SELECT 
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE status = 'disponivel') as disponiveis,
+          COUNT(*) FILTER (WHERE status = 'manutencao') as em_manutencao,
+          COUNT(*) FILTER (WHERE status = 'em_rota') as em_rota,
+          COUNT(*) FILTER (WHERE status = 'sem_equipe') as sem_equipe,
+          COUNT(*) FILTER (WHERE status = 'baixa_venda') as baixa_venda,
+          ROUND(COUNT(*) FILTER (WHERE status = 'disponivel')::numeric / NULLIF(COUNT(*), 0) * 100, 1) as percentual_disponivel
+        FROM coca_cola_vehicles v
+        WHERE 1=1 ${baseFilter}
+      `, vehicleParams);
+      
+      // Histórico de mudanças por dia
+      const historyBaseFilter = cocaColaUser.tipo === 'base' && cocaColaUser.baseId 
+        ? `AND h.base_id = ${cocaColaUser.baseId}` 
+        : '';
+        
+      const dailyHistory = await pool.query(`
+        SELECT 
+          DATE(created_at) as data,
+          COUNT(*) as total_mudancas,
+          COUNT(*) FILTER (WHERE status_novo = 'disponivel') as para_disponivel,
+          COUNT(*) FILTER (WHERE status_novo = 'manutencao') as para_manutencao,
+          COUNT(*) FILTER (WHERE tipo_alteracao = 'reset_diario') as resets_automaticos
+        FROM coca_cola_vehicle_status_history h
+        WHERE h.created_at >= NOW() - INTERVAL '${daysInt} days'
+        ${historyBaseFilter}
+        GROUP BY DATE(created_at)
+        ORDER BY data DESC
+      `);
+      
+      // Veículos com mais tempo em manutenção (últimos X dias)
+      const manutencaoRanking = await pool.query(`
+        SELECT 
+          h.placa,
+          COUNT(*) FILTER (WHERE h.status_novo = 'manutencao') as vezes_em_manutencao,
+          MAX(h.created_at) as ultima_manutencao
+        FROM coca_cola_vehicle_status_history h
+        WHERE h.created_at >= NOW() - INTERVAL '${daysInt} days'
+        ${historyBaseFilter}
+        GROUP BY h.placa
+        HAVING COUNT(*) FILTER (WHERE h.status_novo = 'manutencao') > 0
+        ORDER BY vezes_em_manutencao DESC
+        LIMIT 10
+      `);
+      
+      res.json({
+        atual: currentStats.rows[0],
+        historicoDiario: dailyHistory.rows,
+        rankingManutencao: manutencaoRanking.rows,
+        periodo: `${days} dias`
+      });
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao buscar estatísticas:', error);
+      res.status(500).json({ error: 'Erro ao buscar estatísticas' });
+    }
+  });
+
+  // Executar reset diário manualmente (admin)
+  app.post('/api/coca-cola/daily-reset', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = (req as any).user;
+      const { base_id } = req.body;
+      
+      // Buscar veículos em manutenção/parados para resetar
+      let query = `
+        SELECT v.*, b.nome as base_nome 
+        FROM coca_cola_vehicles v
+        LEFT JOIN coca_cola_bases b ON v.base_id = b.id
+        WHERE v.status IN ('manutencao', 'sem_equipe')
+      `;
+      const params: any[] = [];
+      
+      if (base_id) {
+        query += ' AND v.base_id = $1';
+        params.push(base_id);
+      }
+      
+      const vehicles = await pool.query(query, params);
+      
+      let resetados = 0;
+      for (const vehicle of vehicles.rows) {
+        // Registrar histórico
+        await pool.query(
+          `INSERT INTO coca_cola_vehicle_status_history 
+           (vehicle_id, placa, base_id, status_anterior, status_novo, motivo, tipo_alteracao, usuario_responsavel)
+           VALUES ($1, $2, $3, $4, 'disponivel', 'Reset diário automático - Confirme status real', 'reset_diario', $5)`,
+          [vehicle.id, vehicle.placa, vehicle.base_id, vehicle.status, user?.name || 'Sistema']
+        );
+        
+        // Resetar para disponível
+        await pool.query(
+          `UPDATE coca_cola_vehicles 
+           SET status = 'disponivel', oficina = NULL, prazo_estimado = NULL, updated_at = NOW()
+           WHERE id = $1`,
+          [vehicle.id]
+        );
+        
+        resetados++;
+      }
+      
+      console.log(`[COCA-COLA RESET] ${resetados} veículos resetados para disponível`);
+      res.json({ 
+        success: true, 
+        message: `${resetados} veículo(s) resetado(s) para disponível`,
+        veiculos_resetados: resetados
+      });
+    } catch (error) {
+      console.error('[COCA-COLA] Erro ao executar reset diário:', error);
+      res.status(500).json({ error: 'Erro ao executar r

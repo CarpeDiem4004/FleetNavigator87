@@ -1,0 +1,93 @@
+Perfeito — esse erro está **bem típico de validação inconsistente entre front e API**.
+Abaixo está um **PROMPT PRONTO** pra você colar direto no **Replit AI**, focado **exatamente** em corrigir o erro de **mudança de base** (`Invalid vehicle data – 400`).
+
+---
+
+## ✅ PROMPT PARA O REPLIT AI (copiar e colar)
+
+```
+Estamos com erro 400 (Invalid vehicle data) ao editar um veículo e alterar a BASE.
+
+Contexto:
+- Frontend React
+- Backend API REST (/api/vehicles/:id)
+- O erro ocorre mesmo com permissão válida
+- Log mostra: "Dados mapeados para envio: Object"
+- A falha acontece ao mudar o campo "base"
+
+Objetivo:
+Corrigir a atualização do veículo garantindo que o campo BASE seja enviado corretamente e aceito pela API.
+
+Tarefas obrigatórias:
+
+1️⃣ Frontend (React)
+- Verificar o payload enviado no PUT /api/vehicles/:id
+- Garantir que o campo `base_id` seja enviado como:
+  - number (int) se o backend espera ID
+  - e NÃO como objeto `{ id, nome }`
+- Se o select de base retorna objeto, mapear corretamente:
+  ex:
+  payload.base_id = selectedBase.id
+
+2️⃣ Backend (API)
+- Validar o schema do endpoint PUT /api/vehicles/:id
+- Confirmar se `base_id` é obrigatório
+- Garantir que o backend NÃO esteja esperando `base` como string
+- Ajustar validação para aceitar base_id quando apenas a base é alterada
+
+3️⃣ Validações
+- Permitir update parcial (PATCH behavior mesmo usando PUT)
+- Não invalidar campos não alterados
+- Garantir que campos opcionais (tipo_veiculo, status, cartao_abastecimento) não causem erro se vierem vazios
+
+4️⃣ Logs
+- Adicionar console.log no backend mostrando:
+  - payload recebido
+  - erro de validação exato antes do return 400
+
+Resultado esperado:
+- Alterar a base do veículo sem erro
+- Retornar status 200
+- Atualizar corretamente o campo base_id no banco
+```
+
+---
+
+## 🔍 CAUSA MAIS PROVÁVEL (pra você validar rápido)
+
+> O frontend está enviando algo assim:
+
+```json
+"base": { "id": 3, "nome": "SC ARAÇATUBA" }
+```
+
+👉 Mas o backend espera:
+
+```json
+"base_id": 3
+```
+
+Resultado: **400 Invalid vehicle data**
+
+---
+
+## ✔️ DICA EXTRA (ouro)
+
+Se quiser blindar o sistema:
+
+* Use **PATCH** no backend
+* Validação condicional:
+
+```js
+if (base_id !== undefined) validarBase(base_id)
+```
+
+---
+
+Se quiser, no próximo passo eu:
+
+* ajusto **o payload exato do React**
+* reviso **o endpoint do backend**
+* ou já te mando **o código pronto corrigido**
+
+Só me diz 💪

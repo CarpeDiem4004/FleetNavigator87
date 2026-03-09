@@ -1,0 +1,231 @@
+Abaixo montei **um plano completo e claro** para você criar **um dashboard de análise de consumo**, com filtros por datas, comparativos mensais, ranking por veículo, ranking por base, ranking por cartão (Ticket/Veloe), além de opção para **baixar relatório**.
+
+Tudo está estruturado para você implementar **no seu sistema atual (React + Supabase + Railway)**.
+
+---
+
+# ✅ **ESTRUTURA COMPLETA DO DASHBOARD DE CONSUMO**
+
+## **1️⃣ Filtros Principais (no topo do dashboard)**
+
+Crie uma área de filtros assim:
+
+* **Período**
+
+  * Data Inicial
+  * Data Final
+  * (opcional) Comparar com mês anterior
+* **Projeto**
+* **Base**
+* **Placa**
+* **Motorista**
+* **Operadora do cartão** (Ticket / Veloe / Outro)
+
+➡️ *Esses filtros atualizam tudo no dashboard em tempo real.*
+
+---
+
+# 2️⃣ **Indicadores (KPIs no topo)**
+
+Exibir cartões de resumo:
+
+### 🔵 **Consumo Total do Período**
+
+* Valor total abastecido
+* Litros totais
+* Valor/litro médio
+
+### 🔵 **Comparativo com período anterior**
+
+* * / – diferença
+* porcentagem
+
+### 🔵 **Maior base consumidora**
+
+* Nome da base
+* Valor total
+
+### 🔵 **Veículo que mais consumiu**
+
+* Placa
+* Litros e valor
+
+### 🔵 **Operadora mais utilizada**
+
+* Ticket / Veloe / Etc.
+
+---
+
+# 3️⃣ **Gráficos do Dashboard**
+
+## **📊 1. Gráfico Comparativo Mensal**
+
+Tipo: **Linha ou barras**
+
+* Mês no eixo X
+* Valor total abastecido no eixo Y
+* Alternar entre (Valor / Litros)
+
+---
+
+## **📊 2. Gráfico por Base**
+
+Tipo: **Barras horizontais**
+
+* Base → valor consumido
+* Permite ordenar por maior ou menor consumo
+
+---
+
+## **📊 3. Gráfico por Operadora (Ticket/Veloe)**
+
+Tipo: **Pizza ou Rosca**
+
+* % de consumo por cartão
+* Ticket
+* Veloe
+* Frota
+* Outros
+
+---
+
+## **📊 4. Ranking de Veículos**
+
+Tipo: **Tabela com ordenação**
+
+Colunas:
+
+| Posição | Placa | Km Atual | Litros Consumidos | Valor | Base |
+| ------- | ----- | -------- | ----------------- | ----- | ---- |
+
+---
+
+# 4️⃣ **Tabela Detalhada (modo lista)**
+
+Para auditoria:
+
+| Data | Placa | Motorista | Base | Horário | Litros | Valor | Operadora | Projeto | Status |
+
+➡️ Com botões:
+
+* **Baixar NF**
+* **Histórico do veículo**
+* **Ver motorista**
+
+---
+
+# 5️⃣ **Botão “Baixar Relatório”**
+
+O relatório precisa exportar:
+
+* XLSX
+* PDF (opcional)
+
+Formato Excel com abas:
+
+1. **Resumo Geral (KPIs)**
+2. **Gráfico mensal**
+3. **Ranking de veículos**
+4. **Ranking de bases**
+5. **Lista completa das transações filtradas**
+
+---
+
+# 6️⃣ **Como montar o backend (Supabase / Railway)**
+
+### **Query base para consumo filtrado**
+
+```sql
+select 
+  placa,
+  motorista,
+  base,
+  projeto,
+  data_abastecimento,
+  litros,
+  valor,
+  operadora
+from abastecimentos
+where data_abastecimento between :data_inicio and :data_fim
+and (:base is null or base = :base)
+and (:projeto is null or projeto = :projeto)
+and (:placa is null or placa = :placa)
+and (:operadora is null or operadora = :operadora)
+order by data_abastecimento desc;
+```
+
+### **Query para ranking de veículos**
+
+```sql
+select placa, sum(litros) as litros, sum(valor) as valor
+from abastecimentos
+where data_abastecimento between :data_inicio and :data_fim
+group by placa
+order by valor desc;
+```
+
+### **Query para ranking de bases**
+
+```sql
+select base, sum(valor) as total
+from abastecimentos
+where data_abastecimento between :data_inicio and :data_fim
+group by base
+order by total desc;
+```
+
+### **Comparativo mensal**
+
+```sql
+select 
+  date_trunc('month', data_abastecimento) as mes,
+  sum(valor) as total
+from abastecimentos
+where data_abastecimento between :inicio and :fim
+group by mes
+order by mes;
+```
+
+---
+
+# 7️⃣ **Sugestão de layout moderno (igual seus outros painéis)**
+
+### Área superior com:
+
+* KPIs coloridos
+* Filtros modernos (dropdown, calendário, busca)
+
+### Área do meio:
+
+* Gráficos em cartões expansíveis
+
+### Área inferior:
+
+* Ranking + tabela detalhada
+
+---
+
+# 8️⃣ **Posso gerar o código do dashboard completo**
+
+Se quiser, posso gerar:
+
+✅ **Componente React já pronto**
+✓ Chart.js / Recharts
+✓ Tailwind
+✓ ShadCN UI
+✓ Chamada ao Supabase
+✓ Exportação Excel
+✓ Botão de imprimir PDF
+
+Basta você me responder:
+
+---
+
+# ❓ *Você quer que eu gere o:*
+
+1. **Design completo em React (tela pronta)?**
+2. **Código do backend no Railway?**
+3. **Querys do Supabase?**
+4. **Tudo junto (painel completo funcional)?**
+
+Só me diga: **1, 2, 3 ou 4**.

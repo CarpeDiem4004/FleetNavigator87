@@ -1,0 +1,88 @@
+O erro que aparece no seu sistema é:
+
+javascript
+Copiar
+Editar
+Erro no upload: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+Esse erro significa que a resposta do servidor (backend) que o frontend está esperando ser um JSON na verdade é um HTML (geralmente uma página de erro, como 404 ou 500).
+
+✅ Causas mais comuns para esse erro:
+O endpoint /api/conferencia-rotas/upload não existe ou está errado
+➜ Ele pode estar respondendo com uma página HTML de erro, como 404 Not Found.
+
+O backend não está retornando um JSON válido (application/json)
+➜ Ele pode estar retornando um HTML de erro sem tratamento.
+
+Problema com CORS, headers ou permissões de autenticação (token inválido ou ausente)
+➜ Isso pode fazer o Supabase ou servidor Express responder com HTML de erro.
+
+✅ Como resolver passo a passo
+🔍 1. Verifique se o endpoint está correto
+Abra o console do navegador > aba "Network"
+
+Clique em /api/conferencia-rotas/upload
+
+Veja o status HTTP (deve ser 200, não 404 ou 500)
+
+Veja o conteúdo da resposta (Response) – provavelmente será um HTML de erro
+
+🛠️ 2. Ajuste o backend para sempre retornar JSON
+Se o backend estiver usando Express.js, por exemplo, ele deve sempre terminar com algo como:
+
+ts
+Copiar
+Editar
+res.status(200).json({ success: true, total: 2457 });
+Se der erro, retorne também em JSON:
+
+ts
+Copiar
+Editar
+res.status(400).json({ success: false, message: 'Arquivo inválido' });
+Evite retornar HTML, como páginas de erro ou redirecionamentos.
+
+✅ 3. Corrija no frontend
+Verifique se o fetch ou axios do frontend espera um JSON:
+
+ts
+Copiar
+Editar
+const response = await fetch('/api/conferencia-rotas/upload', {
+  method: 'POST',
+  body: formData,
+  headers: {
+    Authorization: `Bearer ${token}`
+  }
+});
+
+const data = await response.json(); // <-- aqui dá erro se vier HTML
+⚠️ Se o backend retornar HTML, essa linha response.json() vai explodir com o erro que você viu.
+
+✅ 4. Tratamento para resposta inesperada (opcional)
+Adicione um try/catch para capturar erro de parsing:
+
+ts
+Copiar
+Editar
+try {
+  const response = await fetch(...);
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    throw new Error("Resposta não é JSON");
+  }
+  const data = await response.json();
+  // sucesso
+} catch (err) {
+  console.error("Erro ao processar resposta:", err);
+  setError("Erro no upload: resposta inválida do servidor");
+}
+✅ Resumo do que você precisa revisar agora:
+Verifique se o endpoint existe e está correto.
+
+Veja no Network se a resposta realmente é HTML.
+
+Corrija o backend para sempre responder JSON.
+
+Adicione tratamento no frontend para resposta inválida.
+
+Garanta que o token JWT enviado está válido e com permissão.

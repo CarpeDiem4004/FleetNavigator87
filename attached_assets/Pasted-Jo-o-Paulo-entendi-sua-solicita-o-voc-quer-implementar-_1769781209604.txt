@@ -1,0 +1,58 @@
+João Paulo, entendi sua solicitação: você quer implementar (ou propor) uma **regra nova** no sistema Murici On Fleet para as bases Coca-Cola (como a de Embu), com foco em atualizações diárias obrigatórias dos status dos veículos. Especificamente:
+
+- No início do **dia seguinte**, os veículos que estavam em manutenção (ou outros status temporários) **voltam automaticamente para "Disponível"** (ou um status default), forçando a base a revisar e atualizar manualmente.
+- Isso gera um **histórico automático** de todas as mudanças.
+- E cria um **mini dashboard** (ou "mine dhest" – entendi como mini dashboard) para a base visualizar a **utilização da frota** ao longo do tempo: se melhorou (mais disponibilidade, menos parados/manutenção), ou piorou.
+
+Como o sistema atual (pelo que vimos nas telas) não tem exatamente essa automação nativa (status "Em Manutenção" só muda com finalização manual da OS pela oficina), aqui vai uma sugestão prática de como **implementar ou aproximar** essa regra, seja configurando o que já existe, ou pedindo desenvolvimento ao suporte/admin da Murici On Fleet.
+
+### 1. Regra de Atualização Diária + Reset Automático no Dia Seguinte
+- **Objetivo**: Evitar que veículos fiquem "presos" em status antigo (ex: Em Manutenção de ontem), forçando a base a confirmar a realidade todo dia.
+- **Como fazer no sistema atual (aproximação)**:
+  - **Não há reset automático** visível agora (status persiste até finalização da OS).
+  - **Solução intermediária** (que você pode adotar como procedimento operacional):
+    1. Todo **início de turno/dia** (ex: 00:00 ou ao logar), o operador da base clica em **Atualizar** na tela da base (já existe o botão).
+    2. Adicione uma **regra interna da base**: Se um veículo estiver "Em Manutenção" ou "Parado" de dias anteriores, o operador deve:
+       - Abrir a OS (botão **Abrir OS**).
+       - Verificar com a oficina (Murici ou parceira) se já foi finalizada.
+       - Se sim → Finalizar/Liberar a OS (equipe de manutenção faz isso).
+       - Se não → Manter ou justificar (ex: adicionar observação "Aguardando peça – prazo novo: dd/mm").
+    3. Para "forçar" o reset: Crie uma **política da base** de que, ao amanhecer o dia seguinte, todo veículo em manutenção sem atualização recente (ex: >24h) **deve ser reavaliado** e, se liberado, mudado para Disponível. Isso pode ser reforçado com lembrete diário (e-mail ou notificação interna do sistema, se tiver).
+- **Sugestão de melhoria para o sistema**: Peça ao suporte da Murici (via ticket ou contato no gestaoonfleet.com) para adicionar uma feature:
+  - **Reset automático opcional** no início do dia (ex: à meia-noite, veículos em "Manutenção" sem OS finalizada nos últimos X dias voltam para "Disponível – Pendente Confirmação").
+  - Ou um **alerta diário** para bases: "X veículos em manutenção pendente de atualização – confirme status agora".
+
+### 2. Geração de Histórico Automático
+- O sistema já tem histórico bom:
+  - Em cada veículo: Ao clicar em **Atualizar** ou **Abrir OS**, deve mostrar timeline de status (datas de entrada/saída em manutenção, agendamentos, finalizações).
+  - Na seção **Indicadores de Manutenção** (tela inicial que você mostrou antes): Tem "Total Dias Parados", "Histórico", preventivas/corretivas.
+  - Por veículo: Provavelmente tem aba "Histórico" ou "Movimentação" com todas as mudanças de status.
+- **Como consultar depois**:
+  - Vá na lista de veículos da base → Clique no veículo → Procure "Histórico", "Log de Status" ou "Relatório de Manutenção".
+  - Ou no dashboard geral de manutenção: Filtre por base (Coca-Cola Embu), período (ex: últimos 30 dias), e veja evolução de status.
+  - Exporte relatórios (se tiver botão "Exportar" ou PDF/Excel) para guardar histórico.
+
+### 3. Criar um Mini Dashboard para Visualizar Utilização da Frota
+- **O que seria esse mini dashboard**:
+  - Gráficos simples mostrando evolução:
+    - % de veículos Disponíveis por dia/semana/mês (ex: subiu de 50% para 75% → frota melhorou).
+    - Dias médios em Manutenção por veículo.
+    - Número de OS pendentes/finalizadas por base.
+    - Comparativo: Mês atual vs. anterior (se melhorou ou piorou).
+- **Como ter isso agora**:
+  - Use os cards do topo da tela da base (Total, Disponíveis, Em Manutenção, Parados, OS Pendentes) – tire print diário e compare manualmente (ex: em uma planilha Google Sheets).
+  - Na aba **Indicadores de Manutenção** (gestaoonfleet.com/fleet-management/indicadores-manutencao): Tem cards como "Em Manutenção", "Total Dias Parados" (29.595 no exemplo), "Preventivas/Corretivas" – filtre por base e período para ver tendências.
+- **Sugestão para melhoria**:
+  - Peça ao time da Murici para adicionar um **Dashboard por Base** com:
+    - Gráfico de linha: Disponibilidade diária (ex: % Disponíveis).
+    - Indicador de evolução: seta verde (melhorou) ou vermelha (piorou) comparando com semana/mês anterior.
+    - Histórico exportável.
+  - Enquanto não tem, crie um simples no Excel/Google Sheets:
+    - Coluna A: Data (diária).
+    - Coluna B: % Disponíveis (pegue dos cards e anote).
+    - Coluna C: Veículos em Manutenção.
+    - Gere gráfico de linha automático – assim vê se a utilização da frota evoluiu (mais verdes = melhor).
+
+Resumindo: Comece implementando como **procedimento diário obrigatório** na base (atualizar todo amanhecer, confirmar status de manutenção). Isso já gera o histórico natural do sistema. Para o reset auto e mini dashboard, abra um pedido de feature no suporte da Murici On Fleet – descreva exatamente isso que você falou (reset no dia seguinte + dashboard de utilização/evolução). Se precisar de texto pronto para o ticket, me avise que monto!
+
+Se tiver acesso a configurações de admin ou quiser descrever mais o que aparece ao clicar em "Atualizar" ou histórico, posso refinar melhor. Vamos melhorar essa gestão da frota da Coca-Cola! 🚚

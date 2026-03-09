@@ -1,0 +1,101 @@
+O erro deixado pela mensagem na tela e no console já diz a causa técnica: o cliente esperava JSON, mas o servidor respondeu HTML (começando por <!DOCTYPE ...). Isso faz com que response.json() quebre com Unexpected token '<'.
+
+Aqui estão as causas mais prováveis e o que checar / corrigir, passo a passo:
+
+Causas comuns
+
+Rota errada / fallback para página HTML (SPA)
+
+O fetch/request foi feito para uma URL que não é a API (ou não existe) e o servidor devolveu a página HTML do app (index.html) como fallback -> JSON inválido.
+
+Erro do servidor (500 / 404) que retorna página de erro HTML
+
+Um erro interno ou rota não encontrada pode retornar uma página de erro HTML em vez de um JSON estruturado.
+
+Autenticação / redirecionamento para login
+
+Sessão inválida -> servidor redireciona para a página de login (HTML). Muito comum em backends que redirecionam usuários não autenticados.
+
+Content-Type / formato incorreto no envio
+
+Você enviou multipart/form-data (FormData) mas o backend espera application/json, ou vice-versa. Ou você forçou manualmente um Content-Type que quebrou o boundary do FormData.
+
+Upload de arquivo no endpoint errado
+
+Para Supabase e serviços parecidos: primeiro precisa enviar o arquivo ao storage e depois gravar metadata na tabela. Se tentou enviar o JPG direto para a rota de inserção de registros, o backend pode não aceitar.
+
+Proxy / deploy (Vercel/Replit) retornando página de erro ou HTML
+
+Em ambientes serverless, rota mal configurada retorna HTML da homepage.
+
+Como diagnosticar (faça esses passos agora)
+
+Abra a aba Network no DevTools e encontre a request que dá erro. Veja:
+
+Status code (200/302/401/404/500?)
+
+Response tab — veja o corpo (vai mostrar o HTML retornado).
+
+Se for 302/redirect ou HTML de login → verificar autenticação (token/cookie).
+
+Se for 404/500 → ver logs do backend e a rota chamada.
+
+Verifique o Request payload / Headers:
+
+Se estiver enviando FormData, não defina Content-Type manualmente: fetch(url, { body: formData }) (o browser seta o boundary).
+
+Se backend espera JSON, converta o arquivo para base64 ou envie a URL do arquivo depois do upload.
+
+Adicione um try/catch e um fallback para response.text() para logar o conteúdo quando não for JSON:
+
+const res = await fetch(url, options);
+const text = await res.text();
+try {
+  const json = JSON.parse(text);
+  // usar json
+} catch (e) {
+  console.error('Resposta não é JSON:', res.status, text);
+  throw new Error('Resposta do servidor não é JSON — ver console');
+}
+
+Correções práticas (exemplos)
+Se for upload via FormData (arquivo + campos)
+const formData = new FormData();
+formData.append('photo', fileInput.files[0]);
+formData.append('placa', placa);
+formData.append('litros', litros);
+
+// NÃO setar Content-Type — o browser faz isso
+const res = await fetch('/api/postpaid', {
+  method: 'POST',
+  body: formData,
+  credentials: 'include' // se usar cookies de sessão
+});
+if (!res.ok) {
+  const text = await res.text();
+  console.error('Erro do servidor:', res.status, text);
+  throw new Error('Erro no envio');
+}
+const data = await res.json();
+
+Se o backend espera JSON (sem arquivo)
+
+Primeiro faça upload do arquivo ao storage (Supabase Storage ou outro), pegue a url/path e só depois envie o JSON com metadata:
+
+// 1) upload para storage -> obter fileUrl
+// 2) enviar JSON com fileUrl
+await fetch('/api/postpaid', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ placa, litros, photoUrl: fileUrl })
+});
+
+O que verificar agora no seu caso (com base nas telas)
+
+O console mostra 200 true mas o toast indica JSON inválido — parece que a rota respondeu algo que não é JSON.
+
+Verifique se a request que contém a foto está indo para a API correta e não para a rota do front-end (ex: /_app ou index.html).
+
+Verifique autenticação: o console mostra logs do AuthContext; confirme que a sessão está ativa (token presente) e que a API aceita esse token.
+
+Se usa Supabase: confirme se está usando a Storage API para guardar o arquivo e depois a tabela para inserir os metadados.

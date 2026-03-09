@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Murici Logística</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="font-sans bg-gray-900 text-white">
+
+  <!-- Navbar -->
+  <nav class="flex items-center justify-between px-6 py-4 bg-white shadow-md">
+    <div class="flex items-center space-x-2">
+      <img src="SEU_LOGO_AQUI.png" alt="Murici" class="h-8">
+      <span class="text-gray-800 font-bold text-xl">Murici</span>
+    </div>
+    <ul class="hidden md:flex space-x-8 text-gray-700 font-semibold">
+      <li><a href="#" class="hover:text-pink-600">Home</a></li>
+      <li><a href="#" class="hover:text-pink-600">Quem Somos</a></li>
+      <li><a href="#" class="hover:text-pink-600">Serviços</a></li>
+      <li><a href="#" class="hover:text-pink-600">Contato</a></li>
+    </ul>
+    <a href="#" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-full">
+      Orçamento Online
+    </a>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="flex flex-col md:flex-row items-center justify-between px-8 py-20 bg-gray-900 relative overflow-hidden">
+    
+    <!-- Left Side -->
+    <div class="md:w-1/2 z-10">
+      <h1 class="text-4xl md:text-5xl font-extrabold leading-tight mb-6">
+        Soluções confiáveis de<br> logística e transporte.
+      </h1>
+      <div class="flex space-x-4">
+        <a href="#" class="bg-pink-600 hover:bg-pink-700 text-white py-3 px-6 rounded-lg font-semibold">
+          Orçamento Online
+        </a>
+        <a href="#" class="bg-white hover:bg-gray-100 text-gray-900 py-3 px-6 rounded-lg font-semibold">
+          Conhecer a Murici
+        </a>
+      </div>
+    </div>
+
+    <!-- Right Side - Background Image -->
+    <div class="md:w-1/2 absolute md:static inset-0 opacity-40 md:opacity-100">
+      <img src="https://images.unsplash.com/photo-1593622719413-05c9b9204b46?auto=format&fit=crop&w=1400&q=80" 
+        alt="Logística" 
+        class="w-full h-full object-cover mix-blend-overlay"
+        style="background-color: #e30045;">
+    </div>
+    
+  </section>
+
+</body>
+</html>
